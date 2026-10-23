@@ -93,3 +93,12 @@ for (const page of SECTION_PAGES) {
     );
   });
 }
+
+test('pokedex.css disables transitions and animations under prefers-reduced-motion', () => {
+  const css = readSite('css/pokedex.css');
+  const start = css.indexOf('@media (prefers-reduced-motion: reduce)');
+  assert.notEqual(start, -1);
+  const block = css.slice(start);
+  assert.match(block, /transition:\s*none\s*!important/);
+  assert.match(block, /animation:\s*none\s*!important/);
+});

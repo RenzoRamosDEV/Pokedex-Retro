@@ -116,3 +116,49 @@ test('a null storage still applies the chosen theme', async () => {
   assert.doesNotThrow(() => doc.options[1].click());
   assert.equal(doc.body.dataset.theme, 'gb');
 });
+
+for (const [label, saved, prefersDark, expected] of [
+  ['an empty storage with dark preference', {}, true, 'gray'],
+  ['an empty storage without dark preference', {}, false, 'normal'],
+  ['a saved normal with dark preference', { theme: 'normal' }, true, 'normal'],
+  ['a saved gb without dark preference', { theme: 'gb' }, false, 'gb'],
+  ['an unknown saved value with dark preference', { theme: 'rojo' }, true, 'gray'],
+  ['an unknown saved value without dark preference', { theme: 'rojo' }, false, 'normal'],
+]) {
+  test(`${label} starts with ${expected}`, async () => {
+    const initTheme = await loadInitTheme();
+    const doc = createFakeDocument();
+    initTheme(doc, createMapStorage(saved), prefersDark);
+    assert.equal(doc.body.dataset.theme, expected);
+    assert.deepEqual(activeOptions(doc), [expected]);
+  });
+}
+
+test('the initial theme is not saved', async () => {
+  const initTheme = await loadInitTheme();
+  const doc = createFakeDocument();
+  const storage = createMapStorage();
+  const saved = [];
+  storage.setItem = (...args) => saved.push(args);
+  initTheme(doc, storage, true);
+  assert.deepEqual(saved, []);
+  assert.equal(storage.map.size, 0);
+});
+
+test('choosing gb saves it under the theme key', async () => {
+  const initTheme = await loadInitTheme();
+  const doc = createFakeDocument();
+  const storage = createMapStorage();
+  const saved = [];
+  storage.setItem = (...args) => saved.push(args);
+  initTheme(doc, storage, true);
+  doc.options[1].click();
+  assert.deepEqual(saved, [['theme', 'gb']]);
+});
+
+test('a throwing storage with dark preference starts with gray without throwing', async () => {
+  const initTheme = await loadInitTheme();
+  const doc = createFakeDocument();
+  assert.doesNotThrow(() => initTheme(doc, throwingStorage, true));
+  assert.equal(doc.body.dataset.theme, 'gray');
+});
