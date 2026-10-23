@@ -13,6 +13,7 @@ import {
 import { pokedexView } from './render-pokedex.js';
 import { mapPokemon } from '../mappers/pokemon.js';
 import { STRINGS } from './strings.js';
+import { paginationLinks } from '../core/pagination.js';
 
 const fixturePokemon = mapPokemon(
   JSON.parse(readFileSync(join(import.meta.dirname, '../mappers/fixtures/pokemon.json'), 'utf8')),
@@ -126,6 +127,63 @@ for (const [label, prevHref, nextHref] of [
 test('upper turns any value into escaped upper case text', () => {
   assert.equal(upper('mr-mime <x>'), 'MR-MIME &lt;X&gt;');
   assert.equal(upper(7), '7');
+  assert.equal(upper(0), '0');
+  assert.equal(upper(null), 'NULL');
+});
+
+const PREV_LINK = (href) => `<a href="${href}" class="page-btn">◀ ANT.</a>`;
+const NEXT_LINK = (href) => `<a href="${href}" class="page-btn">SIG. ▶</a>`;
+const PREV_OFF = '<span class="page-btn disabled">◀ ANT.</span>';
+const NEXT_OFF = '<span class="page-btn disabled">SIG. ▶</span>';
+
+for (const [label, page, total, rawQuery, prev, next] of [
+  ['first of 3', 1, 3, null, PREV_OFF, NEXT_LINK('?page=2')],
+  ['middle of 3', 2, 3, null, PREV_LINK('?page=1'), NEXT_LINK('?page=3')],
+  ['last of 3', 3, 3, null, PREV_LINK('?page=2'), NEXT_OFF],
+  [
+    'middle of 3 with query',
+    2,
+    3,
+    'mr mime',
+    PREV_LINK('?page=1&amp;q=mr%20mime'),
+    NEXT_LINK('?page=3&amp;q=mr%20mime'),
+  ],
+]) {
+  test(`paginationNav on the ${label} renders the exact navigation`, () => {
+    assert.equal(
+      paginationNav(paginationLinks(page, total, rawQuery)),
+      `
+  <nav class="pagination">
+    ${prev}
+    <span class="page-info">${page} / ${total}</span>
+    ${next}
+  </nav>`,
+    );
+  });
+}
+
+test('paginationNav on a single page renders nothing', () => {
+  assert.equal(paginationNav(paginationLinks(1, 1, null)), '');
+});
+
+test('pageHeader escapes a search value that tries to break out of the attribute', () => {
+  const html = pageHeader('POKEDEX', true, '"><script>alert(1)</script>');
+  assert.ok(html.includes('value="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"'));
+  assert.doesNotMatch(html, /<script/i);
+});
+
+test('pageHeader of a searchable view renders the exact search form', () => {
+  assert.equal(
+    pageHeader('POKEDEX', true, ''),
+    `
+  <div class="page-header">
+    <h2 class="page-title">POKEDEX</h2>
+    <form class="search-form" method="GET">
+      <input class="search-input" type="text" name="q" placeholder="BUSCAR..." value="" autocomplete="off">
+      <button class="search-btn" type="submit">▶</button>
+    </form>
+  </div>`,
+  );
 });
 
 function fakeElement(dataset) {
