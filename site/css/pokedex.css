@@ -135,6 +135,29 @@ body {
   padding: 1rem 1.5rem;
 }
 
+/* ── Salto al contenido y región de estado ───────── */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0.5rem;
+  z-index: 1000;
+  padding: 0.6rem 0.8rem;
+  background: #0d0d0d;
+  color: #ffde00;
+  border: 2px solid #ffde00;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.estado:empty {
+  display: none;
+}
+
 /* ── Pokémon Grid ────────────────────────────────── */
 .pokedex-grid {
   display: grid;

@@ -16,10 +16,6 @@ export function pageHeader(title, searchable, searchValue) {
   </div>`;
 }
 
-export function statusMessage(text) {
-  return `<p class="page-info">${escapeHtml(text)}</p>`;
-}
-
 export function paginationNav(links) {
   if (links === null) return '';
   const prev =
@@ -40,20 +36,23 @@ export function paginationNav(links) {
 
 export const upper = (value) => escapeHtml(String(value).toUpperCase());
 
-export function failedNotice(count) {
-  if (count === 0) return '';
-  const text =
-    count === 1 ? STRINGS.comun.elementoNoCargado : `${count} ${STRINGS.comun.elementosNoCargados}`;
-  return `<p class="page-info" role="status">${text}</p>`;
+function failedText(count) {
+  return count === 1
+    ? STRINGS.comun.elementoNoCargado
+    : `${count} ${STRINGS.comun.elementosNoCargados}`;
 }
 
-export function sectionContent(view, result) {
-  if (result.status === 'error') return statusMessage(STRINGS.comun.errorCarga);
-  const notice = failedNotice(result.failedCount);
-  if (result.items.length === 0) return notice || statusMessage(STRINGS.comun.sinResultados);
+export function statusText(result) {
+  if (result.status === 'error') return STRINGS.comun.errorCarga;
+  if (result.failedCount > 0) return failedText(result.failedCount);
+  if (result.items.length === 0) return STRINGS.comun.sinResultados;
+  return '';
+}
+
+export function sectionBody(view, result) {
+  if (result.status === 'error' || result.items.length === 0) return '';
   const overlays = view.renderOverlays ? view.renderOverlays(result.items) : '';
   return (
-    notice +
     view.renderItems(result.items) +
     paginationNav(paginationLinks(result.page, result.totalPages, result.rawQuery)) +
     overlays

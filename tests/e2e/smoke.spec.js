@@ -56,3 +56,42 @@ test('the DMG theme chosen with the mouse persists after reloading', async ({ pa
   await page.reload();
   await expect(page.locator('body')).toHaveAttribute('data-theme', 'gb');
 });
+
+const statusRegion = (page) => page.locator('main [role="status"]');
+
+test('the first Tab focuses a visible skip link and Enter moves focus to main', async ({
+  page,
+}) => {
+  await page.goto('tipos.html');
+  await page.keyboard.press('Tab');
+  const skip = page.getByRole('link', { name: 'Saltar al contenido' });
+  await expect(skip).toBeFocused();
+  await expect(skip).toBeInViewport();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#contenido')).toBeFocused();
+});
+
+for (const { file, item } of PAGES) {
+  test(`${file} leaves the status region empty after a correct load`, async ({ page }) => {
+    await page.goto(file);
+    await expect(page.locator(item).first()).toBeVisible();
+    await expect(statusRegion(page)).toHaveCount(1);
+    await expect(statusRegion(page)).toHaveText('');
+  });
+}
+
+test('a search without matches says SIN RESULTADOS in the status region', async ({ page }) => {
+  await page.goto('index.html?q=zzz');
+  await expect(statusRegion(page)).toHaveText('SIN RESULTADOS');
+});
+
+test('a failing list shows the load error in the status region', async ({ page }) => {
+  await page.route(
+    (url) => url.href.startsWith('https://pokeapi.co/api/v2/pokemon?'),
+    (route) => route.fulfill({ status: 500, body: '' }),
+  );
+  await page.goto('index.html');
+  await expect(statusRegion(page)).toHaveText(
+    'No se pudieron cargar los datos. Inténtalo de nuevo más tarde.',
+  );
+});
