@@ -1,7 +1,7 @@
 import { parseQuery } from '../core/query.js';
 import { SECTIONS } from '../core/sections.js';
 import { loadSection } from '../core/load-section.js';
-import { applyStatBarWidths, pageHeader, statusMessage, sectionContent } from './layout.js';
+import { applyStatBarWidths, pageHeader, sectionBody, statusText } from './layout.js';
 import { pokedexView } from './render-pokedex.js';
 import { movesView } from './render-moves.js';
 import { naturesView } from './render-natures.js';
@@ -46,14 +46,16 @@ async function start() {
   const sectionName = document.body.dataset.section;
   const view = VIEWS[sectionName];
   const parsedQuery = parseQuery(window.location.search);
-  const main = document.querySelector('.site-main');
-  const header = pageHeader(
+  const status = document.querySelector('[data-estado]');
+  const content = document.querySelector('[data-contenido]');
+  document.querySelector('[data-cabecera]').innerHTML = pageHeader(
     view.title,
     view.searchable,
     parsedQuery.query === null ? '' : parsedQuery.rawQuery,
   );
 
-  main.innerHTML = header + statusMessage(STRINGS.comun.cargando);
+  status.textContent = STRINGS.comun.cargando;
+  content.innerHTML = '';
   const result = await loadUntilPageHide(window, (signal) =>
     loadSection(
       (url) => fetchJson(url, { signal }).then((json) => ({ ok: true, status: 200, json })),
@@ -63,8 +65,9 @@ async function start() {
   );
   lastLoadAborted = result === null;
   if (lastLoadAborted) return;
-  main.innerHTML = header + sectionContent(view, result);
-  applyStatBarWidths(main);
+  status.textContent = statusText(result);
+  content.innerHTML = sectionBody(view, result);
+  applyStatBarWidths(content);
 }
 
 window.addEventListener('pageshow', (event) => {

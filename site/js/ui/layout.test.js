@@ -4,10 +4,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   applyStatBarWidths,
-  failedNotice,
   pageHeader,
   paginationNav,
-  sectionContent,
+  sectionBody,
+  statusText,
   upper,
 } from './layout.js';
 import { pokedexView } from './render-pokedex.js';
@@ -30,58 +30,59 @@ const okResult = (items, failedCount) => ({
 });
 const count = (html, fragment) => html.split(fragment).length - 1;
 
-test('failedNotice(0) is empty', () => {
-  assert.equal(failedNotice(0), '');
-});
-
-for (const [failed, text] of [
-  [1, '1 ELEMENTO NO SE PUDO CARGAR'],
-  [2, '2 ELEMENTOS NO SE PUDIERON CARGAR'],
-  [18, '18 ELEMENTOS NO SE PUDIERON CARGAR'],
+for (const [label, result, text] of [
+  ['an error', { status: 'error' }, STRINGS.comun.errorCarga],
+  ['an empty result without failures', okResult([], 0), 'SIN RESULTADOS'],
+  ['0 items and 18 failures', okResult([], 18), '18 ELEMENTOS NO SE PUDIERON CARGAR'],
+  ['16 items and 2 failures', okResult(pokemons(16), 2), '2 ELEMENTOS NO SE PUDIERON CARGAR'],
+  ['1 item and 1 failure', okResult(pokemons(1), 1), '1 ELEMENTO NO SE PUDO CARGAR'],
+  ['2 items without failures', okResult(pokemons(2), 0), ''],
 ]) {
-  test(`failedNotice(${failed}) is a status paragraph with "${text}"`, () => {
-    assert.equal(failedNotice(failed), `<p class="page-info" role="status">${text}</p>`);
+  test(`statusText of ${label} is "${text}"`, () => {
+    assert.equal(statusText(result), text);
   });
 }
 
-test('partial failures: 16 of 18 Pokémon render as cards with the notice', () => {
-  const html = sectionContent(pokedexView, okResult(pokemons(16), 2));
+test('the load error text is the one of STRINGS', () => {
+  assert.equal(
+    statusText({ status: 'error' }),
+    'No se pudieron cargar los datos. Inténtalo de nuevo más tarde.',
+  );
+});
+
+test('sectionBody of 16 Pokémon renders 16 cards and no status paragraph', () => {
+  const html = sectionBody(pokedexView, okResult(pokemons(16), 2));
   assert.equal(count(html, 'class="poke-card"'), 16);
-  assert.equal(count(html, '2 ELEMENTOS NO SE PUDIERON CARGAR'), 1);
-  assert.ok(html.indexOf('role="status"') < html.indexOf('class="poke-card"'));
+  assert.doesNotMatch(html, /role="status"|ELEMENTOS NO SE PUDIERON/);
 });
 
-test('every detail failing shows only the notice, not SIN RESULTADOS', () => {
-  const html = sectionContent(pokedexView, okResult([], 18));
-  assert.equal(html, failedNotice(18));
-});
+for (const [label, result] of [
+  ['an error', { status: 'error' }],
+  ['an empty result', okResult([], 0)],
+  ['a result where every detail failed', okResult([], 18)],
+]) {
+  test(`sectionBody of ${label} is empty`, () => {
+    assert.equal(sectionBody(pokedexView, result), '');
+  });
+}
 
-test('an empty result without failures shows SIN RESULTADOS and no notice', () => {
-  const html = sectionContent(pokedexView, okResult([], 0));
-  assert.equal(html, `<p class="page-info">${STRINGS.comun.sinResultados}</p>`);
-});
-
-test('an error result shows the load error message', () => {
-  const html = sectionContent(pokedexView, { status: 'error' });
-  assert.equal(html, `<p class="page-info">${STRINGS.comun.errorCarga}</p>`);
-});
-
-test('a result without failures has no status notice but has items and overlays', () => {
-  const html = sectionContent(pokedexView, okResult(pokemons(2), 0));
-  assert.doesNotMatch(html, /role="status"/);
+test('sectionBody renders items and overlays', () => {
+  const html = sectionBody(pokedexView, okResult(pokemons(2), 0));
   assert.equal(count(html, 'class="poke-card"'), 2);
   assert.equal(count(html, 'class="modal"'), 2);
+  assert.ok(html.indexOf('class="poke-card"') < html.indexOf('class="modal"'));
 });
 
-test('pagination is rendered after the items when there are several pages', () => {
-  const html = sectionContent(pokedexView, { ...okResult(pokemons(1), 0), totalPages: 3 });
+test('sectionBody renders the pagination after the items when there are several pages', () => {
+  const html = sectionBody(pokedexView, { ...okResult(pokemons(1), 0), totalPages: 3 });
   assert.match(html, /<nav class="pagination">[\s\S]*1 \/ 3/);
   assert.ok(html.indexOf('class="poke-card"') < html.indexOf('class="pagination"'));
+  assert.ok(html.indexOf('class="pagination"') < html.indexOf('class="modal"'));
 });
 
-test('a view without overlays renders only items and pagination', () => {
+test('sectionBody of a view without overlays renders only items and pagination', () => {
   const view = { renderItems: (items) => `<ul>${items.length}</ul>` };
-  assert.equal(sectionContent(view, okResult([{ id: 1 }], 0)), '<ul>1</ul>');
+  assert.equal(sectionBody(view, okResult([{ id: 1 }], 0)), '<ul>1</ul>');
 });
 
 test('pageHeader of a searchable view has the title and an escaped search value', () => {

@@ -63,6 +63,7 @@
     <script type="module" src="js/ui/main.js"></script>
   </head>
   <body class="section-tipos" data-section="tipos">
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
     <header class="site-header">
       <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true" />
 
@@ -156,8 +157,11 @@
       </nav>
     </header>
 
-    <main class="site-main">
-      <p class="page-info">CARGANDO...</p>
+    <main id="contenido" class="site-main" tabindex="-1">
+      <div data-cabecera></div>
+      <noscript><p class="page-info">ESTA POKÉDEX NECESITA JAVASCRIPT</p></noscript>
+      <p class="page-info estado" role="status" aria-live="polite" data-estado></p>
+      <div data-contenido></div>
     </main>
   </body>
 </html>

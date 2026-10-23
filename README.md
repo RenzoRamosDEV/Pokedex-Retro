@@ -34,6 +34,12 @@ Por eso no se admiten estilos, scripts ni manejadores de eventos en línea (`sty
 
 Las fuentes Press Start 2P y VT323 se sirven desde `site/fonts/` en `woff2` (copiadas de `@fontsource` 5.3.0), con su licencia SIL Open Font License 1.1 en `site/fonts/OFL.txt`; no se usa Google Fonts.
 
+## Accesibilidad
+
+- Cada página de sección empieza con un enlace **Saltar al contenido**, visible al recibir el foco con Tab, que lleva el foco al contenido principal (`<main id="contenido">`).
+- Los mensajes de carga, sin resultados, error y elementos no cargados se anuncian en una única región de estado (`role="status"`, `aria-live="polite"`) que no se recrea entre pintados.
+- Sin JavaScript se muestra el aviso `ESTA POKÉDEX NECESITA JAVASCRIPT`.
+
 ## Temas
 
 Desde el botón de tema se elige entre **NORMAL** (rojo clásico), **DMG** (verde LCD de la Game Boy) y **MONO** (escala de grises). La elección se guarda en `localStorage`.
