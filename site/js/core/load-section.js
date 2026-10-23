@@ -1,9 +1,11 @@
 // @ts-check
 import { filterByName } from './search.js';
 import { offsetFor, sliceFor, totalPages } from './pagination.js';
+import { createLimit } from './limit.js';
 
 const API_BASE = 'https://pokeapi.co/api/v2';
 export const FULL_LIST_LIMIT = 100000;
+const MAX_DETAIL_REQUESTS = 6;
 
 async function fetchList(fetchJson, url) {
   const response = await fetchJson(url);
@@ -38,12 +40,10 @@ async function fetchListing(fetchJson, config, { page, query }) {
 }
 
 async function fetchDetail(fetchJson, config, name) {
-  try {
-    const response = await fetchJson(`${API_BASE}/${config.resource}/${name}`);
-    return response.ok ? config.mapper(response.json) : null;
-  } catch {
-    return null;
-  }
+  const url = `${API_BASE}/${config.resource}/${name}`;
+  const response = await fetchJson(url);
+  if (!response.ok) throw new Error(`Detail request failed: ${url}`);
+  return config.mapper(response.json);
 }
 
 export async function loadSection(fetchJson, config, parsedQuery) {
@@ -56,12 +56,17 @@ export async function loadSection(fetchJson, config, parsedQuery) {
   const names = listing.entries
     .map((entry) => entry.name)
     .filter((name) => !config.exclude.includes(name));
-  const details = await Promise.all(names.map((name) => fetchDetail(fetchJson, config, name)));
+  const run = createLimit(MAX_DETAIL_REQUESTS);
+  const details = await Promise.allSettled(
+    names.map((name) => run(() => fetchDetail(fetchJson, config, name))),
+  );
+  const loaded = details.filter((detail) => detail.status === 'fulfilled');
   return {
     status: 'ok',
-    items: details.filter((item) => item !== null).sort((a, b) => a.id - b.id),
+    items: loaded.map((detail) => detail.value).sort((a, b) => a.id - b.id),
     page: listing.page,
     totalPages: listing.totalPages,
     rawQuery: parsedQuery.query === null ? null : parsedQuery.rawQuery,
+    failedCount: details.length - loaded.length,
   };
 }

@@ -42,6 +42,7 @@ describe('loadSection on a paginated section with a search query', () => {
       page: 1,
       totalPages: 1,
       rawQuery: 'Mr Mime',
+      failedCount: 0,
     });
     assert.deepEqual(requested, [
       `${API}/pokemon?limit=100000`,
@@ -63,6 +64,7 @@ describe('loadSection on a paginated section with a search query', () => {
       page: 1,
       totalPages: 0,
       rawQuery: 'zzzz',
+      failedCount: 0,
     });
     assert.deepEqual(requested, [`${API}/berry?limit=100000`]);
   });
@@ -99,6 +101,7 @@ describe('loadSection on a paginated section with a search query', () => {
       page: 2,
       totalPages: 1,
       rawQuery: 'ch',
+      failedCount: 0,
     });
     assert.equal(requested.length, 1);
   });
@@ -120,6 +123,7 @@ describe('loadSection on a paginated section without a query', () => {
       page: 3,
       totalPages: 59,
       rawQuery: null,
+      failedCount: 0,
     });
     assert.equal(requested[0], `${API}/move?limit=16&offset=32`);
   });
@@ -170,6 +174,7 @@ describe('loadSection on a paginated section without a query', () => {
       result.items.map((p) => p.id),
       expectedIds,
     );
+    assert.equal(result.failedCount, 2);
   });
 
   test('drops an entry whose detail cannot be mapped', async () => {
@@ -187,6 +192,7 @@ describe('loadSection on a paginated section without a query', () => {
     );
 
     assert.deepEqual(result.items, [{ id: 1, name: 'BULBASAUR' }]);
+    assert.equal(result.failedCount, 1);
   });
 });
 
@@ -239,6 +245,7 @@ describe('loadSection on an unpaginated section', () => {
       page: 1,
       totalPages: 1,
       rawQuery: null,
+      failedCount: 0,
     });
     assert.deepEqual(requested, [
       `${API}/nature?limit=100`,
@@ -282,5 +289,95 @@ describe('loadSection on an unpaginated section', () => {
     const result = await loadSection(fetchJson, section('tipos'), parseQuery(''));
 
     assert.deepEqual([result.items, result.totalPages], [[], 0]);
+  });
+});
+
+describe('loadSection detail concurrency and failures', () => {
+  const names = Array.from({ length: 18 }, (_, i) => `mon-${i + 1}`);
+  const listUrl = `${API}/pokemon?limit=18&offset=0`;
+
+  function controlledFetchJson(detailNames) {
+    const state = { inFlight: 0, maxInFlight: 0, pending: [] };
+    const fetchJson = (url) => {
+      if (url.includes('?'))
+        return Promise.resolve({ ok: true, status: 200, ...listOf(detailNames, 1300) });
+      state.inFlight += 1;
+      state.maxInFlight = Math.max(state.maxInFlight, state.inFlight);
+      return new Promise((resolve) => {
+        state.pending.push(() => {
+          state.inFlight -= 1;
+          const name = url.slice(url.lastIndexOf('/') + 1);
+          resolve({ ok: true, status: 200, json: { id: Number(name.slice(4)), name } });
+        });
+      });
+    };
+    return { fetchJson, state };
+  }
+
+  async function flush() {
+    for (let i = 0; i < 10; i += 1) await Promise.resolve();
+  }
+
+  test('keeps at most 6 detail requests in flight and completes all 18', async () => {
+    const { fetchJson, state } = controlledFetchJson(names);
+    const loading = loadSection(fetchJson, section('pokedex'), parseQuery(''));
+    await flush();
+    assert.equal(state.inFlight, 6);
+    while (state.pending.length > 0) {
+      state.pending.pop()();
+      await flush();
+    }
+    const result = await loading;
+    assert.equal(state.maxInFlight, 6);
+    assert.equal(result.items.length, 18);
+    assert.equal(result.failedCount, 0);
+  });
+
+  test('starts every detail at once when there are fewer than 6', async () => {
+    const { fetchJson, state } = controlledFetchJson(names.slice(0, 4));
+    const loading = loadSection(fetchJson, section('pokedex'), parseQuery(''));
+    await flush();
+    assert.equal(state.inFlight, 4);
+    state.pending.forEach((finish) => finish());
+    assert.equal((await loading).items.length, 4);
+  });
+
+  test('2 rejected details out of 18 leave 16 items sorted by id and failedCount 2', async () => {
+    const routes = { [listUrl]: listOf(names, 1300) };
+    names.forEach((name, i) => {
+      routes[`${API}/pokemon/${name}`] = detail(100 - i, name);
+    });
+    routes[`${API}/pokemon/mon-2`] = new TypeError('Failed to fetch');
+    routes[`${API}/pokemon/mon-9`] = new TypeError('Failed to fetch');
+    const { fetchJson } = fakeFetchJson(routes);
+
+    const result = await loadSection(fetchJson, section('pokedex'), parseQuery(''));
+
+    assert.equal(result.items.length, 16);
+    assert.deepEqual(
+      result.items.map((p) => p.id),
+      [...result.items.map((p) => p.id)].sort((a, b) => a - b),
+    );
+    assert.equal(result.failedCount, 2);
+  });
+
+  test('a detail answering 404 counts as a failure', async () => {
+    const { fetchJson } = fakeFetchJson({
+      [listUrl]: listOf(['bulbasaur', 'missingno'], 2),
+      [`${API}/pokemon/bulbasaur`]: detail(1, 'bulbasaur'),
+      [`${API}/pokemon/missingno`]: { status: 404, json: { id: 0, name: 'missingno' } },
+    });
+
+    const result = await loadSection(fetchJson, section('pokedex'), parseQuery(''));
+
+    assert.deepEqual([result.items, result.failedCount], [[detail(1, 'bulbasaur').json], 1]);
+  });
+
+  test('every detail failing leaves no items and counts all of them', async () => {
+    const { fetchJson } = fakeFetchJson({ [listUrl]: listOf(names, 1300) });
+
+    const result = await loadSection(fetchJson, section('pokedex'), parseQuery(''));
+
+    assert.deepEqual([result.items, result.failedCount], [[], 18]);
   });
 });
