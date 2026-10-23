@@ -1,0 +1,109 @@
+{
+  "id": 1,
+  "name": "stench",
+  "effect_entries": [
+    {
+      "short_effect": "A 10% de chances d'apeurer le Pokémon cible à chaque coup.",
+      "language": {
+        "name": "fr",
+        "url": "https://pokeapi.co/api/v2/language/5/"
+      }
+    },
+    {
+      "short_effect": "Mit jedem Treffer besteht eine 10% Chance das Ziel zurückschrecken zu lassen.",
+      "language": {
+        "name": "de",
+        "url": "https://pokeapi.co/api/v2/language/6/"
+      }
+    },
+    {
+      "short_effect": "Has a 10% chance of making target Pokémon flinch with each hit.",
+      "language": {
+        "name": "en",
+        "url": "https://pokeapi.co/api/v2/language/9/"
+      }
+    }
+  ],
+  "pokemon": [
+    {
+      "is_hidden": true,
+      "slot": 3,
+      "pokemon": {
+        "name": "gloom",
+        "url": "https://pokeapi.co/api/v2/pokemon/44/"
+      }
+    },
+    {
+      "is_hidden": false,
+      "slot": 1,
+      "pokemon": {
+        "name": "grimer",
+        "url": "https://pokeapi.co/api/v2/pokemon/88/"
+      }
+    },
+    {
+      "is_hidden": false,
+      "slot": 1,
+      "pokemon": {
+        "name": "muk",
+        "url": "https://pokeapi.co/api/v2/pokemon/89/"
+      }
+    },
+    {
+      "is_hidden": true,
+      "slot": 3,
+      "pokemon": {
+        "name": "koffing",
+        "url": "https://pokeapi.co/api/v2/pokemon/109/"
+      }
+    },
+    {
+      "is_hidden": true,
+      "slot": 3,
+      "pokemon": {
+        "name": "weezing",
+        "url": "https://pokeapi.co/api/v2/pokemon/110/"
+      }
+    },
+    {
+      "is_hidden": false,
+      "slot": 1,
+      "pokemon": {
+        "name": "stunky",
+        "url": "https://pokeapi.co/api/v2/pokemon/434/"
+      }
+    },
+    {
+      "is_hidden": false,
+      "slot": 1,
+      "pokemon": {
+        "name": "skuntank",
+        "url": "https://pokeapi.co/api/v2/pokemon/435/"
+      }
+    },
+    {
+      "is_hidden": false,
+      "slot": 1,
+      "pokemon": {
+        "name": "trubbish",
+        "url": "https://pokeapi.co/api/v2/pokemon/568/"
+      }
+    },
+    {
+      "is_hidden": false,
+      "slot": 1,
+      "pokemon": {
+        "name": "garbodor",
+        "url": "https://pokeapi.co/api/v2/pokemon/569/"
+      }
+    },
+    {
+      "is_hidden": false,
+      "slot": 1,
+      "pokemon": {
+        "name": "garbodor-gmax",
+        "url": "https://pokeapi.co/api/v2/pokemon/10207/"
+      }
+    }
+  ]
+}
