@@ -1,5 +1,6 @@
 {
   "name": "pokedex-retro",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,6 +15,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json",
     "check:html": "node scripts/check-html.mjs",
+    "version": "node scripts/sync-version.mjs && git add site/js/version.js",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {

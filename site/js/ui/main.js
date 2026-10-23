@@ -13,6 +13,7 @@ import { abilitiesView } from './render-abilities.js';
 import { createFetchJson } from '../api/client.js';
 import { loadUntilPageHide } from './cancelable-load.js';
 import { initTheme } from './theme.js';
+import { VERSION } from '../version.js';
 import { STRINGS } from './strings.js';
 
 const VIEWS = {
@@ -75,5 +76,6 @@ window.addEventListener('pageshow', (event) => {
   if (event.persisted && lastLoadAborted) start();
 });
 
+document.querySelector('[data-version]').textContent = VERSION;
 initTheme(document, localStorageOrNull());
 start();
