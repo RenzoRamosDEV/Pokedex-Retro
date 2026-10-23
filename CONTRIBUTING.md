@@ -34,15 +34,16 @@ Conventional Commits con el tipo en inglés y la descripción en español:
 
 | Comando                 | Qué hace                                                           |
 | ----------------------- | ------------------------------------------------------------------ |
-| `npm test`              | Tests unitarios con `node --test`                                  |
+| `npm test`              | Tests unitarios con `node --test` (`site/js` y `scripts`)          |
 | `npm run test:mutation` | Mutación con Stryker sobre `core` y `mappers` (umbral 95 %, 180 s) |
 | `npm run lint`          | ESLint sobre todo el JavaScript                                    |
 | `npm run lint:fix`      | ESLint aplicando las correcciones automáticas                      |
 | `npm run format`        | Reescribe el formato con Prettier                                  |
 | `npm run format:check`  | Falla si algún fichero no cumple el formato                        |
-| `npm run typecheck`     | `tsc` sin emitir ficheros sobre `core` y `mappers`                 |
+| `npm run typecheck`     | `tsc` sin emitir ficheros sobre `core`, `mappers` y `api`          |
+| `npm run check:html`    | Comprueba que la cabecera de las 7 páginas HTML coincide           |
 
-Antes de abrir un PR deben pasar `npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck` y `npm run test:mutation`.
+Antes de abrir un PR deben pasar `npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html` y `npm run test:mutation`.
 
 ## TDD
 

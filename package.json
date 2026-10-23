@@ -6,13 +6,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test \"site/js/**/*.test.js\"",
+    "test": "node --test \"site/js/**/*.test.js\" \"scripts/**/*.test.mjs\"",
     "test:mutation": "timeout 180 stryker run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json",
+    "check:html": "node scripts/check-html.mjs",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {

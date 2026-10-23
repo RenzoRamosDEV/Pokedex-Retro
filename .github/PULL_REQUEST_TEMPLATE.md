@@ -12,4 +12,5 @@
 - [ ] `npm run lint`
 - [ ] `npm run format:check`
 - [ ] `npm run typecheck`
+- [ ] `npm run check:html`
 - [ ] `npm run test:mutation`
