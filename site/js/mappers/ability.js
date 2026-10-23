@@ -1,3 +1,4 @@
+// @ts-check
 import { shortEffect } from './effect.js';
 
 export function mapAbility(json) {

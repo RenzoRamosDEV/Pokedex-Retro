@@ -1,3 +1,4 @@
+// @ts-check
 import { filterByName } from './search.js';
 import { offsetFor, sliceFor, totalPages } from './pagination.js';
 

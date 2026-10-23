@@ -1,3 +1,4 @@
+// @ts-check
 export function offsetFor(page, size) {
   return (page - 1) * size;
 }

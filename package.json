@@ -7,9 +7,20 @@
   },
   "scripts": {
     "test": "node --test \"site/js/**/*.test.js\"",
-    "test:mutation": "timeout 180 stryker run"
+    "test:mutation": "timeout 180 stryker run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
-    "@stryker-mutator/core": "^10.1.1"
+    "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^10.1.1",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2"
   }
 }
