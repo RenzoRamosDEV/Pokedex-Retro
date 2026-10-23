@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const REFERENCE_FILE = 'index.html';
+const EXCLUDED_PAGES = ['404.html'];
 const DEFAULT_SITE_DIR = join(import.meta.dirname, '..', 'site');
 
 export function extractHeader(html) {
@@ -28,7 +29,7 @@ export function findHeaderMismatches(pages) {
 
 function readPages(dir) {
   return readdirSync(dir)
-    .filter((file) => file.endsWith('.html'))
+    .filter((file) => file.endsWith('.html') && !EXCLUDED_PAGES.includes(file))
     .sort()
     .map((file) => ({ file, html: readFileSync(join(dir, file), 'utf8') }));
 }
