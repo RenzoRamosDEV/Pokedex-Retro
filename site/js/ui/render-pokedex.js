@@ -23,7 +23,7 @@ function sprite(pokemon, imageClass, missingClass) {
 }
 
 const card = (pokemon) => `
-<a href="#pokemon-${escapeHtml(pokemon.id)}" class="card-link" aria-label="${STRINGS.pokedex.verDetalles} ${escapeHtml(pokemon.name)}">
+<a href="#pokemon-${escapeHtml(pokemon.id)}" class="card-link">
   <article class="poke-card">
     <div class="card-top">
       <span class="card-number">#${escapeHtml(pokemon.id)}</span>

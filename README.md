@@ -43,6 +43,7 @@ Las fuentes Press Start 2P y VT323 se sirven desde `site/fonts/` en `woff2` (cop
 - Los botones de tema e información anuncian si su panel está abierto (`aria-expanded`) y qué panel controlan (`aria-controls`). Se abren con Enter o Espacio; abrir uno cierra el otro, Escape cierra el abierto devolviendo el foco a su botón y un clic fuera los cierra todos.
 - El menú de navegación se abre con un botón (`aria-expanded`, `aria-controls="nav-menu"`) operable con Enter o Espacio; Escape lo cierra y devuelve el foco al botón.
 - El detalle de cada Pokémon es un `<dialog>` modal nativo: se abre con Enter o clic en la tarjeta, lleva el foco al botón cerrar y se cierra con Escape, con el botón o con un clic fuera del panel, devolviendo el foco a la tarjeta. Abrirlo pone `#pokemon-<id>` en la URL sin añadir entradas al historial, así que un enlace como `index.html?page=2#pokemon-25` abre directamente ese detalle si el Pokémon está en la página.
+- El texto cumple el contraste WCAG 2.1 AA (4,5:1, o 3:1 en texto grande) en los tres temas; el smoke e2e audita con axe cada página en cada tema, y la Pokédex con el detalle abierto, y falla ante cualquier violación grave o crítica. En DMG el texto normal solo usa el verde más oscuro sobre los claros o al revés.
 
 ## Temas
 

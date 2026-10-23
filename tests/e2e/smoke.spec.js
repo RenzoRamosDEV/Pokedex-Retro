@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { mockPokeApi } from './pokeapi-mock.js';
 
 const PAGES = [
@@ -293,3 +294,41 @@ test('the types matrix is a named region reachable with Tab', async ({ page }) =
   }
   expect(reached).toBe(true);
 });
+
+const THEMES = ['normal', 'gb', 'gray'];
+const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+async function expectNoSeriousViolations(page, label) {
+  const { violations } = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
+  const blocking = violations
+    .filter((violation) => ['serious', 'critical'].includes(violation.impact))
+    .map(
+      (violation) =>
+        `${label}: ${violation.id} → ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`,
+    );
+  expect(blocking, blocking.join('\n')).toEqual([]);
+}
+
+async function useTheme(page, theme) {
+  await page.addInitScript((value) => localStorage.setItem('theme', value), theme);
+}
+
+for (const theme of THEMES) {
+  for (const { file, item } of PAGES) {
+    test(`axe: ${file} [${theme}] has no serious or critical violations`, async ({ page }) => {
+      await useTheme(page, theme);
+      await page.goto(file);
+      await expect(page.locator(item).first()).toBeVisible();
+      await expectNoSeriousViolations(page, `${file} [${theme}]`);
+    });
+  }
+
+  test(`axe: index.html with the dialog open [${theme}] has no serious or critical violations`, async ({
+    page,
+  }) => {
+    await useTheme(page, theme);
+    await page.goto('index.html?page=2#pokemon-25');
+    await expect(openDialog(page)).toHaveCount(1);
+    await expectNoSeriousViolations(page, `index.html#pokemon-25 [${theme}]`);
+  });
+}

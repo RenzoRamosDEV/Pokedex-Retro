@@ -45,10 +45,10 @@ test('a card links to its detail and shows number and upper-case name', () => {
   assert.ok(html.includes('<h2 class="card-name">GENGAR</h2>'));
 });
 
-test('the card aria-label is "Ver detalles de" plus the escaped name', () => {
-  const html = pokedexView.renderItems([{ ...gengar, name: 'a"b' }]);
-  assert.ok(html.includes(`aria-label="${STRINGS.pokedex.verDetalles} a&quot;b"`));
-  assert.ok(html.includes('aria-label="Ver detalles de a&quot;b"'));
+test('the card link takes its accessible name from its visible content', () => {
+  const html = pokedexView.renderItems([gengar]);
+  assert.ok(html.includes('<a href="#pokemon-94" class="card-link">'));
+  assert.doesNotMatch(html, /aria-label/);
 });
 
 test('a malicious name is escaped in card and detail', () => {
