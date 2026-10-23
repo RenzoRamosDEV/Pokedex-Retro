@@ -2823,3 +2823,15 @@ body[data-theme='gray'] .logo-dot.green {
   box-shadow: none;
   border-color: #000;
 }
+
+/* ── Movimiento reducido ─────────────────────────── */
+/* !important: it must beat the more specific theme rules. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

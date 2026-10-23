@@ -39,13 +39,14 @@ Las fuentes Press Start 2P y VT323 se sirven desde `site/fonts/` en `woff2` (cop
 - Cada página de sección empieza con un enlace **Saltar al contenido**, visible al recibir el foco con Tab, que lleva el foco al contenido principal (`<main id="contenido">`).
 - Los mensajes de carga, sin resultados, error y elementos no cargados se anuncian en una única región de estado (`role="status"`, `aria-live="polite"`) que no se recrea entre pintados.
 - Sin JavaScript se muestra el aviso `ESTA POKÉDEX NECESITA JAVASCRIPT`.
+- Con `prefers-reduced-motion: reduce` se desactivan todas las transiciones y animaciones.
 - Los botones de tema e información anuncian si su panel está abierto (`aria-expanded`) y qué panel controlan (`aria-controls`). Se abren con Enter o Espacio; abrir uno cierra el otro, Escape cierra el abierto devolviendo el foco a su botón y un clic fuera los cierra todos.
 - El menú de navegación se abre con un botón (`aria-expanded`, `aria-controls="nav-menu"`) operable con Enter o Espacio; Escape lo cierra y devuelve el foco al botón.
 - El detalle de cada Pokémon es un `<dialog>` modal nativo: se abre con Enter o clic en la tarjeta, lleva el foco al botón cerrar y se cierra con Escape, con el botón o con un clic fuera del panel, devolviendo el foco a la tarjeta. Abrirlo pone `#pokemon-<id>` en la URL sin añadir entradas al historial, así que un enlace como `index.html?page=2#pokemon-25` abre directamente ese detalle si el Pokémon está en la página.
 
 ## Temas
 
-Desde el botón de tema se elige entre **NORMAL** (rojo clásico), **DMG** (verde LCD de la Game Boy) y **MONO** (escala de grises). La elección se guarda en `localStorage`.
+Desde el botón de tema se elige entre **NORMAL** (rojo clásico), **DMG** (verde LCD de la Game Boy) y **MONO** (escala de grises). La elección se guarda en `localStorage` solo cuando se elige una opción. Sin tema guardado, el inicial sigue al sistema: **MONO** si prefiere esquema oscuro (`prefers-color-scheme: dark`) y **NORMAL** en otro caso; mientras no se elija ninguno, un cambio de preferencia del sistema se aplica en la siguiente carga.
 
 ## Uso en local
 

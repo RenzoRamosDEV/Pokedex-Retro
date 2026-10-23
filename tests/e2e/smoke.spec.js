@@ -241,3 +241,35 @@ test('Cerrar con Escape: Escape hides the navigation and focuses the button', as
   await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'false');
   await expect(menuButton(page)).toBeFocused();
 });
+
+for (const [scheme, expected] of [
+  ['dark', 'gray'],
+  ['light', 'normal'],
+]) {
+  test(`Tema inicial: with a ${scheme} scheme and no saved theme every page starts in ${expected}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const { file } of PAGES) {
+      await page.goto(file);
+      await expect(page.locator('body')).toHaveAttribute('data-theme', expected);
+    }
+    expect(await page.evaluate(() => localStorage.getItem('theme'))).toBeNull();
+  });
+}
+
+test('Preferencia de movimiento reducido: transitions last 0s', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('index.html?page=2#pokemon-25');
+  await expect(openDialog(page)).toHaveCount(1);
+  for (const selector of ['.poke-card', '.page-btn', '#pokemon-25 .stat-bar-fill']) {
+    const durations = await page
+      .locator(selector)
+      .first()
+      .evaluate((element) => {
+        const style = getComputedStyle(element);
+        return [style.transitionDuration, style.animationDuration];
+      });
+    expect(durations, selector).toEqual(['0s', '0s']);
+  }
+});

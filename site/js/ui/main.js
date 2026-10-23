@@ -84,7 +84,11 @@ window.addEventListener('pageshow', (event) => {
 });
 
 document.querySelector('[data-version]').textContent = VERSION;
-initTheme(document, storageOrNull('localStorage'));
+initTheme(
+  document,
+  storageOrNull('localStorage'),
+  window.matchMedia('(prefers-color-scheme: dark)').matches,
+);
 connectDisclosures(document, [
   { button: 'theme-btn', panel: 'theme-dropdown' },
   { button: 'info-btn', panel: 'info-dropdown' },

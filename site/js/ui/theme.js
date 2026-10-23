@@ -1,12 +1,15 @@
 const THEME_KEY = 'theme';
-const DEFAULT_THEME = 'normal';
+const THEMES = ['normal', 'gb', 'gray'];
+const LIGHT_DEFAULT = 'normal';
+const DARK_DEFAULT = 'gray';
 
 // A null storage throws like a blocked one, so both fall back to not persisting.
-function savedThemeOrDefault(storage) {
+function savedTheme(storage) {
   try {
-    return storage.getItem(THEME_KEY) || DEFAULT_THEME;
+    const theme = storage.getItem(THEME_KEY);
+    return THEMES.includes(theme) ? theme : null;
   } catch {
-    return DEFAULT_THEME;
+    return null;
   }
 }
 
@@ -18,20 +21,22 @@ function saveTheme(storage, theme) {
   }
 }
 
-export function initTheme(document, storage) {
+export function initTheme(document, storage, prefersDark = false) {
   const themeOptions = document.querySelectorAll('.theme-option');
 
   function applyTheme(theme) {
     document.body.dataset.theme = theme;
-    saveTheme(storage, theme);
     themeOptions.forEach((option) => {
       option.classList.toggle('active', option.dataset.value === theme);
     });
   }
 
-  applyTheme(savedThemeOrDefault(storage));
+  applyTheme(savedTheme(storage) ?? (prefersDark ? DARK_DEFAULT : LIGHT_DEFAULT));
 
   themeOptions.forEach((option) => {
-    option.addEventListener('click', () => applyTheme(option.dataset.value));
+    option.addEventListener('click', () => {
+      applyTheme(option.dataset.value);
+      saveTheme(storage, option.dataset.value);
+    });
   });
 }
