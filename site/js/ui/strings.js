@@ -20,7 +20,6 @@ export const STRINGS = deepFreeze({
   },
   pokedex: {
     titulo: 'POKEDEX',
-    verDetalles: 'Ver detalles de',
     cerrar: 'Cerrar',
     oculta: 'OCULTA',
     info: 'INFO',
