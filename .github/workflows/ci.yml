@@ -41,3 +41,5 @@ jobs:
         if: matrix.node == 24
       - run: npm run e2e
         if: matrix.node == 24
+      - run: npm run lhci
+        if: matrix.node == 24 && github.event_name == 'pull_request'

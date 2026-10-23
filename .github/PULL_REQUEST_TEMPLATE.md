@@ -16,3 +16,4 @@
 - [ ] `npm run test:mutation`
 - [ ] `npm run test:mutation:ui`
 - [ ] `npm run e2e`
+- [ ] `npm run lhci`
