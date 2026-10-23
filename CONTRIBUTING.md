@@ -33,20 +33,21 @@ Conventional Commits con el tipo en inglés y la descripción en español:
 
 ## Comandos
 
-| Comando                    | Qué hace                                                                                                            |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `npm test`                 | Tests unitarios con `node --test` (`site/js` y `scripts`)                                                           |
-| `npm run test:mutation`    | Mutación con Stryker sobre `core` y `mappers` (umbral 95 %, 180 s)                                                  |
-| `npm run test:mutation:ui` | Mutación con Stryker sobre `site/js/ui` en dos ejecuciones (`render-*.js` y el resto), umbral 85 % y 180 s cada una |
-| `npm run lint`             | ESLint sobre todo el JavaScript                                                                                     |
-| `npm run lint:fix`         | ESLint aplicando las correcciones automáticas                                                                       |
-| `npm run format`           | Reescribe el formato con Prettier                                                                                   |
-| `npm run format:check`     | Falla si algún fichero no cumple el formato                                                                         |
-| `npm run typecheck`        | `tsc` sin emitir ficheros sobre `core`, `mappers` y `api`                                                           |
-| `npm run check:html`       | Comprueba que la cabecera de las 7 páginas HTML coincide                                                            |
-| `npm run e2e`              | Smoke e2e en Chromium con Playwright y PokéAPI simulada, sin red                                                    |
+| Comando                    | Qué hace                                                                                                                    |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                 | Tests unitarios con `node --test` (`site/js` y `scripts`)                                                                   |
+| `npm run test:mutation`    | Mutación con Stryker sobre `core` y `mappers` (umbral 95 %, 180 s)                                                          |
+| `npm run test:mutation:ui` | Mutación con Stryker sobre `site/js/ui` en dos ejecuciones (`render-*.js` y el resto), umbral 85 % y 180 s cada una         |
+| `npm run lint`             | ESLint sobre todo el JavaScript                                                                                             |
+| `npm run lint:fix`         | ESLint aplicando las correcciones automáticas                                                                               |
+| `npm run format`           | Reescribe el formato con Prettier                                                                                           |
+| `npm run format:check`     | Falla si algún fichero no cumple el formato                                                                                 |
+| `npm run typecheck`        | `tsc` sin emitir ficheros sobre `core`, `mappers` y `api`                                                                   |
+| `npm run check:html`       | Comprueba que la cabecera de las 7 páginas HTML coincide                                                                    |
+| `npm run e2e`              | Smoke e2e en Chromium con Playwright y PokéAPI simulada, sin red                                                            |
+| `npm run lhci`             | Lighthouse CI sobre `index.html` y `tipos.html` (3 ejecuciones, 0,95 por categoría); usa PokéAPI real, así que necesita red |
 
-Antes de abrir un PR deben pasar `npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation`, `npm run test:mutation:ui` y `npm run e2e`.
+Antes de abrir un PR deben pasar `npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation`, `npm run test:mutation:ui`, `npm run e2e` y `npm run lhci` (este último contra PokéAPI real).
 
 ## TDD
 

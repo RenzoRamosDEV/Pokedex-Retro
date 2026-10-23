@@ -91,6 +91,12 @@ npx playwright install chromium
 npm run e2e
 ```
 
+Presupuestos de Lighthouse (móvil, throttling simulado) sobre `index.html` y `tipos.html`, tres ejecuciones por página y mínimo 0,95 en rendimiento, accesibilidad, buenas prácticas y SEO. A diferencia del e2e, usa la PokéAPI real, así que necesita red; los informes quedan en `reports/lhci/`. La auditoría `robots-txt` se omite: la CSP de las páginas (`connect-src https://pokeapi.co`) impide a Lighthouse descargar `/robots.txt`, y en Pages ese fichero tendría que estar en la raíz del dominio, fuera de este repositorio:
+
+```bash
+npm run lhci
+```
+
 Para servir la web en local sin Python: `node scripts/serve-site.mjs` (puerto `4173`, o el de `PORT`).
 
 ## Estructura
