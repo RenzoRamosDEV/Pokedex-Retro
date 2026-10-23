@@ -14,6 +14,11 @@ import { abilitiesView } from './render-abilities.js';
 const SITE_DIR = join(import.meta.dirname, '../..');
 const FONT_FILES = ['press-start-2p-latin-400-normal.woff2', 'vt323-latin-400-normal.woff2'];
 
+const CSP =
+  "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; " +
+  "img-src 'self' https://raw.githubusercontent.com; connect-src https://pokeapi.co; " +
+  "manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'";
+
 const HTML_PAGES = readdirSync(SITE_DIR)
   .filter((file) => file.endsWith('.html'))
   .sort();
@@ -22,7 +27,22 @@ const tagsOf = (html, name) => html.match(new RegExp(`<${name}\\b[^>]*>`, 'gi'))
 const attribute = (tag, name) => tag.match(new RegExp(`\\s${name}="([^"]*)"`, 'i'))?.[1] ?? null;
 const hasFlag = (tag, name) => new RegExp(`\\s${name}(?=[\\s/>=])`, 'i').test(tag);
 
+const isResourceTag = (tag) =>
+  /^<script\b/i.test(tag) || ['stylesheet', 'preload'].includes(attribute(tag, 'rel'));
+
 for (const page of HTML_PAGES) {
+  test(`${page} declares exactly one CSP meta with the exact policy before any resource`, () => {
+    const html = readSite(page);
+    const metas = tagsOf(html, 'meta').filter(
+      (tag) => attribute(tag, 'http-equiv') === 'Content-Security-Policy',
+    );
+    assert.equal(metas.length, 1, page);
+    assert.equal(attribute(metas[0], 'content'), CSP);
+    assert.doesNotMatch(metas[0], /unsafe-/);
+    const firstResource = html.match(/<(?:link|script)\b[^>]*>/gi).find(isResourceTag);
+    assert.ok(html.indexOf(metas[0]) < html.indexOf(firstResource), page);
+  });
+
   test(`${page} does not reference Google Fonts`, () => {
     assert.doesNotMatch(readSite(page), /fonts\.googleapis\.com|fonts\.gstatic\.com/);
   });
