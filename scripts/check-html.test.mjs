@@ -119,6 +119,17 @@ test('the CLI exits 1 and names each divergent page in order', (t) => {
   );
 });
 
+test('the CLI ignores 404.html even with a different header', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'check-html-404-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  for (const file of FILES) cpSync(join(ROOT, 'site', file), join(dir, file));
+  writeFileSync(join(dir, '404.html'), '<header><a href="/Pokedex-Retro/">INICIO</a></header>');
+  const result = runCli([dir]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stderr + result.stdout, /404\.html/);
+  assert.match(result.stdout, /en 7 páginas/);
+});
+
 test('the CLI exits 0 on the real site', () => {
   const result = runCli([]);
   assert.equal(result.status, 0, result.stderr);
