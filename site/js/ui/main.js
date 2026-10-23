@@ -11,6 +11,8 @@ import { itemsView } from './render-items.js';
 import { berriesView } from './render-berries.js';
 import { typesView } from './render-types.js';
 import { abilitiesView } from './render-abilities.js';
+import { createFetchJson } from '../api/client.js';
+import { loadUntilPageHide } from './cancelable-load.js';
 
 const VIEWS = {
   pokedex: pokedexView,
@@ -26,14 +28,8 @@ const LOADING_MESSAGE = 'CARGANDO...';
 const EMPTY_MESSAGE = 'SIN RESULTADOS';
 const ERROR_MESSAGE = 'No se pudieron cargar los datos. Inténtalo de nuevo más tarde.';
 
-async function fetchJson(url) {
-  const response = await fetch(url);
-  return {
-    ok: response.ok,
-    status: response.status,
-    json: response.ok ? await response.json() : null,
-  };
-}
+const fetchJson = createFetchJson({});
+let lastLoadAborted = false;
 
 function renderContent(view, result) {
   if (result.status === 'error') return statusMessage(ERROR_MESSAGE);
@@ -58,8 +54,20 @@ async function start() {
   );
 
   main.innerHTML = header + statusMessage(LOADING_MESSAGE);
-  const result = await loadSection(fetchJson, SECTIONS[sectionName], parsedQuery);
+  const result = await loadUntilPageHide(window, (signal) =>
+    loadSection(
+      (url) => fetchJson(url, { signal }).then((json) => ({ ok: true, status: 200, json })),
+      SECTIONS[sectionName],
+      parsedQuery,
+    ),
+  );
+  lastLoadAborted = result === null;
+  if (lastLoadAborted) return;
   main.innerHTML = header + renderContent(view, result);
 }
+
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted && lastLoadAborted) start();
+});
 
 start();
