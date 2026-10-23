@@ -1,0 +1,86 @@
+{
+  "id": 94,
+  "name": "gengar",
+  "base_experience": 225,
+  "height": 15,
+  "weight": 405,
+  "abilities": [
+    {
+      "ability": {
+        "name": "cursed-body",
+        "url": "https://pokeapi.co/api/v2/ability/130/"
+      },
+      "is_hidden": false,
+      "slot": 1
+    }
+  ],
+  "stats": [
+    {
+      "base_stat": 60,
+      "effort": 0,
+      "stat": {
+        "name": "hp",
+        "url": "https://pokeapi.co/api/v2/stat/1/"
+      }
+    },
+    {
+      "base_stat": 65,
+      "effort": 0,
+      "stat": {
+        "name": "attack",
+        "url": "https://pokeapi.co/api/v2/stat/2/"
+      }
+    },
+    {
+      "base_stat": 60,
+      "effort": 0,
+      "stat": {
+        "name": "defense",
+        "url": "https://pokeapi.co/api/v2/stat/3/"
+      }
+    },
+    {
+      "base_stat": 130,
+      "effort": 3,
+      "stat": {
+        "name": "special-attack",
+        "url": "https://pokeapi.co/api/v2/stat/4/"
+      }
+    },
+    {
+      "base_stat": 75,
+      "effort": 0,
+      "stat": {
+        "name": "special-defense",
+        "url": "https://pokeapi.co/api/v2/stat/5/"
+      }
+    },
+    {
+      "base_stat": 110,
+      "effort": 0,
+      "stat": {
+        "name": "speed",
+        "url": "https://pokeapi.co/api/v2/stat/6/"
+      }
+    }
+  ],
+  "types": [
+    {
+      "slot": 1,
+      "type": {
+        "name": "ghost",
+        "url": "https://pokeapi.co/api/v2/type/8/"
+      }
+    },
+    {
+      "slot": 2,
+      "type": {
+        "name": "poison",
+        "url": "https://pokeapi.co/api/v2/type/4/"
+      }
+    }
+  ],
+  "sprites": {
+    "front_default": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png"
+  }
+}
