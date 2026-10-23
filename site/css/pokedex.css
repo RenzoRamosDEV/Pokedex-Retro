@@ -554,6 +554,7 @@ body {
 }
 
 .stat-bar-fill {
+  width: var(--ancho, 0);
   height: 100%;
   min-width: 4px;
   transition: width 0.3s ease;
@@ -957,6 +958,30 @@ body {
   padding: 0.7rem 1rem;
   cursor: pointer;
   user-select: none;
+}
+
+.acc-stat-attack {
+  border-left: 6px solid #e74c3c;
+}
+
+.acc-stat-defense {
+  border-left: 6px solid #3498db;
+}
+
+.acc-stat-special-attack {
+  border-left: 6px solid #9b59b6;
+}
+
+.acc-stat-special-defense {
+  border-left: 6px solid #1abc9c;
+}
+
+.acc-stat-speed {
+  border-left: 6px solid #f39c12;
+}
+
+.acc-stat-neutral {
+  border-left: 6px solid #555;
 }
 
 .acc-icon {
@@ -2170,10 +2195,8 @@ body[data-theme='gb'] .acc-section {
   border-color: #0f380f;
   box-shadow: 4px 4px 0 #0f380f;
 }
-body[data-theme='gb'] .acc-header[style] {
-  border-left-color: #306230 !important;
-}
 body[data-theme='gb'] .acc-header {
+  border-left-color: #306230;
   background: #0f380f;
 }
 body[data-theme='gb'] .acc-stat-name {
@@ -2692,9 +2715,7 @@ body[data-theme='gray'] .acc-section {
 }
 body[data-theme='gray'] .acc-header {
   background: #222;
-}
-body[data-theme='gray'] .acc-header[style] {
-  border-left-color: #555 !important;
+  border-left-color: #555;
 }
 body[data-theme='gray'] .acc-stat-name {
   color: #ccc;

@@ -1,7 +1,7 @@
 import { parseQuery } from '../core/query.js';
 import { SECTIONS } from '../core/sections.js';
 import { loadSection } from '../core/load-section.js';
-import { pageHeader, statusMessage, sectionContent } from './layout.js';
+import { applyStatBarWidths, pageHeader, statusMessage, sectionContent } from './layout.js';
 import { pokedexView } from './render-pokedex.js';
 import { movesView } from './render-moves.js';
 import { naturesView } from './render-natures.js';
@@ -64,6 +64,7 @@ async function start() {
   lastLoadAborted = result === null;
   if (lastLoadAborted) return;
   main.innerHTML = header + sectionContent(view, result);
+  applyStatBarWidths(main);
 }
 
 window.addEventListener('pageshow', (event) => {

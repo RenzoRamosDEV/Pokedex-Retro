@@ -59,3 +59,9 @@ export function sectionContent(view, result) {
     overlays
   );
 }
+
+export function applyStatBarWidths(root) {
+  root.querySelectorAll('[data-valor]').forEach((bar) => {
+    bar.style.setProperty('--ancho', `${bar.dataset.valor}%`);
+  });
+}

@@ -52,7 +52,7 @@ const statRow = (stat, typeName) => `
                   <span class="stat-value">${escapeHtml(stat.baseStat)}</span>
                   <div class="stat-bar-track">
                     <div class="stat-bar-fill type-${escapeHtml(typeName)}"
-                         style="width: ${statBarWidth(stat.baseStat)}%"></div>
+                         data-valor="${statBarWidth(stat.baseStat)}"></div>
                   </div>
                 </div>`;
 

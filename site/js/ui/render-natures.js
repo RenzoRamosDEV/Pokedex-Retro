@@ -11,7 +11,7 @@ const natureRow = (name, sub, subClass = '') => `
 const statSection = (group) => `
               <div class="acc-section">
                 <input type="checkbox" id="acc-${group.stat}" class="acc-toggle"${group.stat === 'attack' ? ' checked' : ''}>
-                <label for="acc-${group.stat}" class="acc-header" style="border-left: 6px solid ${group.color}">
+                <label for="acc-${group.stat}" class="acc-header acc-stat-${group.stat}">
                   <span class="acc-icon">—</span>
                   <span class="acc-stat-name">${group.label}</span>
                   <span class="acc-counts">
@@ -43,7 +43,7 @@ function neutralSection(neutrals) {
   return `
             <div class="acc-section">
               <input type="checkbox" id="acc-neutral" class="acc-toggle">
-              <label for="acc-neutral" class="acc-header" style="border-left: 6px solid #555">
+              <label for="acc-neutral" class="acc-header acc-stat-neutral">
                 <span class="acc-icon">—</span>
                 <span class="acc-stat-name">${STRINGS.naturalezas.neutral}</span>
                 <span class="acc-counts">
