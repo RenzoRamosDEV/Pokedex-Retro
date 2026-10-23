@@ -57,6 +57,35 @@ for (const page of SECTION_PAGES) {
     });
   }
 
+  test(`${page}: there is no hidden menu checkbox nor focusable element hidden from AT`, () => {
+    assert.doesNotMatch(html, /id="nav-toggle"/);
+    const focusable = ['a', 'button', 'input', 'select', 'textarea'].flatMap((name) =>
+      tagsOf(html, name),
+    );
+    const hidden = [
+      ...focusable,
+      ...tagsOf(html, '[a-z]+').filter((tag) => /\stabindex=/.test(tag)),
+    ].filter((tag) => attribute(tag, 'aria-hidden') === 'true');
+    assert.deepEqual(hidden, []);
+  });
+
+  test(`${page}: the menu button controls the hidden navigation`, () => {
+    const tag = tagsOf(html, 'button').find(
+      (candidate) => attribute(candidate, 'id') === 'nav-btn',
+    );
+    assert.ok(tag, 'nav-btn');
+    assert.equal(attribute(tag, 'type'), 'button');
+    assert.equal(attribute(tag, 'class'), 'hamburger');
+    assert.equal(attribute(tag, 'aria-label'), 'Abrir menú');
+    assert.equal(attribute(tag, 'aria-expanded'), 'false');
+    assert.equal(attribute(tag, 'aria-controls'), 'nav-menu');
+    const nav = tagsOf(html, 'nav').find((candidate) => attribute(candidate, 'id') === 'nav-menu');
+    assert.ok(nav, 'nav-menu');
+    assert.equal(attribute(nav, 'class'), 'nav-menu');
+    assert.equal(attribute(nav, 'aria-label'), 'Navegación principal');
+    assert.match(nav, /\shidden(?=[\s>])/);
+  });
+
   test(`${page}: main has a noscript notice`, () => {
     assert.match(
       mainOf(html),

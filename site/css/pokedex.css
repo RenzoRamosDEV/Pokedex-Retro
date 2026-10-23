@@ -684,16 +684,8 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════
-   HAMBURGER MENU (CSS-only checkbox hack)
+   HAMBURGER MENU
    ═══════════════════════════════════════════════════ */
-
-.nav-toggle {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
 
 .hamburger {
   display: flex;
@@ -705,6 +697,8 @@ body {
   cursor: pointer;
   padding: 4px;
   border: 2px solid rgba(255, 255, 255, 0.4);
+  background: none;
+  font: inherit;
   flex-shrink: 0;
 }
 
@@ -719,18 +713,18 @@ body {
 }
 
 /* Animación a X cuando está abierto */
-.nav-toggle:checked ~ .header-inner .hamburger span:nth-child(1) {
+.hamburger[aria-expanded='true'] span:nth-child(1) {
   transform: translateY(8px) rotate(45deg);
 }
-.nav-toggle:checked ~ .header-inner .hamburger span:nth-child(2) {
+.hamburger[aria-expanded='true'] span:nth-child(2) {
   opacity: 0;
 }
-.nav-toggle:checked ~ .header-inner .hamburger span:nth-child(3) {
+.hamburger[aria-expanded='true'] span:nth-child(3) {
   transform: translateY(-8px) rotate(-45deg);
 }
 
 .nav-menu {
-  display: none;
+  display: flex;
   position: absolute;
   top: 56px;
   left: 0;
@@ -741,8 +735,8 @@ body {
   z-index: 200;
 }
 
-.nav-toggle:checked ~ .nav-menu {
-  display: flex;
+.nav-menu[hidden] {
+  display: none;
 }
 
 .nav-link {
