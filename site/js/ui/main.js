@@ -1,8 +1,7 @@
 import { parseQuery } from '../core/query.js';
 import { SECTIONS } from '../core/sections.js';
 import { loadSection } from '../core/load-section.js';
-import { paginationLinks } from '../core/pagination.js';
-import { pageHeader, statusMessage, paginationNav } from './layout.js';
+import { pageHeader, statusMessage, sectionContent } from './layout.js';
 import { pokedexView } from './render-pokedex.js';
 import { movesView } from './render-moves.js';
 import { naturesView } from './render-natures.js';
@@ -43,17 +42,6 @@ const fetchJson = createFetchJson({
 });
 let lastLoadAborted = false;
 
-function renderContent(view, result) {
-  if (result.status === 'error') return statusMessage(STRINGS.comun.errorCarga);
-  if (result.items.length === 0) return statusMessage(STRINGS.comun.sinResultados);
-  const overlays = view.renderOverlays ? view.renderOverlays(result.items) : '';
-  return (
-    view.renderItems(result.items) +
-    paginationNav(paginationLinks(result.page, result.totalPages, result.rawQuery)) +
-    overlays
-  );
-}
-
 async function start() {
   const sectionName = document.body.dataset.section;
   const view = VIEWS[sectionName];
@@ -75,7 +63,7 @@ async function start() {
   );
   lastLoadAborted = result === null;
   if (lastLoadAborted) return;
-  main.innerHTML = header + renderContent(view, result);
+  main.innerHTML = header + sectionContent(view, result);
 }
 
 window.addEventListener('pageshow', (event) => {

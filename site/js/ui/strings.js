@@ -13,6 +13,8 @@ export const STRINGS = deepFreeze({
     buscar: 'BUSCAR...',
     anterior: '◀ ANT.',
     siguiente: 'SIG. ▶',
+    elementoNoCargado: '1 ELEMENTO NO SE PUDO CARGAR',
+    elementosNoCargados: 'ELEMENTOS NO SE PUDIERON CARGAR',
   },
   pokedex: {
     titulo: 'POKEDEX',
