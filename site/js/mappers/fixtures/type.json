@@ -1,0 +1,88 @@
+{
+  "id": 8,
+  "name": "ghost",
+  "damage_relations": {
+    "no_damage_to": [
+      {
+        "name": "normal",
+        "url": "https://pokeapi.co/api/v2/type/1/"
+      }
+    ],
+    "half_damage_to": [
+      {
+        "name": "dark",
+        "url": "https://pokeapi.co/api/v2/type/17/"
+      }
+    ],
+    "double_damage_to": [
+      {
+        "name": "ghost",
+        "url": "https://pokeapi.co/api/v2/type/8/"
+      },
+      {
+        "name": "psychic",
+        "url": "https://pokeapi.co/api/v2/type/14/"
+      }
+    ],
+    "no_damage_from": [
+      {
+        "name": "normal",
+        "url": "https://pokeapi.co/api/v2/type/1/"
+      },
+      {
+        "name": "fighting",
+        "url": "https://pokeapi.co/api/v2/type/2/"
+      }
+    ],
+    "half_damage_from": [
+      {
+        "name": "poison",
+        "url": "https://pokeapi.co/api/v2/type/4/"
+      },
+      {
+        "name": "bug",
+        "url": "https://pokeapi.co/api/v2/type/7/"
+      }
+    ],
+    "double_damage_from": [
+      {
+        "name": "ghost",
+        "url": "https://pokeapi.co/api/v2/type/8/"
+      },
+      {
+        "name": "dark",
+        "url": "https://pokeapi.co/api/v2/type/17/"
+      }
+    ]
+  },
+  "pokemon": [
+    {
+      "slot": 1,
+      "pokemon": {
+        "name": "gastly",
+        "url": "https://pokeapi.co/api/v2/pokemon/92/"
+      }
+    },
+    {
+      "slot": 1,
+      "pokemon": {
+        "name": "haunter",
+        "url": "https://pokeapi.co/api/v2/pokemon/93/"
+      }
+    },
+    {
+      "slot": 1,
+      "pokemon": {
+        "name": "gengar",
+        "url": "https://pokeapi.co/api/v2/pokemon/94/"
+      }
+    },
+    {
+      "slot": 1,
+      "pokemon": {
+        "name": "misdreavus",
+        "url": "https://pokeapi.co/api/v2/pokemon/200/"
+      }
+    }
+  ]
+}
