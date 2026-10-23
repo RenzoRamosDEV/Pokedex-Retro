@@ -5,6 +5,7 @@
     "command": "npm test"
   },
   "mutate": ["site/js/core/**/*.js", "site/js/mappers/**/*.js", "!site/js/**/*.test.js"],
+  "ignorePatterns": ["tsconfig.json"],
   "thresholds": {
     "high": 95,
     "low": 90,
