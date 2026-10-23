@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "npm test"
+  },
+  "mutate": [
+    "site/js/core/**/*.js",
+    "site/js/mappers/**/*.js",
+    "!site/js/**/*.test.js"
+  ],
+  "thresholds": {
+    "high": 95,
+    "low": 90,
+    "break": 95
+  },
+  "reporters": ["clear-text", "progress"],
+  "timeoutMS": 10000
+}

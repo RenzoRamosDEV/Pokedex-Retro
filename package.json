@@ -1,0 +1,15 @@
+{
+  "name": "pokedex-retro",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"site/js/**/*.test.js\"",
+    "test:mutation": "timeout 180 stryker run"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^10.1.1"
+  }
+}
