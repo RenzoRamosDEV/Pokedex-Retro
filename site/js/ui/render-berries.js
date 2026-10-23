@@ -1,5 +1,6 @@
 import { escapeHtml } from '../core/html.js';
 import { upper } from './layout.js';
+import { STRINGS } from './strings.js';
 
 const berryStat = (label, value) => `
           <div class="berry-stat">
@@ -25,19 +26,19 @@ const berryCard = (berry) => `
           <span class="berry-id">#${escapeHtml(berry.id)}</span>
           <span class="type-badge type-${escapeHtml(berry.naturalGiftType)}">${upper(berry.naturalGiftType)}</span>
         </div>
-        <h3 class="berry-name">${upper(berry.name)} BERRY</h3>
+        <h3 class="berry-name">${upper(berry.name)} ${STRINGS.bayas.baya}</h3>
         <div class="berry-stats">
-          ${berryStat('CRECIM.', `${escapeHtml(berry.growthTime)} H`)}
-          ${berryStat('COSECHA', `x${escapeHtml(berry.maxHarvest)}`)}
-          ${berryStat('POD.NAT.', escapeHtml(berry.naturalGiftPower))}
-          ${berryStat('SUAVIDAD', escapeHtml(berry.smoothness))}
-          ${berryStat('FIRMEZA', upper(berry.firmness))}
+          ${berryStat(STRINGS.bayas.crecimiento, `${escapeHtml(berry.growthTime)} ${STRINGS.bayas.horas}`)}
+          ${berryStat(STRINGS.bayas.cosecha, `${STRINGS.bayas.multiplicador}${escapeHtml(berry.maxHarvest)}`)}
+          ${berryStat(STRINGS.bayas.poderNatural, escapeHtml(berry.naturalGiftPower))}
+          ${berryStat(STRINGS.bayas.suavidad, escapeHtml(berry.smoothness))}
+          ${berryStat(STRINGS.bayas.firmeza, upper(berry.firmness))}
         </div>
         ${berryFlavors(berry)}
       </div>`;
 
 export const berriesView = {
-  title: 'BAYAS',
+  title: STRINGS.bayas.titulo,
   searchable: true,
   renderItems: (berries) => `
   <div class="berries-grid">
