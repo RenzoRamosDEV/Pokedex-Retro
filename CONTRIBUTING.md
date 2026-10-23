@@ -4,6 +4,7 @@
 
 - Node 22 (usa el último parche de la serie 22). Con `nvm`, ejecuta `nvm use` en la raíz: lee `.nvmrc`.
 - `npm ci` instala las dependencias de desarrollo y el hook de pre-commit.
+- `npx playwright install chromium` descarga el navegador de los tests e2e (una vez por versión de Playwright).
 
 La web (`site/`) no tiene build ni dependencias en runtime: se despliega tal cual en GitHub Pages.
 
@@ -43,8 +44,9 @@ Conventional Commits con el tipo en inglés y la descripción en español:
 | `npm run format:check`     | Falla si algún fichero no cumple el formato                        |
 | `npm run typecheck`        | `tsc` sin emitir ficheros sobre `core`, `mappers` y `api`          |
 | `npm run check:html`       | Comprueba que la cabecera de las 7 páginas HTML coincide           |
+| `npm run e2e`              | Smoke e2e en Chromium con Playwright y PokéAPI simulada, sin red   |
 
-Antes de abrir un PR deben pasar `npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation` y `npm run test:mutation:ui`.
+Antes de abrir un PR deben pasar `npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation`, `npm run test:mutation:ui` y `npm run e2e`.
 
 ## TDD
 

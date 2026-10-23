@@ -73,6 +73,15 @@ Y sobre la capa de interfaz `site/js/ui` (sin el arranque `main.js` ni `theme.js
 npm run test:mutation:ui
 ```
 
+Smoke e2e en Chromium con Playwright: sirve `site/` con `scripts/serve-site.mjs` y simula todas las peticiones a PokéAPI y a los sprites con los fixtures, así que no usa la red; falla si la página pide algo externo sin simular o si hay violaciones de la CSP:
+
+```bash
+npx playwright install chromium
+npm run e2e
+```
+
+Para servir la web en local sin Python: `node scripts/serve-site.mjs` (puerto `4173`, o el de `PORT`).
+
 ## Estructura
 
 ```
