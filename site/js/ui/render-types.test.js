@@ -92,3 +92,13 @@ test('consecutive cells, column headers and rows have only whitespace between th
   assert.equal(html.match(/<\/th><th class="matrix-col-header">/g).length, 3);
   assert.equal(html.match(/<\/tr>\s*<tr>/g).length, 3);
 });
+
+test('the scrollable matrix is a focusable region named TABLA DE TIPOS', () => {
+  assert.ok(
+    typesView
+      .renderItems(types)
+      .includes(
+        '<div class="matrix-scroll" tabindex="0" role="region" aria-label="TABLA DE TIPOS">',
+      ),
+  );
+});

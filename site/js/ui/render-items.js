@@ -41,7 +41,7 @@ export const itemsView = {
   title: STRINGS.objetos.titulo,
   searchable: true,
   renderItems: (items) => `
-  <div class="shop-wrap">
+  <div class="shop-wrap" tabindex="0" role="region" aria-label="${STRINGS.objetos.titulo}">
     <table class="shop-table">
       <thead>
         <tr>

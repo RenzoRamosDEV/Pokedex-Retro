@@ -37,7 +37,7 @@ export const typesView = {
     <span class="matrix-legend-label">${STRINGS.tipos.normal}</span>
   </div>
 
-  <div class="matrix-scroll">
+  <div class="matrix-scroll" tabindex="0" role="region" aria-label="${STRINGS.tipos.titulo}">
     <table class="type-matrix">
       <thead>
         <tr>
