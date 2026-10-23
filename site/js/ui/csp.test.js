@@ -19,6 +19,13 @@ for (const page of HTML_PAGES) {
     assert.doesNotMatch(readSite(page), /fonts\.googleapis\.com|fonts\.gstatic\.com/);
   });
 
+  test(`${page} has no lazy static image (above-the-fold logo rule)`, () => {
+    const lazy = tagsOf(readSite(page), 'img').filter(
+      (tag) => attribute(tag, 'loading') === 'lazy',
+    );
+    assert.deepEqual(lazy, []);
+  });
+
   test(`${page} preloads both self-hosted fonts with crossorigin`, () => {
     const preloads = tagsOf(readSite(page), 'link').filter(
       (tag) => attribute(tag, 'rel') === 'preload',
