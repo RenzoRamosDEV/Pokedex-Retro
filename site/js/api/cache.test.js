@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createListCache } from './cache.js';
+import { createApiCache, createDetailCache, createListCache } from './cache.js';
+import { createFetchJson } from './client.js';
 
 const LIST_URL = 'https://pokeapi.co/api/v2/pokemon?limit=100000';
 const LIST_KEY = `pokedex:lista:${LIST_URL}`;
@@ -127,4 +128,184 @@ test('list cache: a null storage misses and ignores writes', () => {
   const cache = createListCache({ storage: null, now: () => NOW });
   assert.doesNotThrow(() => cache.set(LIST_URL, LIST));
   assert.equal(cache.get(LIST_URL), undefined);
+});
+
+const DETAIL_URL = 'https://pokeapi.co/api/v2/pokemon/charmander';
+const DETAIL_KEY = `pokedex:detalle:${DETAIL_URL}`;
+const DETAIL = { id: 4, name: 'charmander' };
+
+test('detail cache: an empty storage is a miss', () => {
+  assert.equal(createDetailCache({ storage: createFakeStorage() }).get(DETAIL_URL), undefined);
+});
+
+test('detail cache: set writes the detail key with the JSON data', () => {
+  const storage = createFakeStorage();
+  createDetailCache({ storage }).set(DETAIL_URL, DETAIL);
+  assert.deepEqual(storage.writes, [[DETAIL_KEY, JSON.stringify(DETAIL)]]);
+});
+
+test('detail cache: get after set is served from memory', () => {
+  const storage = createFakeStorage();
+  const cache = createDetailCache({ storage });
+  cache.set(DETAIL_URL, DETAIL);
+  storage.items.clear();
+  assert.deepEqual(cache.get(DETAIL_URL), DETAIL);
+});
+
+test('detail cache: an entry only in storage (after a reload) is a hit and stays in memory', () => {
+  const storage = createFakeStorage({ [DETAIL_KEY]: JSON.stringify(DETAIL) });
+  const cache = createDetailCache({ storage });
+  assert.deepEqual(cache.get(DETAIL_URL), DETAIL);
+  storage.items.clear();
+  assert.deepEqual(cache.get(DETAIL_URL), DETAIL);
+});
+
+for (const [label, raw] of [
+  ['text that is not JSON', '{no es json'],
+  ['null', 'null'],
+  ['a number', '42'],
+]) {
+  test(`detail cache: an entry with ${label} is a miss without throwing`, () => {
+    const storage = createFakeStorage({ [DETAIL_KEY]: raw });
+    assert.equal(createDetailCache({ storage }).get(DETAIL_URL), undefined);
+  });
+}
+
+for (const [label, storage] of [
+  ['throws', createThrowingStorage()],
+  ['is null', null],
+]) {
+  test(`detail cache: memory keeps working when the storage ${label}`, () => {
+    const cache = createDetailCache({ storage });
+    assert.equal(cache.get(DETAIL_URL), undefined);
+    assert.doesNotThrow(() => cache.set(DETAIL_URL, DETAIL));
+    assert.deepEqual(cache.get(DETAIL_URL), DETAIL);
+  });
+}
+
+test('detail caches do not share memory', () => {
+  createDetailCache({ storage: null }).set(DETAIL_URL, DETAIL);
+  assert.equal(createDetailCache({ storage: null }).get(DETAIL_URL), undefined);
+});
+
+for (const [url, target] of [
+  ['https://pokeapi.co/api/v2/pokemon?limit=100000', 'local'],
+  ['https://pokeapi.co/api/v2/move?limit=100000', 'local'],
+  ['https://pokeapi.co/api/v2/pokemon?limit=18&offset=0', 'session'],
+  ['https://pokeapi.co/api/v2/nature?limit=100', 'session'],
+  ['https://pokeapi.co/api/v2/pokemon?limit=1000000', 'session'],
+  ['https://pokeapi.co/api/v2/pokemon/charmander', 'session'],
+]) {
+  test(`api cache: ${url} is stored only in ${target}Storage`, () => {
+    const local = createFakeStorage();
+    const session = createFakeStorage();
+    const cache = createApiCache({ local, session, now: () => NOW });
+    cache.set(url, LIST);
+    const prefix = target === 'local' ? 'pokedex:lista:' : 'pokedex:detalle:';
+    assert.deepEqual([...(target === 'local' ? local : session).items.keys()], [prefix + url]);
+    assert.equal((target === 'local' ? session : local).items.size, 0);
+    assert.deepEqual(cache.get(url), LIST);
+  });
+}
+
+test('api cache: now defaults to Date.now for lists', (t) => {
+  t.mock.method(Date, 'now', () => NOW);
+  const local = createFakeStorage({ [LIST_KEY]: storedList(NOW - DAY_MS) });
+  assert.equal(createApiCache({ local, session: null }).get(LIST_URL), undefined);
+});
+
+function createCountingFetch(bodies) {
+  const calls = new Map();
+  const fetch = async (url) => {
+    calls.set(url, (calls.get(url) ?? 0) + 1);
+    return { ok: true, status: 200, json: async () => bodies[url] };
+  };
+  return { fetch, callsTo: (url) => calls.get(url) ?? 0 };
+}
+
+const FRESH_LIST = { count: 2, results: [{ name: 'charmander' }, { name: 'charmeleon' }] };
+
+test('scenario: a search with a 2 h old cached list makes no list request', async () => {
+  const local = createFakeStorage({ [LIST_KEY]: storedList(NOW - 2 * HOUR_MS) });
+  const network = createCountingFetch({ [LIST_URL]: FRESH_LIST });
+  const fetchJson = createFetchJson({
+    fetch: network.fetch,
+    cache: createApiCache({ local, session: createFakeStorage(), now: () => NOW }),
+  });
+  assert.deepEqual(await fetchJson(LIST_URL), LIST);
+  assert.equal(network.callsTo(LIST_URL), 0);
+});
+
+test('scenario: a 25 h old list is requested again and overwritten', async () => {
+  const local = createFakeStorage({ [LIST_KEY]: storedList(NOW - 25 * HOUR_MS) });
+  const network = createCountingFetch({ [LIST_URL]: FRESH_LIST });
+  const fetchJson = createFetchJson({
+    fetch: network.fetch,
+    cache: createApiCache({ local, session: createFakeStorage(), now: () => NOW }),
+  });
+  assert.deepEqual(await fetchJson(LIST_URL), FRESH_LIST);
+  assert.equal(network.callsTo(LIST_URL), 1);
+  assert.equal(local.items.get(LIST_KEY), storedList(NOW, FRESH_LIST));
+});
+
+test('scenario: a corrupt list entry is requested again and overwritten', async () => {
+  const local = createFakeStorage({ [LIST_KEY]: '{no es json' });
+  const network = createCountingFetch({ [LIST_URL]: FRESH_LIST });
+  const fetchJson = createFetchJson({
+    fetch: network.fetch,
+    cache: createApiCache({ local, session: null, now: () => NOW }),
+  });
+  assert.deepEqual(await fetchJson(LIST_URL), FRESH_LIST);
+  assert.equal(local.items.get(LIST_KEY), storedList(NOW, FRESH_LIST));
+});
+
+test('scenario: a full storage still resolves with the JSON', async () => {
+  const network = createCountingFetch({ [LIST_URL]: FRESH_LIST, [DETAIL_URL]: DETAIL });
+  const fetchJson = createFetchJson({
+    fetch: network.fetch,
+    cache: createApiCache({
+      local: createThrowingStorage(),
+      session: createThrowingStorage(),
+      now: () => NOW,
+    }),
+  });
+  assert.deepEqual(await fetchJson(LIST_URL), FRESH_LIST);
+  assert.deepEqual(await fetchJson(DETAIL_URL), DETAIL);
+});
+
+test('scenario: an inaccessible storage sends every list load to the network', async () => {
+  const network = createCountingFetch({ [LIST_URL]: FRESH_LIST });
+  const fetchJson = createFetchJson({
+    fetch: network.fetch,
+    cache: createApiCache({ local: null, session: null, now: () => NOW }),
+  });
+  await fetchJson(LIST_URL);
+  await fetchJson(LIST_URL);
+  assert.equal(network.callsTo(LIST_URL), 2);
+});
+
+test('scenario: a repeated detail makes a single request', async () => {
+  const network = createCountingFetch({ [DETAIL_URL]: DETAIL });
+  const fetchJson = createFetchJson({
+    fetch: network.fetch,
+    cache: createApiCache({
+      local: createFakeStorage(),
+      session: createFakeStorage(),
+      now: () => NOW,
+    }),
+  });
+  assert.deepEqual(await fetchJson(DETAIL_URL), DETAIL);
+  assert.deepEqual(await fetchJson(DETAIL_URL), DETAIL);
+  assert.equal(network.callsTo(DETAIL_URL), 1);
+});
+
+test('scenario: a detail in sessionStorage after a reload makes no request', async () => {
+  const session = createFakeStorage({ [DETAIL_KEY]: JSON.stringify(DETAIL) });
+  const network = createCountingFetch({ [DETAIL_URL]: { id: 0 } });
+  const fetchJson = createFetchJson({
+    fetch: network.fetch,
+    cache: createApiCache({ local: createFakeStorage(), session, now: () => NOW }),
+  });
+  assert.deepEqual(await fetchJson(DETAIL_URL), DETAIL);
+  assert.equal(network.callsTo(DETAIL_URL), 0);
 });

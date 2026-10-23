@@ -3,7 +3,7 @@ import { filterByName } from './search.js';
 import { offsetFor, sliceFor, totalPages } from './pagination.js';
 
 const API_BASE = 'https://pokeapi.co/api/v2';
-const FULL_LIST_LIMIT = 100000;
+export const FULL_LIST_LIMIT = 100000;
 
 async function fetchList(fetchJson, url) {
   const response = await fetchJson(url);
