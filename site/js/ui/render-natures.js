@@ -1,5 +1,6 @@
 import { upper } from './layout.js';
 import { groupNatures } from '../mappers/nature.js';
+import { STRINGS } from './strings.js';
 
 const natureRow = (name, sub, subClass = '') => `
                       <div class="acc-nature-row">
@@ -21,11 +22,11 @@ const statSection = (group) => `
                 </label>
                 <div class="acc-body">
                   <div class="acc-col acc-up">
-                    <div class="acc-col-header">↑ SUBE ${group.label}</div>
+                    <div class="acc-col-header">↑ ${STRINGS.naturalezas.sube} ${group.label}</div>
                     ${group.up.map((n) => natureRow(n.name, `↓ ${upper(n.decreasedStat ?? '—')}`)).join('')}
                   </div>
                   <div class="acc-col acc-down">
-                    <div class="acc-col-header">↓ BAJA ${group.label}</div>
+                    <div class="acc-col-header">↓ ${STRINGS.naturalezas.baja} ${group.label}</div>
                     ${group.down.map((n) => natureRow(n.name, `↑ ${upper(n.increasedStat ?? '—')}`)).join('')}
                   </div>
                 </div>
@@ -33,8 +34,8 @@ const statSection = (group) => `
 
 const neutralColumn = (natures) => `
                 <div class="acc-col">
-                  <div class="acc-col-header">SIN CAMBIO DE STATS</div>
-                  ${natures.map((n) => natureRow(n.name, '— NEUTRAL', ' acc-neutral-tag')).join('')}
+                  <div class="acc-col-header">${STRINGS.naturalezas.sinCambio}</div>
+                  ${natures.map((n) => natureRow(n.name, `— ${STRINGS.naturalezas.neutral}`, ' acc-neutral-tag')).join('')}
                 </div>`;
 
 function neutralSection(neutrals) {
@@ -44,9 +45,9 @@ function neutralSection(neutrals) {
               <input type="checkbox" id="acc-neutral" class="acc-toggle">
               <label for="acc-neutral" class="acc-header" style="border-left: 6px solid #555">
                 <span class="acc-icon">—</span>
-                <span class="acc-stat-name">NEUTRAL</span>
+                <span class="acc-stat-name">${STRINGS.naturalezas.neutral}</span>
                 <span class="acc-counts">
-                  <span class="acc-count-up">${neutrals.all.length} naturales</span>
+                  <span class="acc-count-up">${neutrals.all.length} ${STRINGS.naturalezas.naturales}</span>
                 </span>
                 <span class="acc-arrow">▶</span>
               </label>
@@ -58,7 +59,7 @@ function neutralSection(neutrals) {
 }
 
 export const naturesView = {
-  title: 'NATURALEZAS',
+  title: STRINGS.naturalezas.titulo,
   searchable: false,
   renderItems: (natures) => {
     const { statGroups, neutrals } = groupNatures(natures);

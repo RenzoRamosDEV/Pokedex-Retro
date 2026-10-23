@@ -1,5 +1,6 @@
 import { escapeHtml } from '../core/html.js';
 import { upper } from './layout.js';
+import { STRINGS } from './strings.js';
 
 const itemSprite = (item) =>
   item.sprite === null
@@ -37,7 +38,7 @@ const itemRow = (item) => `
           </tr>`;
 
 export const itemsView = {
-  title: 'OBJETOS',
+  title: STRINGS.objetos.titulo,
   searchable: true,
   renderItems: (items) => `
   <div class="shop-wrap">
@@ -45,10 +46,10 @@ export const itemsView = {
       <thead>
         <tr>
           <th class="shop-th-sprite"></th>
-          <th class="shop-th-name">OBJETO</th>
-          <th class="shop-th-cat">CATEGORÍA</th>
-          <th class="shop-th-price">PRECIO</th>
-          <th class="shop-th-effect">EFECTO</th>
+          <th class="shop-th-name">${STRINGS.objetos.objeto}</th>
+          <th class="shop-th-cat">${STRINGS.objetos.categoria}</th>
+          <th class="shop-th-price">${STRINGS.objetos.precio}</th>
+          <th class="shop-th-effect">${STRINGS.objetos.efecto}</th>
         </tr>
       </thead>
       <tbody>

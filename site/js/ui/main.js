@@ -13,6 +13,7 @@ import { abilitiesView } from './render-abilities.js';
 import { createFetchJson } from '../api/client.js';
 import { loadUntilPageHide } from './cancelable-load.js';
 import { initTheme } from './theme.js';
+import { STRINGS } from './strings.js';
 
 const VIEWS = {
   pokedex: pokedexView,
@@ -23,10 +24,6 @@ const VIEWS = {
   tipos: typesView,
   habilidades: abilitiesView,
 };
-
-const LOADING_MESSAGE = 'CARGANDO...';
-const EMPTY_MESSAGE = 'SIN RESULTADOS';
-const ERROR_MESSAGE = 'No se pudieron cargar los datos. Inténtalo de nuevo más tarde.';
 
 const fetchJson = createFetchJson({});
 let lastLoadAborted = false;
@@ -40,8 +37,8 @@ function localStorageOrNull() {
 }
 
 function renderContent(view, result) {
-  if (result.status === 'error') return statusMessage(ERROR_MESSAGE);
-  if (result.items.length === 0) return statusMessage(EMPTY_MESSAGE);
+  if (result.status === 'error') return statusMessage(STRINGS.comun.errorCarga);
+  if (result.items.length === 0) return statusMessage(STRINGS.comun.sinResultados);
   const overlays = view.renderOverlays ? view.renderOverlays(result.items) : '';
   return (
     view.renderItems(result.items) +
@@ -61,7 +58,7 @@ async function start() {
     parsedQuery.query === null ? '' : parsedQuery.rawQuery,
   );
 
-  main.innerHTML = header + statusMessage(LOADING_MESSAGE);
+  main.innerHTML = header + statusMessage(STRINGS.comun.cargando);
   const result = await loadUntilPageHide(window, (signal) =>
     loadSection(
       (url) => fetchJson(url, { signal }).then((json) => ({ ok: true, status: 200, json })),

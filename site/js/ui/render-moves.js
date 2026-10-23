@@ -1,5 +1,6 @@
 import { escapeHtml } from '../core/html.js';
 import { upper } from './layout.js';
+import { STRINGS } from './strings.js';
 
 const moveStat = (label, value) => `
           <div class="move-stat">
@@ -16,16 +17,16 @@ const moveCard = (move) => `
         </div>
         <h3 class="move-name">${upper(move.name)}</h3>
         <div class="move-stats">
-          ${moveStat('POW', move.power)}
-          ${moveStat('ACC', move.accuracy)}
-          ${moveStat('PP', move.pp)}
-          ${moveStat('PRI', move.priority)}
+          ${moveStat(STRINGS.movimientos.potencia, move.power)}
+          ${moveStat(STRINGS.movimientos.precision, move.accuracy)}
+          ${moveStat(STRINGS.movimientos.pp, move.pp)}
+          ${moveStat(STRINGS.movimientos.prioridad, move.priority)}
         </div>
         ${move.shortEffect ? `<p class="move-effect">${escapeHtml(move.shortEffect)}</p>` : ''}
       </div>`;
 
 export const movesView = {
-  title: 'MOVIMIENTOS',
+  title: STRINGS.movimientos.titulo,
   searchable: true,
   renderItems: (moves) => `
   <div class="moves-grid">

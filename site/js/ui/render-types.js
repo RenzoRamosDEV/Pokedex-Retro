@@ -1,6 +1,7 @@
 import { escapeHtml } from '../core/html.js';
 import { upper } from './layout.js';
 import { effectiveness } from '../mappers/type.js';
+import { STRINGS } from './strings.js';
 
 const CELL_SYMBOLS = { '2x': '×2', half: '½', 0: '✕', 1: '' };
 
@@ -22,25 +23,25 @@ function matrixRow(attacker, types) {
 }
 
 export const typesView = {
-  title: 'TABLA DE TIPOS',
+  title: STRINGS.tipos.titulo,
   searchable: false,
   renderItems: (types) => `
   <div class="matrix-legend">
     <span class="matrix-legend-item eff-2x-cell">×2</span>
-    <span class="matrix-legend-label">Súper efectivo</span>
+    <span class="matrix-legend-label">${STRINGS.tipos.superEfectivo}</span>
     <span class="matrix-legend-item eff-half-cell">½</span>
-    <span class="matrix-legend-label">No muy efectivo</span>
+    <span class="matrix-legend-label">${STRINGS.tipos.noMuyEfectivo}</span>
     <span class="matrix-legend-item eff-0-cell">✕</span>
-    <span class="matrix-legend-label">Inmune</span>
+    <span class="matrix-legend-label">${STRINGS.tipos.inmune}</span>
     <span class="matrix-legend-item eff-1-cell">—</span>
-    <span class="matrix-legend-label">Normal</span>
+    <span class="matrix-legend-label">${STRINGS.tipos.normal}</span>
   </div>
 
   <div class="matrix-scroll">
     <table class="type-matrix">
       <thead>
         <tr>
-          <th class="matrix-corner">ATK ╲ DEF</th>
+          <th class="matrix-corner">${STRINGS.tipos.esquina}</th>
           ${types.map((t) => `<th class="matrix-col-header">${typeBadge(t)}</th>`).join('')}
         </tr>
       </thead>
