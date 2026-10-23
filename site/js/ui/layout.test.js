@@ -180,8 +180,8 @@ test('pageHeader of a searchable view renders the exact search form', () => {
   <div class="page-header">
     <h2 class="page-title">POKEDEX</h2>
     <form class="search-form" method="GET">
-      <input class="search-input" type="text" name="q" placeholder="BUSCAR..." value="" autocomplete="off">
-      <button class="search-btn" type="submit">▶</button>
+      <input class="search-input" type="text" name="q" placeholder="BUSCAR..." aria-label="Buscar por nombre" value="" autocomplete="off">
+      <button class="search-btn" type="submit" aria-label="Buscar">▶</button>
     </form>
   </div>`,
   );

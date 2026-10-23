@@ -90,3 +90,11 @@ test('consecutive shop rows have nothing but whitespace between them', () => {
   const html = itemsView.renderItems([masterBall, { ...masterBall, id: 2 }]);
   assert.match(html, /<\/tr>\s*<tr class="shop-row">/);
 });
+
+test('the scrollable shop table is a focusable region named OBJETOS', () => {
+  assert.ok(
+    itemsView
+      .renderItems([masterBall])
+      .includes('<div class="shop-wrap" tabindex="0" role="region" aria-label="OBJETOS">'),
+  );
+});

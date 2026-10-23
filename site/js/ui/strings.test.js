@@ -198,3 +198,8 @@ test('a Pokémon without hidden ability has no OCULTA tag', () => {
   );
   assert.doesNotMatch(pokedexView.renderOverlays([fixturePokemon]), /OCULTA|HIDDEN/);
 });
+
+test('the search field and button have their accessible names in STRINGS', () => {
+  assert.equal(STRINGS.comun.etiquetaBusqueda, 'Buscar por nombre');
+  assert.equal(STRINGS.comun.enviarBusqueda, 'Buscar');
+});

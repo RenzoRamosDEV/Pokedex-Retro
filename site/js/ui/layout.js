@@ -6,8 +6,8 @@ export function pageHeader(title, searchable, searchValue) {
   const searchForm = searchable
     ? `
     <form class="search-form" method="GET">
-      <input class="search-input" type="text" name="q" placeholder="${STRINGS.comun.buscar}" value="${escapeHtml(searchValue)}" autocomplete="off">
-      <button class="search-btn" type="submit">▶</button>
+      <input class="search-input" type="text" name="q" placeholder="${STRINGS.comun.buscar}" aria-label="${STRINGS.comun.etiquetaBusqueda}" value="${escapeHtml(searchValue)}" autocomplete="off">
+      <button class="search-btn" type="submit" aria-label="${STRINGS.comun.enviarBusqueda}">▶</button>
     </form>`
     : '';
   return `

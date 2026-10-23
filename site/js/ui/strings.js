@@ -11,6 +11,8 @@ export const STRINGS = deepFreeze({
     sinResultados: 'SIN RESULTADOS',
     errorCarga: 'No se pudieron cargar los datos. Inténtalo de nuevo más tarde.',
     buscar: 'BUSCAR...',
+    etiquetaBusqueda: 'Buscar por nombre',
+    enviarBusqueda: 'Buscar',
     anterior: '◀ ANT.',
     siguiente: 'SIG. ▶',
     elementoNoCargado: '1 ELEMENTO NO SE PUDO CARGAR',

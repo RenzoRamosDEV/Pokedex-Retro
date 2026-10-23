@@ -273,3 +273,23 @@ test('Preferencia de movimiento reducido: transitions last 0s', async ({ page })
     expect(durations, selector).toEqual(['0s', '0s']);
   }
 });
+
+test('the search field and button have accessible names', async ({ page }) => {
+  await loadedPokedex(page);
+  await expect(page.getByRole('textbox', { name: 'Buscar por nombre', exact: true })).toHaveCount(
+    1,
+  );
+  await expect(page.getByRole('button', { name: 'Buscar', exact: true })).toHaveCount(1);
+});
+
+test('the types matrix is a named region reachable with Tab', async ({ page }) => {
+  await page.goto('tipos.html');
+  const region = page.getByRole('region', { name: 'TABLA DE TIPOS', exact: true });
+  await expect(region).toBeVisible();
+  let reached = false;
+  for (let presses = 0; presses < 20 && !reached; presses += 1) {
+    await page.keyboard.press('Tab');
+    reached = await region.evaluate((element) => element === document.activeElement);
+  }
+  expect(reached).toBe(true);
+});
