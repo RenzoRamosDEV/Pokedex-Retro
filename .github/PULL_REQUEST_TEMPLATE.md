@@ -14,3 +14,4 @@
 - [ ] `npm run typecheck`
 - [ ] `npm run check:html`
 - [ ] `npm run test:mutation`
+- [ ] `npm run test:mutation:ui`

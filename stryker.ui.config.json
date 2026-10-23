@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "node --test --test-skip-pattern=\"has no visible text literals\" \"site/js/ui/**/*.test.js\""
+  },
+  "mutate": [
+    "site/js/ui/**/*.js",
+    "!site/js/ui/**/*.test.js",
+    "!site/js/ui/main.js",
+    "!site/js/ui/theme.js"
+  ],
+  "ignorePatterns": ["tsconfig.json"],
+  "thresholds": { "high": 90, "low": 85, "break": 85 },
+  "reporters": ["clear-text", "progress"],
+  "timeoutMS": 10000
+}
