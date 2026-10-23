@@ -38,6 +38,12 @@ Requiere Node ≥ 22. Los tests usan el runner nativo de Node y respuestas de Po
 npm test
 ```
 
+`npm test` incluye también los tests de `scripts/`. Para comprobar que la cabecera y la navegación de las siete páginas coinciden (la propia página se marca con `aria-current="page"`):
+
+```bash
+npm run check:html
+```
+
 Tests de mutación con Stryker sobre `site/js/core` y `site/js/mappers`:
 
 ```bash
@@ -53,10 +59,20 @@ site/
 ├── css/pokedex.css     estilos y temas
 ├── images/             logotipo
 └── js/
+    ├── api/client.js   cliente HTTP: reintentos, timeout, cancelación y caché inyectable
     ├── core/           lógica pura: URL, búsqueda, paginación, carga de secciones
     ├── mappers/        PokéAPI → datos de vista (con fixtures de respuestas reales)
-    └── ui/             renderizado en el DOM y selector de tema
+    ├── ui/             renderizado en el DOM, selector de tema y cancelación al salir
+    │   └── strings.js  textos de la interfaz, centralizados
+    └── version.js      versión mostrada en el panel INFO (generado)
+scripts/
+├── check-html.mjs      comprueba que las cabeceras de las páginas coinciden
+└── sync-version.mjs    genera site/js/version.js desde package.json
 ```
+
+## Versión
+
+La versión vive en `package.json` y se copia a `site/js/version.js`, que muestra el panel INFO. Para cambiarla se usa `npm version` (por ejemplo `npm version patch`), que regenera y añade `version.js` antes de su commit; un test falla si ambos valores no coinciden.
 
 ## Despliegue en GitHub Pages
 
