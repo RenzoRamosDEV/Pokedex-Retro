@@ -161,3 +161,50 @@ test('the dialog accessible name is the Pokémon name', async ({ page }) => {
   await openPikachuWithKeyboard(page);
   await expect(page.getByRole('dialog', { name: 'PIKACHU', exact: true })).toBeVisible();
 });
+
+const themeButton = (page) => page.locator('#theme-btn');
+const infoButton = (page) => page.locator('#info-btn');
+
+async function loadedPokedex(page) {
+  await page.goto('index.html');
+  await expect(page.locator('.poke-card').first()).toBeVisible();
+}
+
+test('Abrir con teclado: Enter on the theme button shows its panel', async ({ page }) => {
+  await loadedPokedex(page);
+  await themeButton(page).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#theme-dropdown')).toBeVisible();
+  await expect(themeButton(page)).toHaveAttribute('aria-expanded', 'true');
+});
+
+test('Escape: closes the theme panel and focuses its button', async ({ page }) => {
+  await loadedPokedex(page);
+  await themeButton(page).focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#theme-dropdown')).toBeHidden();
+  await expect(themeButton(page)).toHaveAttribute('aria-expanded', 'false');
+  await expect(themeButton(page)).toBeFocused();
+});
+
+test('Un solo desplegable abierto: opening info hides the theme panel', async ({ page }) => {
+  await loadedPokedex(page);
+  await themeButton(page).click();
+  await infoButton(page).click();
+  await expect(page.locator('#info-dropdown')).toBeVisible();
+  await expect(page.locator('#theme-dropdown')).toBeHidden();
+  await expect(infoButton(page)).toHaveAttribute('aria-expanded', 'true');
+  await expect(themeButton(page)).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('Elegir tema: DMG chosen with the keyboard applies gb and returns focus', async ({ page }) => {
+  await loadedPokedex(page);
+  await themeButton(page).focus();
+  await page.keyboard.press('Enter');
+  await page.locator('.theme-option[data-value="gb"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('body')).toHaveAttribute('data-theme', 'gb');
+  await expect(page.locator('#theme-dropdown')).toBeHidden();
+  await expect(themeButton(page)).toBeFocused();
+});

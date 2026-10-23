@@ -42,6 +42,21 @@ for (const page of SECTION_PAGES) {
     assert.ok(mainOf(html).includes(regions[0]));
   });
 
+  for (const [button, panel] of [
+    ['theme-btn', 'theme-dropdown'],
+    ['info-btn', 'info-dropdown'],
+  ]) {
+    test(`${page}: #${button} announces and controls #${panel}`, () => {
+      const tag = tagsOf(html, 'button').find((candidate) => attribute(candidate, 'id') === button);
+      assert.ok(tag, button);
+      assert.equal(attribute(tag, 'type'), 'button');
+      assert.equal(attribute(tag, 'aria-haspopup'), 'true');
+      assert.equal(attribute(tag, 'aria-expanded'), 'false');
+      assert.equal(attribute(tag, 'aria-controls'), panel);
+      assert.ok(html.includes(`id="${panel}"`), panel);
+    });
+  }
+
   test(`${page}: main has a noscript notice`, () => {
     assert.match(
       mainOf(html),

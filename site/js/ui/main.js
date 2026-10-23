@@ -14,6 +14,7 @@ import { createApiCache } from '../api/cache.js';
 import { loadUntilPageHide } from './cancelable-load.js';
 import { initTheme } from './theme.js';
 import { connectPokemonDialogs } from './dialog.js';
+import { connectDisclosures } from './disclosure.js';
 import { VERSION } from '../version.js';
 import { STRINGS } from './strings.js';
 
@@ -84,4 +85,8 @@ window.addEventListener('pageshow', (event) => {
 
 document.querySelector('[data-version]').textContent = VERSION;
 initTheme(document, storageOrNull('localStorage'));
+connectDisclosures(document, [
+  { button: 'theme-btn', panel: 'theme-dropdown' },
+  { button: 'info-btn', panel: 'info-dropdown' },
+]);
 start();
