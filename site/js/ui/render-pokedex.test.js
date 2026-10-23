@@ -107,7 +107,7 @@ test('a missing sprite renders the placeholders in card and detail', () => {
 test('the detail shows number, name, data labels and values', () => {
   const html = pokedexView.renderOverlays([gengar]);
   assert.ok(html.includes('<span class="modal-number">#94</span>'));
-  assert.ok(html.includes('<h2 class="modal-name">GENGAR</h2>'));
+  assert.ok(html.includes('<h2 id="pokemon-94-nombre" class="modal-name">GENGAR</h2>'));
   assert.ok(html.includes('<h3 class="section-title">INFO</h3>'));
   assert.ok(html.includes('<td class="data-label">HEIGHT</td>'));
   assert.ok(html.includes('<td class="data-value">1.5 m</td>'));
@@ -171,4 +171,30 @@ test('consecutive cards, details, ability items and stat rows have only whitespa
   assert.match(overlays, /<\/(?:div|dialog)>\s*<(?:div|dialog) id="pokemon-95"/);
   assert.match(overlays, /<\/li>\s*<li class="ability-item hidden">/);
   assert.equal(overlays.match(/<\/div>\s*<div class="stat-row">/g).length, 10);
+});
+
+test('each detail is a native dialog labelled by its h2 with a close button', () => {
+  const html = pokedexView.renderOverlays(pokemons(2));
+  assert.ok(
+    html.includes('<dialog id="pokemon-1" class="modal" aria-labelledby="pokemon-1-nombre">'),
+  );
+  assert.ok(html.includes('<h2 id="pokemon-1-nombre" class="modal-name">POKE-1</h2>'));
+  assert.ok(html.includes('<h2 id="pokemon-2-nombre" class="modal-name">POKE-2</h2>'));
+  assert.equal(
+    count(
+      html,
+      '<button type="button" class="modal-close" data-cerrar aria-label="Cerrar">✕</button>',
+    ),
+    2,
+  );
+  assert.equal(count(html, '</dialog>'), 2);
+  assert.doesNotMatch(html, /role="dialog"|aria-modal|modal-backdrop|modal-close-area|href="#"/);
+});
+
+test('every aria-labelledby of the details points to an existing id', () => {
+  const html = pokedexView.renderOverlays(pokemons(18));
+  const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  const labels = [...html.matchAll(/aria-labelledby="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(labels.length, 18);
+  for (const label of labels) assert.ok(ids.has(label), label);
 });

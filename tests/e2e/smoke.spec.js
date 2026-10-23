@@ -95,3 +95,69 @@ test('a failing list shows the load error in the status region', async ({ page }
     'No se pudieron cargar los datos. Inténtalo de nuevo más tarde.',
   );
 });
+
+const card25 = (page) => page.locator('a.card-link[href="#pokemon-25"]');
+const openDialog = (page) => page.locator('dialog.modal[open]');
+
+async function openPikachuWithKeyboard(page, url = 'index.html?page=2') {
+  await page.goto(url);
+  await card25(page).focus();
+  await page.keyboard.press('Enter');
+  await expect(openDialog(page)).toHaveAttribute('id', 'pokemon-25');
+}
+
+test('Modal con teclado: Enter opens, Escape closes and focus returns to the card', async ({
+  page,
+}) => {
+  await openPikachuWithKeyboard(page);
+  await expect(page.locator('#pokemon-25 [data-cerrar]')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(openDialog(page)).toHaveCount(0);
+  await expect(page).toHaveURL(/index\.html\?page=2$/);
+  await expect(card25(page)).toBeFocused();
+});
+
+test('Cierre con el botón: Enter on close closes and focus returns to the card', async ({
+  page,
+}) => {
+  await openPikachuWithKeyboard(page);
+  await page.keyboard.press('Enter');
+  await expect(openDialog(page)).toHaveCount(0);
+  await expect(card25(page)).toBeFocused();
+});
+
+test('Clic en el fondo: a click outside the panel closes the dialog', async ({ page }) => {
+  await openPikachuWithKeyboard(page);
+  await page.mouse.click(5, 5);
+  await expect(openDialog(page)).toHaveCount(0);
+});
+
+test('Enlace profundo: loading #pokemon-25 on its page opens its dialog', async ({ page }) => {
+  await page.goto('index.html?page=2#pokemon-25');
+  await expect(openDialog(page)).toHaveAttribute('id', 'pokemon-25');
+});
+
+test('Hash al abrir y cerrar: the hash follows the dialog without new history entries', async ({
+  page,
+}) => {
+  await page.goto('index.html?q=pika');
+  await expect(card25(page)).toBeVisible();
+  const historyLength = await page.evaluate(() => history.length);
+  await card25(page).click();
+  await expect(page).toHaveURL(/index\.html\?q=pika#pokemon-25$/);
+  await page.locator('#pokemon-25 [data-cerrar]').click();
+  await expect(page).toHaveURL(/index\.html\?q=pika$/);
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+});
+
+test('Pokémon fuera de la página: #pokemon-25 on page 1 opens nothing', async ({ page }) => {
+  await page.goto('index.html#pokemon-25');
+  await expect(page.locator('.poke-card').first()).toBeVisible();
+  await expect(openDialog(page)).toHaveCount(0);
+  await expect(page.locator('#pokemon-25')).toHaveCount(0);
+});
+
+test('the dialog accessible name is the Pokémon name', async ({ page }) => {
+  await openPikachuWithKeyboard(page);
+  await expect(page.getByRole('dialog', { name: 'PIKACHU', exact: true })).toBeVisible();
+});
