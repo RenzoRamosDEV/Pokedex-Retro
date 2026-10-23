@@ -1,4 +1,3 @@
-import { escapeHtml } from '../core/html.js';
 import { upper } from './layout.js';
 import { groupNatures } from '../mappers/nature.js';
 
