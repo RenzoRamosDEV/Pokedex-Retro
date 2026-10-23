@@ -4,7 +4,16 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
   {
-    ignores: ['reports/', '.stryker-tmp/', 'requirements/', '.serena/', '.claude/'],
+    ignores: [
+      'reports/',
+      '.stryker-tmp/',
+      'requirements/',
+      '.serena/',
+      '.claude/',
+      'test-results/',
+      'playwright-report/',
+      '.lighthouseci/',
+    ],
   },
   js.configs.recommended,
   {
@@ -25,9 +34,21 @@ export default [
     },
   },
   {
-    files: ['**/*.test.js', 'scripts/**/*.{js,mjs}', 'mcp/**/*.js', 'eslint.config.js'],
+    files: [
+      '**/*.test.js',
+      'scripts/**/*.{js,mjs}',
+      'mcp/**/*.js',
+      'eslint.config.js',
+      'playwright.config.js',
+    ],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+  {
+    files: ['tests/e2e/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
     },
   },
   eslintConfigPrettier,

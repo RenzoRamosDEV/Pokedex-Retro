@@ -16,11 +16,13 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json",
     "check:html": "node scripts/check-html.mjs",
+    "e2e": "playwright test",
     "version": "node scripts/sync-version.mjs && git add site/js/version.js",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@stryker-mutator/core": "^10.1.1",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",

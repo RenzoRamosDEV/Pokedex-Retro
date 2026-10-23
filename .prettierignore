@@ -7,3 +7,6 @@ openspec/
 requirements/
 .serena/
 .claude/
+test-results/
+playwright-report/
+.lighthouseci/

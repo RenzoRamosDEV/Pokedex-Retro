@@ -15,3 +15,4 @@
 - [ ] `npm run check:html`
 - [ ] `npm run test:mutation`
 - [ ] `npm run test:mutation:ui`
+- [ ] `npm run e2e`

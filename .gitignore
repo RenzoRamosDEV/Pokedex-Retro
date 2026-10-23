@@ -1,6 +1,11 @@
 # Dependencias
 node_modules/
 
+# Playwright y Lighthouse CI
+test-results/
+playwright-report/
+.lighthouseci/
+
 # Stryker
 reports/
 .stryker-tmp/
