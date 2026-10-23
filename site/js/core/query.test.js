@@ -26,7 +26,11 @@ describe('parseQuery', () => {
   }
 
   test('keeps the raw query and normalizes the active query', () => {
-    assert.deepEqual(parseQuery('?q=Mr%20Mime'), { page: 1, rawQuery: 'Mr Mime', query: 'mr-mime' });
+    assert.deepEqual(parseQuery('?q=Mr%20Mime'), {
+      page: 1,
+      rawQuery: 'Mr Mime',
+      query: 'mr-mime',
+    });
   });
 
   test('treats a blank query as no active query while keeping it raw', () => {

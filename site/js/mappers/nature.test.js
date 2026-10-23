@@ -16,7 +16,14 @@ describe('mapNature', () => {
   });
 
   test('maps null stats and flavors to null', () => {
-    const neutral = { id: 1, name: 'hardy', increased_stat: null, decreased_stat: null, likes_flavor: null, hates_flavor: null };
+    const neutral = {
+      id: 1,
+      name: 'hardy',
+      increased_stat: null,
+      decreased_stat: null,
+      likes_flavor: null,
+      hates_flavor: null,
+    };
     assert.deepStrictEqual(mapNature(neutral), {
       id: 1,
       name: 'hardy',
@@ -40,7 +47,8 @@ describe('mapNature', () => {
 });
 
 const nature = (name, increasedStat, decreasedStat) => ({ name, increasedStat, decreasedStat });
-const neutrals = (count) => Array.from({ length: count }, (_, i) => nature(`n${i + 1}`, null, null));
+const neutrals = (count) =>
+  Array.from({ length: count }, (_, i) => nature(`n${i + 1}`, null, null));
 
 describe('groupNatures', () => {
   test('returns the five stat groups in order with their labels', () => {
@@ -94,7 +102,11 @@ describe('groupNatures', () => {
     test(`splits ${count} neutral natures with ${leftCount} in the left column`, () => {
       const list = neutrals(count);
       const grouped = groupNatures(list).neutrals;
-      assert.deepEqual(grouped, { all: list, left: list.slice(0, leftCount), right: list.slice(leftCount) });
+      assert.deepEqual(grouped, {
+        all: list,
+        left: list.slice(0, leftCount),
+        right: list.slice(leftCount),
+      });
     });
   }
 });

@@ -36,15 +36,24 @@ describe('filterByName', () => {
   });
 
   test('matches a substring at the start of the name', () => {
-    assert.deepEqual(filterByName(results, 'charm').map((r) => r.name), ['charmander', 'charmeleon']);
+    assert.deepEqual(
+      filterByName(results, 'charm').map((r) => r.name),
+      ['charmander', 'charmeleon'],
+    );
   });
 
   test('matches a substring in the middle of the name', () => {
-    assert.deepEqual(filterByName(results, 'kac').map((r) => r.name), ['pikachu']);
+    assert.deepEqual(
+      filterByName(results, 'kac').map((r) => r.name),
+      ['pikachu'],
+    );
   });
 
   test('matches a substring at the end of the name, preserving order', () => {
-    assert.deepEqual(filterByName(results, 'mime').map((r) => r.name), ['mr-mime', 'mime-jr']);
+    assert.deepEqual(
+      filterByName(results, 'mime').map((r) => r.name),
+      ['mr-mime', 'mime-jr'],
+    );
   });
 
   test('returns an empty list when nothing matches', () => {

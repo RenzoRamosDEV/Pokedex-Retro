@@ -6,15 +6,15 @@ Los datos se piden directamente desde el navegador a `https://pokeapi.co/api/v2`
 
 ## Secciones
 
-| Página | Contenido |
-| --- | --- |
-| `index.html` | Pokédex: rejilla de Pokémon con sprite, tipos y ficha detallada |
-| `movimientos.html` | Movimientos con potencia, precisión, PP y efecto |
-| `tipos.html` | Tabla de efectividad de tipos |
-| `habilidades.html` | Habilidades y su efecto |
-| `naturalezas.html` | Naturalezas agrupadas por estadística afectada |
-| `objetos.html` | Objetos con categoría, precio y efecto |
-| `bayas.html` | Bayas con crecimiento, firmeza y sabores |
+| Página             | Contenido                                                       |
+| ------------------ | --------------------------------------------------------------- |
+| `index.html`       | Pokédex: rejilla de Pokémon con sprite, tipos y ficha detallada |
+| `movimientos.html` | Movimientos con potencia, precisión, PP y efecto                |
+| `tipos.html`       | Tabla de efectividad de tipos                                   |
+| `habilidades.html` | Habilidades y su efecto                                         |
+| `naturalezas.html` | Naturalezas agrupadas por estadística afectada                  |
+| `objetos.html`     | Objetos con categoría, precio y efecto                          |
+| `bayas.html`       | Bayas con crecimiento, firmeza y sabores                        |
 
 Todas las secciones tienen buscador por nombre y, salvo Tipos y Naturalezas, paginación. La búsqueda y la página van en la URL (`?q=char&page=2`).
 

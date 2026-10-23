@@ -4,7 +4,8 @@ import { effectiveness } from '../mappers/type.js';
 
 const CELL_SYMBOLS = { '2x': '×2', half: '½', 0: '✕', 1: '' };
 
-const typeBadge = (type) => `<span class="type-badge type-${escapeHtml(type.name)}">${upper(type.name)}</span>`;
+const typeBadge = (type) =>
+  `<span class="type-badge type-${escapeHtml(type.name)}">${upper(type.name)}</span>`;
 
 function matrixRow(attacker, types) {
   const cells = types.map((defender) => {

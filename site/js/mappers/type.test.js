@@ -21,7 +21,14 @@ describe('mapType', () => {
   test('maps every missing damage relation key to an empty list', () => {
     const type = mapType({ id: 10001, name: 'unknown', damage_relations: {}, pokemon: [] });
     assert.deepEqual(
-      [type.doubleDamageTo, type.halfDamageTo, type.noDamageTo, type.doubleDamageFrom, type.halfDamageFrom, type.noDamageFrom],
+      [
+        type.doubleDamageTo,
+        type.halfDamageTo,
+        type.noDamageTo,
+        type.doubleDamageFrom,
+        type.halfDamageFrom,
+        type.noDamageFrom,
+      ],
       [[], [], [], [], [], []],
     );
   });
@@ -33,7 +40,12 @@ describe('mapType', () => {
 });
 
 describe('effectiveness', () => {
-  const attacker = (relations) => ({ doubleDamageTo: [], halfDamageTo: [], noDamageTo: [], ...relations });
+  const attacker = (relations) => ({
+    doubleDamageTo: [],
+    halfDamageTo: [],
+    noDamageTo: [],
+    ...relations,
+  });
 
   test('returns 2x for double damage', () => {
     assert.equal(effectiveness(attacker({ doubleDamageTo: ['grass'] }), 'grass'), '2x');
@@ -52,11 +64,18 @@ describe('effectiveness', () => {
   });
 
   test('double damage wins over half and none', () => {
-    const all = attacker({ doubleDamageTo: ['grass'], halfDamageTo: ['grass'], noDamageTo: ['grass'] });
+    const all = attacker({
+      doubleDamageTo: ['grass'],
+      halfDamageTo: ['grass'],
+      noDamageTo: ['grass'],
+    });
     assert.equal(effectiveness(all, 'grass'), '2x');
   });
 
   test('half damage wins over none', () => {
-    assert.equal(effectiveness(attacker({ halfDamageTo: ['grass'], noDamageTo: ['grass'] }), 'grass'), 'half');
+    assert.equal(
+      effectiveness(attacker({ halfDamageTo: ['grass'], noDamageTo: ['grass'] }), 'grass'),
+      'half',
+    );
   });
 });

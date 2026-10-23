@@ -30,7 +30,10 @@ async function fetchListing(fetchJson, config, { page, query }) {
     };
   }
   const offset = offsetFor(page, config.pageSize);
-  const { count, results } = await fetchList(fetchJson, `${resourceUrl}?limit=${config.pageSize}&offset=${offset}`);
+  const { count, results } = await fetchList(
+    fetchJson,
+    `${resourceUrl}?limit=${config.pageSize}&offset=${offset}`,
+  );
   return { entries: results, page, totalPages: totalPages(count, config.pageSize) };
 }
 
@@ -50,7 +53,9 @@ export async function loadSection(fetchJson, config, parsedQuery) {
   } catch {
     return { status: 'error' };
   }
-  const names = listing.entries.map((entry) => entry.name).filter((name) => !config.exclude.includes(name));
+  const names = listing.entries
+    .map((entry) => entry.name)
+    .filter((name) => !config.exclude.includes(name));
   const details = await Promise.all(names.map((name) => fetchDetail(fetchJson, config, name)));
   return {
     status: 'ok',

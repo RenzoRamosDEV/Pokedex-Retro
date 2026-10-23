@@ -22,33 +22,33 @@ Punto de partida: rama `main`, commit `73b20e6` (tag `v1.0.0-RC.0`).
 
 ### Problemas
 
-| # | Hallazgo | Evidencia | Fase |
-| --- | --- | --- | --- |
-| P1 | `theme.js` tiene efectos al importarse (consulta el DOM y aplica el tema); no testeable | `site/js/ui/theme.js:4-8`, `:19`; importado por `site/js/ui/main.js:1` | 2 |
-| P2 | `localStorage.setItem` sin protección: si lanza (modo privado/cuota) rompe el tema | `site/js/ui/theme.js:12` | 2 |
-| P3 | Cliente HTTP mínimo dentro de `main.js`: sin timeout, reintentos ni cancelación | `site/js/ui/main.js:29-32` | 2 |
-| P4 | Textos en inglés en la UI: `HIDDEN`, `◀ PREV`, `NEXT ▶` | `render-pokedex.js:43`, `layout.js:24-28` | 2 |
-| P5 | Literales de texto dispersos (incl. `HEIGHT`, `WEIGHT`, `BASE EXP`, `ABILITIES`, `BASE STATS`, `POW`/`ACC`/`PRI`, `ATK ╲ DEF`) | `render-pokedex.js:82-104`, `render-moves.js:19-22`, `render-types.js:42`, `main.js:25-27` | 2 |
-| P6 | Cabecera y navegación duplicadas en los 7 HTML (idénticas salvo la clase `active`); sin control de divergencia | `site/*.html:41-110` | 2 |
-| P7 | Enlace activo sin `aria-current="page"` | `site/index.html:102` | 2 |
-| P8 | Versión `1.0` fija en el panel INFO de los 7 HTML | `site/index.html:81` | 2 |
-| P9 | Meta `description` menciona "cadenas evolutivas", que la web no muestra (7 HTML) | `site/index.html:8` | 2 |
-| P10 | Sin lint, formato ni typecheck; `package.json` solo tiene `test` y `test:mutation` | `package.json` | 1 |
-| P11 | CI solo en el despliegue: `pages.yml` corre en `push` a `main`, ejecuta `npm test` sin `npm ci`, sin lint ni mutación; los PR no se validan | `.github/workflows/pages.yml:3-6`, `:18-25` | 1 |
-| P12 | Cada búsqueda vuelve a descargar la lista completa (`limit=100000`) sin caché | `site/js/core/load-section.js:5`, `:22-23` | 3 |
-| P13 | Detalles pedidos con `Promise.all` sin límite de concurrencia | `site/js/core/load-section.js:53` | 3 |
-| P14 | Fallos de detalle silenciados (`null` filtrado): el usuario no sabe que faltan elementos | `site/js/core/load-section.js:36-43`, `:56` | 3 |
-| P15 | Dependencia de Google Fonts (privacidad, latencia, bloquea CSP `'self'`) | `site/index.html:34-36` (7 HTML) | 3 |
-| P16 | Sin CSP en ningún HTML | `site/*.html` | 3 |
-| P17 | Atributos `style=` generados por JS (incompatibles con CSP sin `'unsafe-inline'`) | `render-pokedex.js:52`, `render-natures.js:14`, `render-natures.js:46`; colores en `site/js/mappers/nature.js:2-6` | 3 |
-| P18 | `<img>` sin `width`/`height`/`decoding` (CLS); `loading` solo en tarjetas | `render-pokedex.js:19`, `render-items.js:6` | 3 |
-| P19 | Sin `404.html`, `robots.txt`, `sitemap.xml` ni `manifest.webmanifest` | `site/` | 3 |
-| P20 | Modal = `div` abierto con `:target`: sin trampa de foco, sin Escape, sin retorno de foco | `render-pokedex.js:56-62`, `site/css/pokedex.css:260-262` | 4 |
-| P21 | Botones tema/info sin `aria-expanded`/`aria-controls`; sin cierre con Escape | `site/index.html:51`, `:66`; `theme.js:21-39` | 4 |
-| P22 | Menú móvil: checkbox con `aria-hidden="true"` + `label`; no operable ni anunciado por teclado | `site/index.html:42-45`, `pokedex.css:580-586` | 4 |
-| P23 | Sin skip-link, sin `<noscript>`, mensajes de estado sin región viva | `site/index.html:112-114`, `layout.js:17-19` | 4 |
-| P24 | Transiciones sin `prefers-reduced-motion`; contraste del tema `gb` no verificado | `pokedex.css:130`, `:481`, `:606`; `:1406-1454` | 4 |
-| P25 | Capa `ui` sin tests ni mutación | `site/js/ui/` (0 `*.test.js`); `stryker.config.json` `mutate` | 4 |
+| #   | Hallazgo                                                                                                                                    | Evidencia                                                                                                          | Fase |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---- |
+| P1  | `theme.js` tiene efectos al importarse (consulta el DOM y aplica el tema); no testeable                                                     | `site/js/ui/theme.js:4-8`, `:19`; importado por `site/js/ui/main.js:1`                                             | 2    |
+| P2  | `localStorage.setItem` sin protección: si lanza (modo privado/cuota) rompe el tema                                                          | `site/js/ui/theme.js:12`                                                                                           | 2    |
+| P3  | Cliente HTTP mínimo dentro de `main.js`: sin timeout, reintentos ni cancelación                                                             | `site/js/ui/main.js:29-32`                                                                                         | 2    |
+| P4  | Textos en inglés en la UI: `HIDDEN`, `◀ PREV`, `NEXT ▶`                                                                                     | `render-pokedex.js:43`, `layout.js:24-28`                                                                          | 2    |
+| P5  | Literales de texto dispersos (incl. `HEIGHT`, `WEIGHT`, `BASE EXP`, `ABILITIES`, `BASE STATS`, `POW`/`ACC`/`PRI`, `ATK ╲ DEF`)              | `render-pokedex.js:82-104`, `render-moves.js:19-22`, `render-types.js:42`, `main.js:25-27`                         | 2    |
+| P6  | Cabecera y navegación duplicadas en los 7 HTML (idénticas salvo la clase `active`); sin control de divergencia                              | `site/*.html:41-110`                                                                                               | 2    |
+| P7  | Enlace activo sin `aria-current="page"`                                                                                                     | `site/index.html:102`                                                                                              | 2    |
+| P8  | Versión `1.0` fija en el panel INFO de los 7 HTML                                                                                           | `site/index.html:81`                                                                                               | 2    |
+| P9  | Meta `description` menciona "cadenas evolutivas", que la web no muestra (7 HTML)                                                            | `site/index.html:8`                                                                                                | 2    |
+| P10 | Sin lint, formato ni typecheck; `package.json` solo tiene `test` y `test:mutation`                                                          | `package.json`                                                                                                     | 1    |
+| P11 | CI solo en el despliegue: `pages.yml` corre en `push` a `main`, ejecuta `npm test` sin `npm ci`, sin lint ni mutación; los PR no se validan | `.github/workflows/pages.yml:3-6`, `:18-25`                                                                        | 1    |
+| P12 | Cada búsqueda vuelve a descargar la lista completa (`limit=100000`) sin caché                                                               | `site/js/core/load-section.js:5`, `:22-23`                                                                         | 3    |
+| P13 | Detalles pedidos con `Promise.all` sin límite de concurrencia                                                                               | `site/js/core/load-section.js:53`                                                                                  | 3    |
+| P14 | Fallos de detalle silenciados (`null` filtrado): el usuario no sabe que faltan elementos                                                    | `site/js/core/load-section.js:36-43`, `:56`                                                                        | 3    |
+| P15 | Dependencia de Google Fonts (privacidad, latencia, bloquea CSP `'self'`)                                                                    | `site/index.html:34-36` (7 HTML)                                                                                   | 3    |
+| P16 | Sin CSP en ningún HTML                                                                                                                      | `site/*.html`                                                                                                      | 3    |
+| P17 | Atributos `style=` generados por JS (incompatibles con CSP sin `'unsafe-inline'`)                                                           | `render-pokedex.js:52`, `render-natures.js:14`, `render-natures.js:46`; colores en `site/js/mappers/nature.js:2-6` | 3    |
+| P18 | `<img>` sin `width`/`height`/`decoding` (CLS); `loading` solo en tarjetas                                                                   | `render-pokedex.js:19`, `render-items.js:6`                                                                        | 3    |
+| P19 | Sin `404.html`, `robots.txt`, `sitemap.xml` ni `manifest.webmanifest`                                                                       | `site/`                                                                                                            | 3    |
+| P20 | Modal = `div` abierto con `:target`: sin trampa de foco, sin Escape, sin retorno de foco                                                    | `render-pokedex.js:56-62`, `site/css/pokedex.css:260-262`                                                          | 4    |
+| P21 | Botones tema/info sin `aria-expanded`/`aria-controls`; sin cierre con Escape                                                                | `site/index.html:51`, `:66`; `theme.js:21-39`                                                                      | 4    |
+| P22 | Menú móvil: checkbox con `aria-hidden="true"` + `label`; no operable ni anunciado por teclado                                               | `site/index.html:42-45`, `pokedex.css:580-586`                                                                     | 4    |
+| P23 | Sin skip-link, sin `<noscript>`, mensajes de estado sin región viva                                                                         | `site/index.html:112-114`, `layout.js:17-19`                                                                       | 4    |
+| P24 | Transiciones sin `prefers-reduced-motion`; contraste del tema `gb` no verificado                                                            | `pokedex.css:130`, `:481`, `:606`; `:1406-1454`                                                                    | 4    |
+| P25 | Capa `ui` sin tests ni mutación                                                                                                             | `site/js/ui/` (0 `*.test.js`); `stryker.config.json` `mutate`                                                      | 4    |
 
 ### Observaciones fuera de alcance (no se actúa en este plan)
 
@@ -102,21 +102,21 @@ Punto de partida: rama `main`, commit `73b20e6` (tag `v1.0.0-RC.0`).
 
 ## 5. Decisiones tomadas
 
-| Decisión | ADR |
-| --- | --- |
-| Cabecera y navegación estáticas en los 7 HTML + `scripts/check-html.mjs` en CI (solo puede diferir `aria-current="page"`) | 0001 |
+| Decisión                                                                                                                                   | ADR  |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| Cabecera y navegación estáticas en los 7 HTML + `scripts/check-html.mjs` en CI (solo puede diferir `aria-current="page"`)                  | 0001 |
 | Caché: listas completas en `localStorage` (TTL 24 h); detalles en memoria + `sessionStorage`; MCP en memoria (TTL 24 h) con disco opcional | 0002 |
-| MCP por stdio, no HTTP: uso local con Claude Desktop/Claude Code, sin servidor que mantener | 0003 |
-| JavaScript + JSDoc + `// @ts-check` con `tsc --noEmit` en lugar de TypeScript: sin build y módulos compartidos con el MCP | 0004 |
-| `◀ PREV` / `NEXT ▶` → `◀ ANT.` / `SIG. ▶`; `HIDDEN` → `OCULTA` | — |
-| Tema inicial sin preferencia guardada: `gray` si `prefers-color-scheme: dark`, si no `normal` (fase 4) | — |
-| Barras de estadísticas con `data-valor` + `style.setProperty('--ancho', …)` vía CSSOM (compatible con CSP) | — |
-| Modal con `<dialog>` nativo (`showModal()`), enlace profundo `#pokemon-<id>` con `history.replaceState` | — |
-| MCP: `tamano_pagina` 1–50, por defecto 10 | — |
-| MCP: nombres de tipos, estadísticas y búsqueda en inglés de PokéAPI (`fire`) | — |
-| MCP: caché en disco solo con `POKEDEX_MCP_DISK_CACHE=1` | — |
-| `pages.yml` se dispara por `workflow_run` del CI en `main` con éxito (+ `workflow_dispatch`) | — |
-| Una rama + un PR por fase, fusión `--rebase` | — |
+| MCP por stdio, no HTTP: uso local con Claude Desktop/Claude Code, sin servidor que mantener                                                | 0003 |
+| JavaScript + JSDoc + `// @ts-check` con `tsc --noEmit` en lugar de TypeScript: sin build y módulos compartidos con el MCP                  | 0004 |
+| `◀ PREV` / `NEXT ▶` → `◀ ANT.` / `SIG. ▶`; `HIDDEN` → `OCULTA`                                                                             | —    |
+| Tema inicial sin preferencia guardada: `gray` si `prefers-color-scheme: dark`, si no `normal` (fase 4)                                     | —    |
+| Barras de estadísticas con `data-valor` + `style.setProperty('--ancho', …)` vía CSSOM (compatible con CSP)                                 | —    |
+| Modal con `<dialog>` nativo (`showModal()`), enlace profundo `#pokemon-<id>` con `history.replaceState`                                    | —    |
+| MCP: `tamano_pagina` 1–50, por defecto 10                                                                                                  | —    |
+| MCP: nombres de tipos, estadísticas y búsqueda en inglés de PokéAPI (`fire`)                                                               | —    |
+| MCP: caché en disco solo con `POKEDEX_MCP_DISK_CACHE=1`                                                                                    | —    |
+| `pages.yml` se dispara por `workflow_run` del CI en `main` con éxito (+ `workflow_dispatch`)                                               | —    |
+| Una rama + un PR por fase, fusión `--rebase`                                                                                               | —    |
 
 ## 6. Fases
 
@@ -223,34 +223,34 @@ Punto de partida: rama `main`, commit `73b20e6` (tag `v1.0.0-RC.0`).
 
 ## 7. Dependencias previstas
 
-| Paquete | Dónde | Por qué |
-| --- | --- | --- |
-| `@stryker-mutator/core` (existente) | raíz, dev | Mutación de `core`, `mappers`, `ui` y `mcp/src` |
-| `eslint`, `@eslint/js`, `globals` | raíz, dev | Lint con flat config y globales por entorno |
-| `eslint-config-prettier` | raíz, dev | Desactiva reglas de estilo que chocan con Prettier |
-| `prettier` | raíz, dev | Formato único del repo |
-| `typescript` | raíz, dev | `tsc --noEmit` sobre JS con JSDoc (ADR 0004) |
-| `simple-git-hooks`, `lint-staged` | raíz, dev | Lint y formato en pre-commit sobre ficheros staged |
-| `@playwright/test`, `@axe-core/playwright` | raíz, dev | e2e en Chromium y auditoría axe |
-| `@lhci/cli` | raíz, dev | Presupuestos de Lighthouse en PR |
-| `@modelcontextprotocol/sdk` | `mcp/`, runtime | Servidor, transporte stdio e `InMemoryTransport` |
-| `zod` | `mcp/`, runtime | Validación de entradas y `outputSchema` |
-| `@modelcontextprotocol/inspector` | `npx`, sin instalar | Depuración manual (`mcp:inspect`) |
+| Paquete                                    | Dónde               | Por qué                                            |
+| ------------------------------------------ | ------------------- | -------------------------------------------------- |
+| `@stryker-mutator/core` (existente)        | raíz, dev           | Mutación de `core`, `mappers`, `ui` y `mcp/src`    |
+| `eslint`, `@eslint/js`, `globals`          | raíz, dev           | Lint con flat config y globales por entorno        |
+| `eslint-config-prettier`                   | raíz, dev           | Desactiva reglas de estilo que chocan con Prettier |
+| `prettier`                                 | raíz, dev           | Formato único del repo                             |
+| `typescript`                               | raíz, dev           | `tsc --noEmit` sobre JS con JSDoc (ADR 0004)       |
+| `simple-git-hooks`, `lint-staged`          | raíz, dev           | Lint y formato en pre-commit sobre ficheros staged |
+| `@playwright/test`, `@axe-core/playwright` | raíz, dev           | e2e en Chromium y auditoría axe                    |
+| `@lhci/cli`                                | raíz, dev           | Presupuestos de Lighthouse en PR                   |
+| `@modelcontextprotocol/sdk`                | `mcp/`, runtime     | Servidor, transporte stdio e `InMemoryTransport`   |
+| `zod`                                      | `mcp/`, runtime     | Validación de entradas y `outputSchema`            |
+| `@modelcontextprotocol/inspector`          | `npx`, sin instalar | Depuración manual (`mcp:inspect`)                  |
 
 ## 8. Riesgos y mitigaciones
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Stryker supera 180 s al sumar `ui` y `mcp/src` | Configs separadas (`core`+`mappers`, `ui`, `mcp`), cada una con su `timeout 180` |
-| Lighthouse performance < 0,95 por la latencia real de PokéAPI | La aserción de performance pasa a `warn`; cifra obtenida documentada en el PR |
-| CSP en `<meta>` no admite `frame-ancestors` ni cabeceras HTTP (Pages no las permite) | Se documenta la limitación en la ADR/PR; no se promete protección anti-iframe |
-| `tsc` sobre carpetas con `*.test.js` necesita tipos de Node (`node:test`) | Excluir tests del `tsconfig.json`; si se necesitan, justificar `@types/node` en el PR |
-| Uso razonable de PokéAPI (API pública, sin clave) | Caché web y MCP, máx. 6/4 peticiones simultáneas, User-Agent identificable, reintentos acotados |
-| e2e/Lighthouse inestables con red real | PokéAPI mockeada con fixtures en e2e; Lighthouse acotado a dos páginas y 3 ejecuciones |
-| GIF de demo > 3 MB | Resolución y fps reducidos en `ffmpeg`, paleta optimizada, duración ≤ 15 s |
-| Rutas absolutas de `404.html` acopladas a `/Pokedex-Retro/` | Si cambia el nombre del repo, se actualizan 404, `robots.txt` y `sitemap.xml` juntos |
-| Contraste AA cambia la paleta del tema `gb` | Ajuste dentro de la gama verde; verificación con axe en e2e |
-| Prettier reformatea todo el código existente | Commit aislado `style: aplica el formato de Prettier`, sin cambios de lógica |
+| Riesgo                                                                               | Mitigación                                                                                      |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Stryker supera 180 s al sumar `ui` y `mcp/src`                                       | Configs separadas (`core`+`mappers`, `ui`, `mcp`), cada una con su `timeout 180`                |
+| Lighthouse performance < 0,95 por la latencia real de PokéAPI                        | La aserción de performance pasa a `warn`; cifra obtenida documentada en el PR                   |
+| CSP en `<meta>` no admite `frame-ancestors` ni cabeceras HTTP (Pages no las permite) | Se documenta la limitación en la ADR/PR; no se promete protección anti-iframe                   |
+| `tsc` sobre carpetas con `*.test.js` necesita tipos de Node (`node:test`)            | Excluir tests del `tsconfig.json`; si se necesitan, justificar `@types/node` en el PR           |
+| Uso razonable de PokéAPI (API pública, sin clave)                                    | Caché web y MCP, máx. 6/4 peticiones simultáneas, User-Agent identificable, reintentos acotados |
+| e2e/Lighthouse inestables con red real                                               | PokéAPI mockeada con fixtures en e2e; Lighthouse acotado a dos páginas y 3 ejecuciones          |
+| GIF de demo > 3 MB                                                                   | Resolución y fps reducidos en `ffmpeg`, paleta optimizada, duración ≤ 15 s                      |
+| Rutas absolutas de `404.html` acopladas a `/Pokedex-Retro/`                          | Si cambia el nombre del repo, se actualizan 404, `robots.txt` y `sitemap.xml` juntos            |
+| Contraste AA cambia la paleta del tema `gb`                                          | Ajuste dentro de la gama verde; verificación con axe en e2e                                     |
+| Prettier reformatea todo el código existente                                         | Commit aislado `style: aplica el formato de Prettier`, sin cambios de lógica                    |
 
 ## 9. Próximo paso
 

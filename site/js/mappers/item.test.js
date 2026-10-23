@@ -10,7 +10,8 @@ describe('mapItem', () => {
       name: 'master-ball',
       cost: null,
       category: 'standard-balls',
-      sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png',
+      sprite:
+        'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png',
       shortEffect: 'Catches a wild Pokémon every time.',
     });
   });

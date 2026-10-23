@@ -11,7 +11,10 @@ function berryFlavors(berry) {
   const flavors = berry.flavors.filter((f) => f.potency > 0);
   if (flavors.length === 0) return '';
   const badges = flavors
-    .map((f) => `<span class="berry-flavor flavor-${escapeHtml(f.flavor)}">${upper(f.flavor)} ${escapeHtml(f.potency)}</span>`)
+    .map(
+      (f) =>
+        `<span class="berry-flavor flavor-${escapeHtml(f.flavor)}">${upper(f.flavor)} ${escapeHtml(f.potency)}</span>`,
+    )
     .join('\n');
   return `<div class="berry-flavors">${badges}</div>`;
 }

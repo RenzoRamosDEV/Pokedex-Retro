@@ -16,7 +16,10 @@ describe('escapeHtml', () => {
   }
 
   test('escapes every occurrence in a mixed string', () => {
-    assert.equal(escapeHtml(`<a href="x">Tom & Jerry's</a>`), '&lt;a href=&quot;x&quot;&gt;Tom &amp; Jerry&#39;s&lt;/a&gt;');
+    assert.equal(
+      escapeHtml(`<a href="x">Tom & Jerry's</a>`),
+      '&lt;a href=&quot;x&quot;&gt;Tom &amp; Jerry&#39;s&lt;/a&gt;',
+    );
   });
 
   test('passes plain text through', () => {

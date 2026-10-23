@@ -7,9 +7,21 @@ import { mapBerry } from '../mappers/berry.js';
 import { mapType } from '../mappers/type.js';
 import { mapAbility } from '../mappers/ability.js';
 
-const paginated = (resource, pageSize, mapper) => ({ resource, pageSize, listLimit: null, mapper, exclude: [] });
+const paginated = (resource, pageSize, mapper) => ({
+  resource,
+  pageSize,
+  listLimit: null,
+  mapper,
+  exclude: [],
+});
 
-const unpaginated = (resource, mapper, exclude = []) => ({ resource, pageSize: null, listLimit: 100, mapper, exclude });
+const unpaginated = (resource, mapper, exclude = []) => ({
+  resource,
+  pageSize: null,
+  listLimit: 100,
+  mapper,
+  exclude,
+});
 
 export const SECTIONS = {
   pokedex: paginated('pokemon', 18, mapPokemon),

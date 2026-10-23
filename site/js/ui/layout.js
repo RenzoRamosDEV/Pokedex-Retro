@@ -20,12 +20,14 @@ export function statusMessage(text) {
 
 export function paginationNav(links) {
   if (links === null) return '';
-  const prev = links.prevHref === null
-    ? '<span class="page-btn disabled">◀ PREV</span>'
-    : `<a href="${escapeHtml(links.prevHref)}" class="page-btn">◀ PREV</a>`;
-  const next = links.nextHref === null
-    ? '<span class="page-btn disabled">NEXT ▶</span>'
-    : `<a href="${escapeHtml(links.nextHref)}" class="page-btn">NEXT ▶</a>`;
+  const prev =
+    links.prevHref === null
+      ? '<span class="page-btn disabled">◀ PREV</span>'
+      : `<a href="${escapeHtml(links.prevHref)}" class="page-btn">◀ PREV</a>`;
+  const next =
+    links.nextHref === null
+      ? '<span class="page-btn disabled">NEXT ▶</span>'
+      : `<a href="${escapeHtml(links.nextHref)}" class="page-btn">NEXT ▶</a>`;
   return `
   <nav class="pagination">
     ${prev}
