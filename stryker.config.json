@@ -2,7 +2,7 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "command",
   "commandRunner": {
-    "command": "npm test"
+    "command": "node --test \"site/js/core/**/*.test.js\" \"site/js/mappers/**/*.test.js\""
   },
   "mutate": ["site/js/core/**/*.js", "site/js/mappers/**/*.js", "!site/js/**/*.test.js"],
   "ignorePatterns": ["tsconfig.json"],
