@@ -1,0 +1,27 @@
+{
+  "id": 1,
+  "name": "master-ball",
+  "category": {
+    "name": "standard-balls",
+    "url": "https://pokeapi.co/api/v2/item-category/34/"
+  },
+  "sprites": {
+    "default": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png"
+  },
+  "effect_entries": [
+    {
+      "short_effect": "Capture un Pokémon sauvage à chaque fois.",
+      "language": {
+        "name": "fr",
+        "url": "https://pokeapi.co/api/v2/language/5/"
+      }
+    },
+    {
+      "short_effect": "Catches a wild Pokémon every time.",
+      "language": {
+        "name": "en",
+        "url": "https://pokeapi.co/api/v2/language/9/"
+      }
+    }
+  ]
+}
