@@ -73,11 +73,17 @@ describe('Pokémon view helpers', () => {
   };
 
   test('orders types by slot', () => {
-    assert.deepEqual(typesBySlot(pokemon).map((t) => t.typeName), ['ghost', 'poison']);
+    assert.deepEqual(
+      typesBySlot(pokemon).map((t) => t.typeName),
+      ['ghost', 'poison'],
+    );
   });
 
   test('orders abilities by slot', () => {
-    assert.deepEqual(abilitiesBySlot(pokemon).map((a) => a.name), ['cursed-body', 'levitate']);
+    assert.deepEqual(
+      abilitiesBySlot(pokemon).map((a) => a.name),
+      ['cursed-body', 'levitate'],
+    );
   });
 
   test('does not reorder the original lists', () => {

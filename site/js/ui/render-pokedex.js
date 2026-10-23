@@ -9,9 +9,12 @@ import {
   statBarWidth,
 } from '../mappers/pokemon.js';
 
-const typeBadges = (pokemon) => typesBySlot(pokemon)
-  .map((t) => `<span class="type-badge type-${escapeHtml(t.typeName)}">${upper(t.typeName)}</span>`)
-  .join('\n');
+const typeBadges = (pokemon) =>
+  typesBySlot(pokemon)
+    .map(
+      (t) => `<span class="type-badge type-${escapeHtml(t.typeName)}">${upper(t.typeName)}</span>`,
+    )
+    .join('\n');
 
 function sprite(pokemon, imageClass, missingClass, lazy) {
   if (pokemon.sprite === null) return `<div class="${missingClass}">?</div>`;

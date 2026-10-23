@@ -19,7 +19,9 @@ function fakeFetchJson(routes) {
   return { fetchJson, requested };
 }
 
-const listOf = (names, count = names.length) => ({ json: { count, results: names.map((name) => ({ name, url: `x/${name}` })) } });
+const listOf = (names, count = names.length) => ({
+  json: { count, results: names.map((name) => ({ name, url: `x/${name}` })) },
+});
 const detail = (id, name) => ({ json: { id, name } });
 const idName = (json) => ({ id: json.id, name: json.name });
 const section = (key) => ({ ...SECTIONS[key], mapper: idName });
@@ -55,7 +57,13 @@ describe('loadSection on a paginated section with a search query', () => {
 
     const result = await loadSection(fetchJson, section('bayas'), parseQuery('?q=zzzz'));
 
-    assert.deepStrictEqual(result, { status: 'ok', items: [], page: 1, totalPages: 0, rawQuery: 'zzzz' });
+    assert.deepStrictEqual(result, {
+      status: 'ok',
+      items: [],
+      page: 1,
+      totalPages: 0,
+      rawQuery: 'zzzz',
+    });
     assert.deepEqual(requested, [`${API}/berry?limit=100000`]);
   });
 
@@ -69,7 +77,10 @@ describe('loadSection on a paginated section with a search query', () => {
 
     const result = await loadSection(fetchJson, section('bayas'), parseQuery('?q=berry&page=2'));
 
-    assert.deepEqual(result.items.map((b) => b.name), ['berry-16', 'berry-17', 'berry-18', 'berry-19', 'berry-20']);
+    assert.deepEqual(
+      result.items.map((b) => b.name),
+      ['berry-16', 'berry-17', 'berry-18', 'berry-19', 'berry-20'],
+    );
     assert.equal(result.totalPages, 2);
     assert.equal(result.page, 2);
     assert.equal(requested.length, 6);
@@ -82,7 +93,13 @@ describe('loadSection on a paginated section with a search query', () => {
 
     const result = await loadSection(fetchJson, section('bayas'), parseQuery('?q=ch&page=2'));
 
-    assert.deepStrictEqual(result, { status: 'ok', items: [], page: 2, totalPages: 1, rawQuery: 'ch' });
+    assert.deepStrictEqual(result, {
+      status: 'ok',
+      items: [],
+      page: 2,
+      totalPages: 1,
+      rawQuery: 'ch',
+    });
     assert.equal(requested.length, 1);
   });
 });
@@ -108,7 +125,9 @@ describe('loadSection on a paginated section without a query', () => {
   });
 
   test('treats an invalid page as page 1', async () => {
-    const { fetchJson, requested } = fakeFetchJson({ [`${API}/item?limit=12&offset=0`]: listOf([], 0) });
+    const { fetchJson, requested } = fakeFetchJson({
+      [`${API}/item?limit=12&offset=0`]: listOf([], 0),
+    });
 
     await loadSection(fetchJson, section('objetos'), parseQuery('?page=abc'));
 
@@ -116,9 +135,15 @@ describe('loadSection on a paginated section without a query', () => {
   });
 
   test('treats a blank query as no query', async () => {
-    const { fetchJson, requested } = fakeFetchJson({ [`${API}/ability?limit=8&offset=8`]: listOf([], 0) });
+    const { fetchJson, requested } = fakeFetchJson({
+      [`${API}/ability?limit=8&offset=8`]: listOf([], 0),
+    });
 
-    const result = await loadSection(fetchJson, section('habilidades'), parseQuery('?page=2&q=%20%20'));
+    const result = await loadSection(
+      fetchJson,
+      section('habilidades'),
+      parseQuery('?page=2&q=%20%20'),
+    );
 
     assert.deepEqual(requested, [`${API}/ability?limit=8&offset=8`]);
     assert.equal(result.rawQuery, null);
@@ -141,7 +166,10 @@ describe('loadSection on a paginated section without a query', () => {
       .filter((id) => id !== 98 && id !== 94)
       .sort((a, b) => a - b);
     assert.equal(result.status, 'ok');
-    assert.deepEqual(result.items.map((p) => p.id), expectedIds);
+    assert.deepEqual(
+      result.items.map((p) => p.id),
+      expectedIds,
+    );
   });
 
   test('drops an entry whose detail cannot be mapped', async () => {
@@ -152,7 +180,11 @@ describe('loadSection on a paginated section without a query', () => {
     });
     const strictMapper = (json) => ({ id: json.id, name: json.name.toUpperCase() });
 
-    const result = await loadSection(fetchJson, { ...SECTIONS.pokedex, mapper: strictMapper }, parseQuery(''));
+    const result = await loadSection(
+      fetchJson,
+      { ...SECTIONS.pokedex, mapper: strictMapper },
+      parseQuery(''),
+    );
 
     assert.deepEqual(result.items, [{ id: 1, name: 'BULBASAUR' }]);
   });
@@ -160,22 +192,34 @@ describe('loadSection on a paginated section without a query', () => {
 
 describe('loadSection list failures', () => {
   test('returns the error state when the list request rejects', async () => {
-    const { fetchJson } = fakeFetchJson({ [`${API}/item?limit=12&offset=0`]: new TypeError('Failed to fetch') });
+    const { fetchJson } = fakeFetchJson({
+      [`${API}/item?limit=12&offset=0`]: new TypeError('Failed to fetch'),
+    });
 
-    assert.deepStrictEqual(await loadSection(fetchJson, section('objetos'), parseQuery('')), { status: 'error' });
+    assert.deepStrictEqual(await loadSection(fetchJson, section('objetos'), parseQuery('')), {
+      status: 'error',
+    });
   });
 
   test('returns the error state when the list request answers 500', async () => {
-    const { fetchJson, requested } = fakeFetchJson({ [`${API}/item?limit=12&offset=0`]: { status: 500, json: null } });
+    const { fetchJson, requested } = fakeFetchJson({
+      [`${API}/item?limit=12&offset=0`]: { status: 500, json: null },
+    });
 
-    assert.deepStrictEqual(await loadSection(fetchJson, section('objetos'), parseQuery('')), { status: 'error' });
+    assert.deepStrictEqual(await loadSection(fetchJson, section('objetos'), parseQuery('')), {
+      status: 'error',
+    });
     assert.equal(requested.length, 1);
   });
 
   test('returns the error state when the list body is malformed', async () => {
-    const { fetchJson } = fakeFetchJson({ [`${API}/item?limit=12&offset=0`]: { json: { detail: 'Not found' } } });
+    const { fetchJson } = fakeFetchJson({
+      [`${API}/item?limit=12&offset=0`]: { json: { detail: 'Not found' } },
+    });
 
-    assert.deepStrictEqual(await loadSection(fetchJson, section('objetos'), parseQuery('')), { status: 'error' });
+    assert.deepStrictEqual(await loadSection(fetchJson, section('objetos'), parseQuery('')), {
+      status: 'error',
+    });
   });
 });
 
@@ -196,7 +240,11 @@ describe('loadSection on an unpaginated section', () => {
       totalPages: 1,
       rawQuery: null,
     });
-    assert.deepEqual(requested, [`${API}/nature?limit=100`, `${API}/nature/hardy`, `${API}/nature/adamant`]);
+    assert.deepEqual(requested, [
+      `${API}/nature?limit=100`,
+      `${API}/nature/hardy`,
+      `${API}/nature/adamant`,
+    ]);
   });
 
   test('filters by the query without paginating', async () => {
@@ -222,7 +270,10 @@ describe('loadSection on an unpaginated section', () => {
 
     const result = await loadSection(fetchJson, section('tipos'), parseQuery(''));
 
-    assert.deepEqual(result.items.map((t) => t.name), ['ghost']);
+    assert.deepEqual(
+      result.items.map((t) => t.name),
+      ['ghost'],
+    );
   });
 
   test('reports zero pages when the list is empty', async () => {

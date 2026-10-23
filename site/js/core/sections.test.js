@@ -12,13 +12,43 @@ import { mapAbility } from '../mappers/ability.js';
 describe('SECTIONS', () => {
   test('declares exactly the seven sections with their configuration', () => {
     assert.deepStrictEqual(SECTIONS, {
-      pokedex: { resource: 'pokemon', pageSize: 18, listLimit: null, mapper: mapPokemon, exclude: [] },
-      movimientos: { resource: 'move', pageSize: 16, listLimit: null, mapper: mapMove, exclude: [] },
-      naturalezas: { resource: 'nature', pageSize: null, listLimit: 100, mapper: mapNature, exclude: [] },
+      pokedex: {
+        resource: 'pokemon',
+        pageSize: 18,
+        listLimit: null,
+        mapper: mapPokemon,
+        exclude: [],
+      },
+      movimientos: {
+        resource: 'move',
+        pageSize: 16,
+        listLimit: null,
+        mapper: mapMove,
+        exclude: [],
+      },
+      naturalezas: {
+        resource: 'nature',
+        pageSize: null,
+        listLimit: 100,
+        mapper: mapNature,
+        exclude: [],
+      },
       objetos: { resource: 'item', pageSize: 12, listLimit: null, mapper: mapItem, exclude: [] },
       bayas: { resource: 'berry', pageSize: 15, listLimit: null, mapper: mapBerry, exclude: [] },
-      tipos: { resource: 'type', pageSize: null, listLimit: 100, mapper: mapType, exclude: ['unknown', 'shadow'] },
-      habilidades: { resource: 'ability', pageSize: 8, listLimit: null, mapper: mapAbility, exclude: [] },
+      tipos: {
+        resource: 'type',
+        pageSize: null,
+        listLimit: 100,
+        mapper: mapType,
+        exclude: ['unknown', 'shadow'],
+      },
+      habilidades: {
+        resource: 'ability',
+        pageSize: 8,
+        listLimit: null,
+        mapper: mapAbility,
+        exclude: [],
+      },
     });
   });
 });

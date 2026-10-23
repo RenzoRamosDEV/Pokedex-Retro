@@ -56,15 +56,30 @@ describe('paginationLinks', () => {
   });
 
   test('disables PREV on the first page', () => {
-    assert.deepEqual(paginationLinks(1, 10, null), { page: 1, total: 10, prevHref: null, nextHref: '?page=2' });
+    assert.deepEqual(paginationLinks(1, 10, null), {
+      page: 1,
+      total: 10,
+      prevHref: null,
+      nextHref: '?page=2',
+    });
   });
 
   test('disables NEXT on the last page', () => {
-    assert.deepEqual(paginationLinks(2, 2, null), { page: 2, total: 2, prevHref: '?page=1', nextHref: null });
+    assert.deepEqual(paginationLinks(2, 2, null), {
+      page: 2,
+      total: 2,
+      prevHref: '?page=1',
+      nextHref: null,
+    });
   });
 
   test('links both directions on a middle page', () => {
-    assert.deepEqual(paginationLinks(3, 5, null), { page: 3, total: 5, prevHref: '?page=2', nextHref: '?page=4' });
+    assert.deepEqual(paginationLinks(3, 5, null), {
+      page: 3,
+      total: 5,
+      prevHref: '?page=2',
+      nextHref: '?page=4',
+    });
   });
 
   test('keeps the encoded raw query in both links', () => {

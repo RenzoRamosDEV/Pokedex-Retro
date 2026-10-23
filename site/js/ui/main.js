@@ -28,16 +28,22 @@ const ERROR_MESSAGE = 'No se pudieron cargar los datos. Inténtalo de nuevo más
 
 async function fetchJson(url) {
   const response = await fetch(url);
-  return { ok: response.ok, status: response.status, json: response.ok ? await response.json() : null };
+  return {
+    ok: response.ok,
+    status: response.status,
+    json: response.ok ? await response.json() : null,
+  };
 }
 
 function renderContent(view, result) {
   if (result.status === 'error') return statusMessage(ERROR_MESSAGE);
   if (result.items.length === 0) return statusMessage(EMPTY_MESSAGE);
   const overlays = view.renderOverlays ? view.renderOverlays(result.items) : '';
-  return view.renderItems(result.items)
-    + paginationNav(paginationLinks(result.page, result.totalPages, result.rawQuery))
-    + overlays;
+  return (
+    view.renderItems(result.items) +
+    paginationNav(paginationLinks(result.page, result.totalPages, result.rawQuery)) +
+    overlays
+  );
 }
 
 async function start() {
@@ -45,7 +51,11 @@ async function start() {
   const view = VIEWS[sectionName];
   const parsedQuery = parseQuery(window.location.search);
   const main = document.querySelector('.site-main');
-  const header = pageHeader(view.title, view.searchable, parsedQuery.query === null ? '' : parsedQuery.rawQuery);
+  const header = pageHeader(
+    view.title,
+    view.searchable,
+    parsedQuery.query === null ? '' : parsedQuery.rawQuery,
+  );
 
   main.innerHTML = header + statusMessage(LOADING_MESSAGE);
   const result = await loadSection(fetchJson, SECTIONS[sectionName], parsedQuery);
