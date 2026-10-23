@@ -39,6 +39,7 @@ Las fuentes Press Start 2P y VT323 se sirven desde `site/fonts/` en `woff2` (cop
 - Cada página de sección empieza con un enlace **Saltar al contenido**, visible al recibir el foco con Tab, que lleva el foco al contenido principal (`<main id="contenido">`).
 - Los mensajes de carga, sin resultados, error y elementos no cargados se anuncian en una única región de estado (`role="status"`, `aria-live="polite"`) que no se recrea entre pintados.
 - Sin JavaScript se muestra el aviso `ESTA POKÉDEX NECESITA JAVASCRIPT`.
+- El detalle de cada Pokémon es un `<dialog>` modal nativo: se abre con Enter o clic en la tarjeta, lleva el foco al botón cerrar y se cierra con Escape, con el botón o con un clic fuera del panel, devolviendo el foco a la tarjeta. Abrirlo pone `#pokemon-<id>` en la URL sin añadir entradas al historial, así que un enlace como `index.html?page=2#pokemon-25` abre directamente ese detalle si el Pokémon está en la página.
 
 ## Temas
 

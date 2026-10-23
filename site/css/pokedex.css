@@ -336,29 +336,22 @@ body {
 
 /* ── Modal ───────────────────────────────────────── */
 .modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+  margin: auto;
+  width: min(900px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: 92vh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
 }
 
-.modal:target {
+.modal[open] {
   display: flex;
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
+.modal::backdrop {
   background: rgba(13, 13, 13, 0.85);
-}
-
-.modal-close-area {
-  position: absolute;
-  inset: 0;
-  display: block;
 }
 
 .modal-panel {
@@ -389,6 +382,8 @@ body {
   justify-content: center;
   text-decoration: none;
   z-index: 10;
+  padding: 0;
+  cursor: pointer;
   box-shadow: 2px 2px 0 #555;
   transition: transform 80ms;
 }
@@ -1975,7 +1970,7 @@ body[data-theme='gb'] .page-info {
 }
 
 /* Modal */
-body[data-theme='gb'] .modal-backdrop {
+body[data-theme='gb'] .modal::backdrop {
   background: rgba(15, 56, 15, 0.88);
 }
 
@@ -2511,7 +2506,7 @@ body[data-theme='gray'] .page-info {
 }
 
 /* Modal */
-body[data-theme='gray'] .modal-backdrop {
+body[data-theme='gray'] .modal::backdrop {
   background: rgba(0, 0, 0, 0.82);
 }
 body[data-theme='gray'] .modal-panel {

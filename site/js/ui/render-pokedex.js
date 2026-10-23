@@ -57,16 +57,13 @@ const statRow = (stat, typeName) => `
                 </div>`;
 
 const modal = (pokemon) => `
-<div id="pokemon-${escapeHtml(pokemon.id)}" class="modal" role="dialog" aria-modal="true" aria-label="${escapeHtml(pokemon.name)}">
-  <div class="modal-backdrop">
-    <a href="#" class="modal-close-area" aria-label="${STRINGS.pokedex.cerrar}"></a>
-  </div>
+<dialog id="pokemon-${escapeHtml(pokemon.id)}" class="modal" aria-labelledby="pokemon-${escapeHtml(pokemon.id)}-nombre">
   <div class="modal-panel">
-    <a href="#" class="modal-close" aria-label="${STRINGS.pokedex.cerrar}">✕</a>
+    <button type="button" class="modal-close" data-cerrar aria-label="${STRINGS.pokedex.cerrar}">✕</button>
 
     <div class="modal-header">
       <span class="modal-number">#${escapeHtml(pokemon.id)}</span>
-      <h2 class="modal-name">${upper(pokemon.name)}</h2>
+      <h2 id="pokemon-${escapeHtml(pokemon.id)}-nombre" class="modal-name">${upper(pokemon.name)}</h2>
     </div>
 
     <div class="modal-body">
@@ -112,7 +109,7 @@ const modal = (pokemon) => `
       </div>
     </div>
   </div>
-</div>`;
+</dialog>`;
 
 export const pokedexView = {
   title: STRINGS.pokedex.titulo,

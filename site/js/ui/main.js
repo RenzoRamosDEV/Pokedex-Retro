@@ -13,6 +13,7 @@ import { createFetchJson } from '../api/client.js';
 import { createApiCache } from '../api/cache.js';
 import { loadUntilPageHide } from './cancelable-load.js';
 import { initTheme } from './theme.js';
+import { connectPokemonDialogs } from './dialog.js';
 import { VERSION } from '../version.js';
 import { STRINGS } from './strings.js';
 
@@ -41,6 +42,12 @@ const fetchJson = createFetchJson({
   }),
 });
 let lastLoadAborted = false;
+const dialogs = connectPokemonDialogs({
+  root: document.querySelector('main'),
+  document,
+  location: window.location,
+  history: window.history,
+});
 
 async function start() {
   const sectionName = document.body.dataset.section;
@@ -68,6 +75,7 @@ async function start() {
   status.textContent = statusText(result);
   content.innerHTML = sectionBody(view, result);
   applyStatBarWidths(content);
+  dialogs.openFromHash();
 }
 
 window.addEventListener('pageshow', (event) => {
