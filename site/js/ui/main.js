@@ -1,4 +1,3 @@
-import './theme.js';
 import { parseQuery } from '../core/query.js';
 import { SECTIONS } from '../core/sections.js';
 import { loadSection } from '../core/load-section.js';
@@ -13,6 +12,7 @@ import { typesView } from './render-types.js';
 import { abilitiesView } from './render-abilities.js';
 import { createFetchJson } from '../api/client.js';
 import { loadUntilPageHide } from './cancelable-load.js';
+import { initTheme } from './theme.js';
 
 const VIEWS = {
   pokedex: pokedexView,
@@ -30,6 +30,14 @@ const ERROR_MESSAGE = 'No se pudieron cargar los datos. Inténtalo de nuevo más
 
 const fetchJson = createFetchJson({});
 let lastLoadAborted = false;
+
+function localStorageOrNull() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
 
 function renderContent(view, result) {
   if (result.status === 'error') return statusMessage(ERROR_MESSAGE);
@@ -70,4 +78,5 @@ window.addEventListener('pageshow', (event) => {
   if (event.persisted && lastLoadAborted) start();
 });
 
+initTheme(document, localStorageOrNull());
 start();
