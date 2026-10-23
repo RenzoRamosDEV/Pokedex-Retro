@@ -65,10 +65,10 @@ describe('groupNatures', () => {
     );
   });
 
-  test('keeps the accent color of each stat group', () => {
+  test('leaves colours to the stylesheet: no stat group exposes a color', () => {
     assert.deepEqual(
-      groupNatures([]).statGroups.map((g) => g.color),
-      ['#e74c3c', '#3498db', '#9b59b6', '#1abc9c', '#f39c12'],
+      groupNatures([]).statGroups.filter((g) => 'color' in g),
+      [],
     );
   });
 

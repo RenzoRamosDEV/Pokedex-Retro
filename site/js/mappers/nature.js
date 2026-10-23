@@ -1,10 +1,10 @@
 // @ts-check
 const STAT_GROUPS = [
-  { stat: 'attack', label: 'ATK', color: '#e74c3c' },
-  { stat: 'defense', label: 'DEF', color: '#3498db' },
-  { stat: 'special-attack', label: 'SP.ATK', color: '#9b59b6' },
-  { stat: 'special-defense', label: 'SP.DEF', color: '#1abc9c' },
-  { stat: 'speed', label: 'SPD', color: '#f39c12' },
+  { stat: 'attack', label: 'ATK' },
+  { stat: 'defense', label: 'DEF' },
+  { stat: 'special-attack', label: 'SP.ATK' },
+  { stat: 'special-defense', label: 'SP.DEF' },
+  { stat: 'speed', label: 'SPD' },
 ];
 
 const optionalName = (resource) => resource?.name ?? null;

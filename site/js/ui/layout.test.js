@@ -2,7 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { failedNotice, pageHeader, paginationNav, sectionContent, upper } from './layout.js';
+import {
+  applyStatBarWidths,
+  failedNotice,
+  pageHeader,
+  paginationNav,
+  sectionContent,
+  upper,
+} from './layout.js';
 import { pokedexView } from './render-pokedex.js';
 import { mapPokemon } from '../mappers/pokemon.js';
 import { STRINGS } from './strings.js';
@@ -119,4 +126,26 @@ for (const [label, prevHref, nextHref] of [
 test('upper turns any value into escaped upper case text', () => {
   assert.equal(upper('mr-mime <x>'), 'MR-MIME &lt;X&gt;');
   assert.equal(upper(7), '7');
+});
+
+function fakeElement(dataset) {
+  const properties = [];
+  return { dataset, properties, style: { setProperty: (...args) => properties.push(args) } };
+}
+
+test('applyStatBarWidths sets --ancho from data-valor on every bar of the root', () => {
+  const bars = [fakeElement({ valor: '45' }), fakeElement({ valor: '100' })];
+  const root = {
+    querySelectorAll: (selector) => (selector === '[data-valor]' ? bars : []),
+  };
+  applyStatBarWidths(root);
+  assert.deepEqual(
+    bars.map((bar) => bar.properties),
+    [[['--ancho', '45%']], [['--ancho', '100%']]],
+  );
+});
+
+test('applyStatBarWidths leaves the root untouched when there are no bars', () => {
+  const root = { querySelectorAll: () => [] };
+  assert.doesNotThrow(() => applyStatBarWidths(root));
 });

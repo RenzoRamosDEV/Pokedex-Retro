@@ -2,6 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { SECTIONS } from '../core/sections.js';
+import { pokedexView } from './render-pokedex.js';
+import { movesView } from './render-moves.js';
+import { naturesView } from './render-natures.js';
+import { itemsView } from './render-items.js';
+import { berriesView } from './render-berries.js';
+import { typesView } from './render-types.js';
+import { abilitiesView } from './render-abilities.js';
 
 const SITE_DIR = join(import.meta.dirname, '../..');
 const FONT_FILES = ['press-start-2p-latin-400-normal.woff2', 'vt323-latin-400-normal.woff2'];
@@ -62,3 +70,55 @@ test('site/fonts/OFL.txt carries the SIL OFL 1.1 for both families', () => {
   assert.match(license, /Press Start 2P/);
   assert.match(license, /VT323/);
 });
+
+const INLINE_PATTERNS = {
+  'style attribute': /\sstyle\s*=/i,
+  'inline script': /<script(?![^>]*\ssrc\s*=)[^>]*>/i,
+  'event handler attribute': /\son[a-z]+\s*=/i,
+};
+const inlineFindings = (html) =>
+  Object.entries(INLINE_PATTERNS)
+    .filter(([, pattern]) => pattern.test(html))
+    .map(([name]) => name);
+
+test('the inline guard detects style, inline scripts and handlers', () => {
+  assert.deepEqual(inlineFindings('<div style="x">'), ['style attribute']);
+  assert.deepEqual(inlineFindings('<script>alert(1)</script>'), ['inline script']);
+  assert.deepEqual(inlineFindings('<img onerror="x">'), ['event handler attribute']);
+});
+
+test('the inline guard accepts external scripts and plain classes', () => {
+  assert.deepEqual(inlineFindings('<script type="module" src="a.js"></script>'), []);
+  assert.deepEqual(inlineFindings('<p class="one">'), []);
+});
+
+for (const page of HTML_PAGES) {
+  test(`${page} has no inline styles, scripts or handlers`, () => {
+    assert.deepEqual(inlineFindings(readSite(page)), [], page);
+  });
+}
+
+const VIEWS = [
+  ['pokedex', pokedexView, 'pokemon'],
+  ['movimientos', movesView, 'move'],
+  ['naturalezas', naturesView, 'nature'],
+  ['objetos', itemsView, 'item'],
+  ['bayas', berriesView, 'berry'],
+  ['tipos', typesView, 'type'],
+  ['habilidades', abilitiesView, 'ability'],
+];
+const fixtureItems = (section, fixture) => {
+  const item = SECTIONS[section].mapper(
+    JSON.parse(readSite(`js/mappers/fixtures/${fixture}.json`)),
+  );
+  const neutral = { ...item, id: item.id + 1, increasedStat: null, decreasedStat: null };
+  return section === 'naturalezas' ? [item, neutral] : [item];
+};
+
+for (const [section, view, fixture] of VIEWS) {
+  test(`the ${section} view renders no inline styles, scripts or handlers`, () => {
+    const items = fixtureItems(section, fixture);
+    const html = view.renderItems(items) + (view.renderOverlays?.(items) ?? '');
+    assert.deepEqual(inlineFindings(html), [], `vista ${section}`);
+  });
+}
