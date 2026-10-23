@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { STRINGS } from './strings.js';
+import { paginationNav } from './layout.js';
+import { pokedexView } from './render-pokedex.js';
+import { mapPokemon } from '../mappers/pokemon.js';
 
 const UI_DIR = import.meta.dirname;
 const GUARDED_FILES = [
@@ -157,3 +160,39 @@ for (const file of GUARDED_FILES) {
     assert.deepEqual(visibleLiterals(source), [], `Literales visibles en ${file}`);
   });
 }
+
+test('pagination of a middle page shows ANT. and SIG. in Spanish', () => {
+  const html = paginationNav({ page: 2, total: 3, prevHref: '?page=1', nextHref: '?page=3' });
+  assert.match(html, /◀ ANT\./);
+  assert.match(html, /SIG\. ▶/);
+  assert.doesNotMatch(html, /PREV|NEXT/);
+});
+
+test('disabled pagination buttons are also in Spanish', () => {
+  const html = paginationNav({ page: 1, total: 1, prevHref: null, nextHref: null });
+  assert.match(html, /◀ ANT\./);
+  assert.match(html, /SIG\. ▶/);
+  assert.doesNotMatch(html, /PREV|NEXT/);
+});
+
+const fixturePokemon = mapPokemon(
+  JSON.parse(readFileSync(join(UI_DIR, '../mappers/fixtures/pokemon.json'), 'utf8')),
+);
+
+test('a hidden ability is tagged OCULTA', () => {
+  const pokemon = {
+    ...fixturePokemon,
+    abilities: [...fixturePokemon.abilities, { name: 'weak-armor', isHidden: true, slot: 3 }],
+  };
+  const html = pokedexView.renderOverlays([pokemon]);
+  assert.match(html, /<span class="hidden-tag">OCULTA<\/span>/);
+  assert.doesNotMatch(html, /HIDDEN/);
+});
+
+test('a Pokémon without hidden ability has no OCULTA tag', () => {
+  assert.equal(
+    fixturePokemon.abilities.some((ability) => ability.isHidden),
+    false,
+  );
+  assert.doesNotMatch(pokedexView.renderOverlays([fixturePokemon]), /OCULTA|HIDDEN/);
+});
