@@ -208,3 +208,36 @@ test('Elegir tema: DMG chosen with the keyboard applies gb and returns focus', a
   await expect(page.locator('#theme-dropdown')).toBeHidden();
   await expect(themeButton(page)).toBeFocused();
 });
+
+const menuButton = (page) => page.locator('#nav-btn');
+
+test('Abrir el menú: Enter shows the navigation and its first link is reachable', async ({
+  page,
+}) => {
+  await loadedPokedex(page);
+  await menuButton(page).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#nav-menu')).toBeVisible();
+  await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'true');
+  const firstBar = menuButton(page).locator('span').first();
+  await expect(firstBar).not.toHaveCSS('transform', 'none');
+  const firstLink = page.locator('#nav-menu .nav-link').first();
+  const reachedWithTab = async () => {
+    for (let presses = 0; presses < 10; presses += 1) {
+      await page.keyboard.press('Tab');
+      if (await firstLink.evaluate((link) => link === document.activeElement)) return true;
+    }
+    return false;
+  };
+  expect(await reachedWithTab()).toBe(true);
+});
+
+test('Cerrar con Escape: Escape hides the navigation and focuses the button', async ({ page }) => {
+  await loadedPokedex(page);
+  await menuButton(page).focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#nav-menu')).toBeHidden();
+  await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'false');
+  await expect(menuButton(page)).toBeFocused();
+});

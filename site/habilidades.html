@@ -65,14 +65,19 @@
   <body class="section-habilidades" data-section="habilidades">
     <a class="skip-link" href="#contenido">Saltar al contenido</a>
     <header class="site-header">
-      <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true" />
-
       <div class="header-inner">
-        <label for="nav-toggle" class="hamburger" aria-label="Abrir menú">
-          <span></span>
-          <span></span>
-          <span></span>
-        </label>
+        <button
+          type="button"
+          id="nav-btn"
+          class="hamburger"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+          aria-controls="nav-menu"
+        >
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </button>
         <div class="theme-picker-wrap">
           <button
             type="button"
@@ -162,7 +167,7 @@
         <div class="header-badge">RENZO RAMOS</div>
       </div>
 
-      <nav class="nav-menu" aria-label="Navegación principal">
+      <nav id="nav-menu" class="nav-menu" aria-label="Navegación principal" hidden>
         <a href="index.html" class="nav-link">POKEDEX</a>
         <a href="movimientos.html" class="nav-link">MOVIMIENTOS</a>
         <a href="tipos.html" class="nav-link">TIPOS</a>

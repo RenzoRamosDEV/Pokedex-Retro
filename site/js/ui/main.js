@@ -88,5 +88,6 @@ initTheme(document, storageOrNull('localStorage'));
 connectDisclosures(document, [
   { button: 'theme-btn', panel: 'theme-dropdown' },
   { button: 'info-btn', panel: 'info-dropdown' },
+  { button: 'nav-btn', panel: 'nav-menu' },
 ]);
 start();
