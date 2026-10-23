@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es" prefix="og: https://ogp.me/ns#">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POKÉDEX — Retro Edition</title>
+
+  <meta name="description" content="Pokédex retro interactiva. Explora los Pokémon con estética de consola clásica de los 90: stats, tipos, habilidades y cadenas evolutivas.">
+  <meta name="keywords" content="pokedex, pokemon, retro, stats, tipos, habilidades, pokeapi">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#cc2200">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pokédex Retro">
+  <meta property="og:title" content="POKÉDEX — Retro Edition">
+  <meta property="og:description" content="Explora los Pokémon con estética de consola clásica de los 90. Stats, tipos, habilidades y más.">
+  <meta property="og:image" content="images/logo-pokeball.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="400">
+  <meta property="og:image:height" content="400">
+  <meta property="og:image:alt" content="Pokébola — Pokédex Retro">
+  <meta property="og:locale" content="es_ES">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="POKÉDEX — Retro Edition">
+  <meta name="twitter:description" content="Explora los Pokémon con estética de consola clásica de los 90. Stats, tipos, habilidades y más.">
+  <meta name="twitter:image" content="images/logo-pokeball.png">
+  <meta name="twitter:image:alt" content="Pokébola — Pokédex Retro">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="images/logo-pokeball.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="images/logo-pokeball.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/logo-pokeball.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/pokedex.css">
+  <script type="module" src="js/ui/main.js"></script>
+</head>
+<body class="section-pokedex" data-section="pokedex">
+  <header class="site-header">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
+
+    <div class="header-inner">
+      <label for="nav-toggle" class="hamburger" aria-label="Abrir menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </label>
+      <div class="theme-picker-wrap">
+        <button id="theme-btn" class="theme-cycle-btn" title="Cambiar tema">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2 A10 10 0 0 1 12 22 Z" fill="currentColor" stroke="none"/>
+            <line x1="12" y1="2" x2="12" y2="22"/>
+          </svg>
+        </button>
+        <div id="theme-dropdown" class="theme-dropdown" hidden>
+          <button class="theme-option" data-value="normal">NORMAL</button>
+          <button class="theme-option" data-value="gb">DMG</button>
+          <button class="theme-option" data-value="gray">MONO</button>
+        </div>
+      </div>
+
+      <div class="info-wrap">
+        <button id="info-btn" class="theme-cycle-btn" title="Información">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="8" stroke-width="3" stroke-linecap="round"/>
+            <line x1="12" y1="12" x2="12" y2="17"/>
+          </svg>
+        </button>
+        <div id="info-dropdown" class="theme-dropdown info-panel" hidden>
+          <div class="info-row info-title">POKEDEX RETRO</div>
+          <div class="info-row">
+            <span class="info-label">AUTOR</span>
+            <span class="info-value">RENZO RAMOS</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">VERSIÓN</span>
+            <span class="info-value">1.0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">STACK</span>
+            <span class="info-value">SCALA · PLAY</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">DATOS</span>
+            <span class="info-value">POKEAPI.CO</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">SECCIONES</span>
+            <span class="info-value">7</span>
+          </div>
+        </div>
+      </div>
+      <h1 class="site-title"><a href="index.html" class="site-title-link">POKEDEX</a></h1>
+      <div class="header-badge">RENZO RAMOS</div>
+    </div>
+
+    <nav class="nav-menu" aria-label="Navegación principal">
+      <a href="index.html" class="nav-link active">POKEDEX</a>
+      <a href="movimientos.html" class="nav-link">MOVIMIENTOS</a>
+      <a href="tipos.html" class="nav-link">TIPOS</a>
+      <a href="habilidades.html" class="nav-link">HABILIDADES</a>
+      <a href="naturalezas.html" class="nav-link">NATURALEZAS</a>
+      <a href="objetos.html" class="nav-link">OBJETOS</a>
+      <a href="bayas.html" class="nav-link">BAYAS</a>
+    </nav>
+  </header>
+
+  <main class="site-main">
+    <p class="page-info">CARGANDO...</p>
+  </main>
+</body>
+</html>
