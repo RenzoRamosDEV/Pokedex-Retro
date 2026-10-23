@@ -16,7 +16,7 @@ jobs:
   calidad:
     name: calidad (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -34,4 +34,10 @@ jobs:
       - run: npm run check:html
       - run: npm test
       - run: npm run test:mutation
+        if: matrix.node == 24
+      - run: npm run test:mutation:ui
+        if: matrix.node == 24
+      - run: npx playwright install --with-deps chromium
+        if: matrix.node == 24
+      - run: npm run e2e
         if: matrix.node == 24
