@@ -67,6 +67,12 @@ npm install
 npm run test:mutation
 ```
 
+Y sobre la capa de interfaz `site/js/ui` (sin el arranque `main.js` ni `theme.js`), con umbral del 85 %:
+
+```bash
+npm run test:mutation:ui
+```
+
 ## Estructura
 
 ```

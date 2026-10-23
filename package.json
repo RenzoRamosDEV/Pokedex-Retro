@@ -9,6 +9,7 @@
   "scripts": {
     "test": "node --test \"site/js/**/*.test.js\" \"scripts/**/*.test.mjs\"",
     "test:mutation": "timeout 180 stryker run",
+    "test:mutation:ui": "timeout 180 stryker run stryker.ui.config.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
