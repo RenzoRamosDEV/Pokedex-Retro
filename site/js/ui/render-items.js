@@ -5,7 +5,7 @@ import { STRINGS } from './strings.js';
 const itemSprite = (item) =>
   item.sprite === null
     ? '<span class="shop-sprite-missing">?</span>'
-    : `<img src="${escapeHtml(item.sprite)}" alt="${escapeHtml(item.name)}" class="shop-sprite">`;
+    : `<img src="${escapeHtml(item.sprite)}" alt="${escapeHtml(item.name)}" class="shop-sprite" width="30" height="30" loading="lazy" decoding="async">`;
 
 const itemPrice = (item) =>
   item.cost

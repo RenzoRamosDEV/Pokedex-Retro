@@ -17,10 +17,9 @@ const typeBadges = (pokemon) =>
     )
     .join('\n');
 
-function sprite(pokemon, imageClass, missingClass, lazy) {
+function sprite(pokemon, imageClass, missingClass) {
   if (pokemon.sprite === null) return `<div class="${missingClass}">?</div>`;
-  const loading = lazy ? ' loading="lazy"' : '';
-  return `<img src="${escapeHtml(pokemon.sprite)}" alt="${escapeHtml(pokemon.name)}" class="${imageClass}"${loading}>`;
+  return `<img src="${escapeHtml(pokemon.sprite)}" alt="${escapeHtml(pokemon.name)}" class="${imageClass}" width="96" height="96" loading="lazy" decoding="async">`;
 }
 
 const card = (pokemon) => `
@@ -29,7 +28,7 @@ const card = (pokemon) => `
     <div class="card-top">
       <span class="card-number">#${escapeHtml(pokemon.id)}</span>
       <div class="card-sprite-wrap">
-        ${sprite(pokemon, 'card-sprite', 'card-sprite-missing', true)}
+        ${sprite(pokemon, 'card-sprite', 'card-sprite-missing')}
       </div>
     </div>
     <div class="card-bottom">
@@ -72,7 +71,7 @@ const modal = (pokemon) => `
 
     <div class="modal-body">
       <div class="modal-sprite-col">
-        ${sprite(pokemon, 'modal-sprite', 'modal-sprite-missing', false)}
+        ${sprite(pokemon, 'modal-sprite', 'modal-sprite-missing')}
         <div class="modal-types">
           ${typeBadges(pokemon)}
         </div>
