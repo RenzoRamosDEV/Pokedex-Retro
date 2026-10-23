@@ -11,6 +11,7 @@ import { berriesView } from './render-berries.js';
 import { typesView } from './render-types.js';
 import { abilitiesView } from './render-abilities.js';
 import { createFetchJson } from '../api/client.js';
+import { createApiCache } from '../api/cache.js';
 import { loadUntilPageHide } from './cancelable-load.js';
 import { initTheme } from './theme.js';
 import { VERSION } from '../version.js';
@@ -26,16 +27,21 @@ const VIEWS = {
   habilidades: abilitiesView,
 };
 
-const fetchJson = createFetchJson({});
-let lastLoadAborted = false;
-
-function localStorageOrNull() {
+function storageOrNull(name) {
   try {
-    return window.localStorage;
+    return window[name];
   } catch {
     return null;
   }
 }
+
+const fetchJson = createFetchJson({
+  cache: createApiCache({
+    local: storageOrNull('localStorage'),
+    session: storageOrNull('sessionStorage'),
+  }),
+});
+let lastLoadAborted = false;
 
 function renderContent(view, result) {
   if (result.status === 'error') return statusMessage(STRINGS.comun.errorCarga);
@@ -77,5 +83,5 @@ window.addEventListener('pageshow', (event) => {
 });
 
 document.querySelector('[data-version]').textContent = VERSION;
-initTheme(document, localStorageOrNull());
+initTheme(document, storageOrNull('localStorage'));
 start();

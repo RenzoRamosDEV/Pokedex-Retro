@@ -18,6 +18,7 @@ const GUARDED_FILES = [
 
 const LETTER = /\p{L}/u;
 const UPPERCASE = /[A-ZÁÉÍÓÚÑ]/;
+const CAMEL_CASE_IDENTIFIER = /^[a-z]+(?:[A-Z][a-z]+)+$/;
 const VISIBLE_ATTRIBUTE = /\b(?:aria-label|placeholder|title|alt)="([^"]*)"/g;
 
 function skipQuoted(source, start) {
@@ -81,7 +82,7 @@ function isVisibleText({ kind, text }) {
     const attributeValues = [...text.matchAll(VISIBLE_ATTRIBUTE)].map((match) => match[1]);
     return LETTER.test(textOutsideTags) || attributeValues.some((value) => LETTER.test(value));
   }
-  return UPPERCASE.test(text);
+  return UPPERCASE.test(text) && !CAMEL_CASE_IDENTIFIER.test(text);
 }
 
 export const visibleLiterals = (source) =>
@@ -152,6 +153,7 @@ test('the literal guard ignores markup, symbols and code identifiers', () => {
   assert.deepEqual(visibleLiterals('const a = `<img alt="${x}" src="${y}">`;'), []);
   assert.deepEqual(visibleLiterals("const a = `<td>×2 ½ ✕ ₽ #${x}</td>`; // Comentario 'X'"), []);
   assert.deepEqual(visibleLiterals("const a = { '2x': 'a\\'b' };"), []);
+  assert.deepEqual(visibleLiterals("read('localStorage', 'sessionStorage');"), []);
 });
 
 for (const file of GUARDED_FILES) {

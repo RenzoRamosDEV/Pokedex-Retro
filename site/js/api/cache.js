@@ -1,6 +1,8 @@
 // @ts-check
+import { FULL_LIST_LIMIT } from '../core/load-section.js';
 
 const LIST_PREFIX = 'pokedex:lista:';
+const DETAIL_PREFIX = 'pokedex:detalle:';
 const DAY_MS = 86_400_000;
 
 /**
@@ -58,5 +60,53 @@ export function createListCache({ storage, now = Date.now, ttlMs = DAY_MS }) {
     set(url, data) {
       writeJson(storage, LIST_PREFIX + url, { t: now(), data });
     },
+  };
+}
+
+/**
+ * @param {{ storage: StorageLike | null }} options
+ */
+export function createDetailCache({ storage }) {
+  /** @type {Map<string, unknown>} */
+  const memory = new Map();
+  return {
+    /** @param {string} url */
+    get(url) {
+      if (memory.has(url)) return memory.get(url);
+      const data = readJson(storage, DETAIL_PREFIX + url);
+      if (!isObject(data)) return undefined;
+      memory.set(url, data);
+      return data;
+    },
+    /**
+     * @param {string} url
+     * @param {unknown} data
+     */
+    set(url, data) {
+      memory.set(url, data);
+      writeJson(storage, DETAIL_PREFIX + url, data);
+    },
+  };
+}
+
+/** @param {string} url */
+const isFullList = (url) => new URL(url).searchParams.get('limit') === String(FULL_LIST_LIMIT);
+
+/**
+ * @param {{ local: StorageLike | null, session: StorageLike | null, now?: () => number }} options
+ */
+export function createApiCache({ local, session, now = Date.now }) {
+  const lists = createListCache({ storage: local, now });
+  const details = createDetailCache({ storage: session });
+  /** @param {string} url */
+  const cacheFor = (url) => (isFullList(url) ? lists : details);
+  return {
+    /** @param {string} url */
+    get: (url) => cacheFor(url).get(url),
+    /**
+     * @param {string} url
+     * @param {unknown} data
+     */
+    set: (url, data) => cacheFor(url).set(url, data),
   };
 }
