@@ -1,3 +1,4 @@
+// @ts-check
 import { normalizeQuery } from './search.js';
 
 const POSITIVE_INTEGER = /^[1-9]\d*$/;

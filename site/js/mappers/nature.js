@@ -1,3 +1,4 @@
+// @ts-check
 const STAT_GROUPS = [
   { stat: 'attack', label: 'ATK', color: '#e74c3c' },
   { stat: 'defense', label: 'DEF', color: '#3498db' },

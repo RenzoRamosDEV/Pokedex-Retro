@@ -1,3 +1,4 @@
+// @ts-check
 const MAX_STAT_BAR_WIDTH = 100;
 
 export function mapPokemon(json) {

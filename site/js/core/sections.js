@@ -1,3 +1,4 @@
+// @ts-check
 import { mapPokemon } from '../mappers/pokemon.js';
 import { mapMove } from '../mappers/move.js';
 import { mapNature } from '../mappers/nature.js';

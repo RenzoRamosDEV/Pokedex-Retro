@@ -1,3 +1,4 @@
+// @ts-check
 export function normalizeQuery(raw) {
   const trimmed = (raw ?? '').trim();
   return trimmed === '' ? null : trimmed.toLowerCase().replaceAll(' ', '-');

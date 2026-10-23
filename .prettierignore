@@ -1,0 +1,9 @@
+node_modules/
+reports/
+.stryker-tmp/
+package-lock.json
+site/js/mappers/fixtures/
+openspec/
+requirements/
+.serena/
+.claude/

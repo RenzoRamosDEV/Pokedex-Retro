@@ -1,3 +1,4 @@
+// @ts-check
 export function mapBerry(json) {
   return {
     id: json.id,

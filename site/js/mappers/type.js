@@ -1,3 +1,4 @@
+// @ts-check
 const names = (relations, key) => (relations[key] ?? []).map((resource) => resource.name);
 
 export function mapType(json) {
