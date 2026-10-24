@@ -4,6 +4,18 @@ Todos los cambios relevantes de este proyecto se documentan en este fichero.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.1.1] - 2026-10-24
+
+### Corregido
+
+- La tabla de TIPOS ya no muestra la fila y la columna vacías del tipo `stellar`; la web y el MCP comparten la misma lista de tipos excluidos.
+- Los precios de OBJETOS vuelven a mostrarse: PokéAPI ya no devuelve `cost`, así que se usa el último precio de compra en `poke-dollar` de `prices` (o «—» si no hay ninguno). El MCP devuelve el mismo `cost`.
+- La demo muestra a PIKACHU con su tipo real `ELECTRIC`.
+
+### Cambiado
+
+- Dependabot ya no propone versiones mayores de `@types/node`, porque el proyecto apunta a Node 22.
+
 ## [1.1.0] - 2026-10-24
 
 `1.0.0` fue la versión de trabajo de `package.json` desde la fase 2 y nunca se etiquetó ni publicó; los cambios de las fases 1–5 se publican juntos en esta versión.
@@ -52,5 +64,6 @@ La etiqueta `v1.0.0-RC.0` apunta al primer commit del repositorio (`dcfbae7`, so
 - Tests con `node --test` y mutación con Stryker sobre `site/js/core` y `site/js/mappers`.
 - Despliegue de `site/` en GitHub Pages.
 
+[1.1.1]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.0.0-RC.0...v1.1.0
 [1.0.0-RC.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/releases/tag/v1.0.0-RC.0
