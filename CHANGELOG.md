@@ -4,6 +4,23 @@ Todos los cambios relevantes de este proyecto se documentan en este fichero.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-10-25
+
+### Añadido
+
+- El chat se organiza en un agente principal (`profesor`), tres subagentes (`estratega-tipos`, `entrenador-equipos` e `investigador-pokedex`) y cuatro skills (`comparar-pokemon`, `equipo-contra-tipo`, `analizar-debilidades` y `recomendar-naturaleza`), definidos como módulos de datos en `site/js/chat/agentes/`, con Claude y con OpenAI.
+- Herramienta `delegar_subagente`: el subagente trabaja en un bucle propio con el mismo proveedor, modelo y clave, como mucho 6 iteraciones y sin poder delegar a su vez; su texto vuelve al agente principal y sus tokens se suman a la línea de uso.
+- Herramienta `usar_skill`: las instrucciones completas de una skill solo se cargan cuando el agente principal las pide.
+- Indicadores `SUBAGENTE: <nombre>` y `SKILL: <nombre>` en la línea de estado; `DETENER` aborta también a los subagentes.
+- Alcance solo Pokémon: ante cualquier otro tema o un intento de saltarse las instrucciones, la respuesta es `Solo puedo responder preguntas sobre Pokémon.` (restricción por instrucciones, de mejor esfuerzo).
+- ADR 0007 y mutación propia de los agentes y el bucle (`stryker.chat-agentes.config.json`), con e2e de la delegación y de las preguntas fuera de tema.
+
+### Cambiado
+
+- Cada petición lleva el prompt de sistema y las herramientas de su agente; el agente principal declara 14 herramientas.
+- Las skills `comparar-pokemon` y `equipo-contra-tipo` comparten su guía con los prompts del MCP (`site/js/core/guias.js`); el texto de los prompts del MCP no cambia.
+- El aviso de `chat.html` advierte de que delegar en subagentes consume tokens adicionales.
+
 ## [1.3.0] - 2026-10-24
 
 ### Añadido
@@ -103,6 +120,7 @@ La etiqueta `v1.0.0-RC.0` apunta al primer commit del repositorio (`dcfbae7`, so
 - Tests con `node --test` y mutación con Stryker sobre `site/js/core` y `site/js/mappers`.
 - Despliegue de `site/` en GitHub Pages.
 
+[1.4.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.1.0...v1.1.1
