@@ -40,12 +40,60 @@ export const FUNCIONES = DEFINICIONES.map(({ name, description, input_schema }) 
 }));
 
 /**
- * @param {string} codigo
+ * Quota and spend-limit 429s: retrying them does not restore access.
+ * https://developers.openai.com/api/docs/guides/error-codes
+ */
+const SIN_SALDO = [
+  'insufficient_quota',
+  'credit_balance_exhausted',
+  'organization_spend_limit_exceeded',
+  'project_spend_limit_exceeded',
+  'organization_usage_limit_exceeded',
+];
+
+/** @type {Record<number, import('../errores.js').CodigoError>} */
+const CODIGO_POR_ESTADO = {
+  400: 'peticion',
+  401: 'clave_invalida',
+  403: 'permiso',
+  429: 'limite_uso',
+  503: 'saturado',
+};
+
+/** HTTP status equivalent to each stream error code; unknown codes are server errors. */
+const ESTADO_POR_CODIGO = {
+  invalid_api_key: 401,
+  rate_limit_exceeded: 429,
+  slow_down: 429,
+  server_is_overloaded: 503,
+  ...Object.fromEntries(SIN_SALDO.map((codigo) => [codigo, 429])),
+};
+
+/**
+ * @param {import('../errores.js').CodigoError} codigo
  * @param {number} estado
  * @param {string} detalle
  */
 const crearError = (codigo, estado, detalle) =>
   Object.assign(new Error(detalle), { name: 'ErrorDeOpenAI', codigo, estado, detalle });
+
+/**
+ * @param {number} estado
+ * @param {{ type?: string, code?: string, message?: string }} error
+ * @param {string} detalle
+ */
+function errorPorEstado(estado, { type, code }, detalle) {
+  const sinSaldo = estado === 429 && (SIN_SALDO.includes(type) || SIN_SALDO.includes(code));
+  return crearError(
+    sinSaldo ? 'sin_saldo' : (CODIGO_POR_ESTADO[estado] ?? 'servidor'),
+    estado,
+    detalle,
+  );
+}
+
+/** @param {{ code?: string, message: string }} error */
+const errorDeStream = ({ code, message }) =>
+  errorPorEstado(ESTADO_POR_CODIGO[code] ?? 500, { code }, message);
 
 /** @param {string} detalle */
 const errorDeRed = (detalle) => crearError('red', 0, detalle);
@@ -124,6 +172,10 @@ export const openai = {
             items[datos.output_index] = item;
             return '';
           }
+          case 'error':
+            throw errorDeStream(datos);
+          case 'response.failed':
+            throw errorDeStream(datos.response.error);
           case 'response.completed':
           case 'response.incomplete':
             final = datos.response;
@@ -159,4 +211,19 @@ export const openai = {
       call_id: id,
       output: contenido,
     })),
+
+  /** @param {{ status: number, json(): Promise<any> }} respuesta */
+  async errorDeRespuesta(respuesta) {
+    const { status } = respuesta;
+    const { error = {} } = await respuesta.json().catch(() => ({}));
+    const clasificado = errorPorEstado(status, error, error.message ?? `HTTP ${status}`);
+    return Object.assign(clasificado, {
+      reintentable: clasificado.codigo === 'limite_uso' || status >= 500,
+    });
+  },
+
+  errorDeRed,
+
+  /** @param {string} detalle */
+  errorDesconocido: (detalle) => crearError('servidor', 500, detalle),
 };

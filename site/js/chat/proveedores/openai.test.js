@@ -16,6 +16,9 @@ import {
   respuesta,
   responseCompleted,
   responseCreated,
+  responseFailed,
+  errorEvent,
+  respuestaError,
   responseIncomplete,
   serializar,
   textDelta,
@@ -414,5 +417,174 @@ describe('openai history items', () => {
         { type: 'function_call_output', call_id: 'call_2', output: 'No existe.' },
       ],
     );
+  });
+});
+
+const SALDO = [
+  'insufficient_quota',
+  'credit_balance_exhausted',
+  'organization_spend_limit_exceeded',
+  'project_spend_limit_exceeded',
+  'organization_usage_limit_exceeded',
+];
+
+/** Name, code, status and detail of a classified error, plus its retry flag when present. */
+const forma = (error) => [
+  error.name,
+  error.codigo,
+  error.estado,
+  error.detalle,
+  error.reintentable,
+];
+
+describe('openai.errorDeRespuesta', () => {
+  const casos = [
+    [
+      400,
+      { type: 'invalid_request_error', message: 'Bad schema' },
+      'peticion',
+      'Bad schema',
+      false,
+    ],
+    [
+      401,
+      { code: 'invalid_api_key', message: 'Incorrect API key' },
+      'clave_invalida',
+      'Incorrect API key',
+      false,
+    ],
+    [403, { message: 'denied' }, 'permiso', 'denied', false],
+    [404, { message: 'no model' }, 'servidor', 'no model', false],
+    [
+      429,
+      { type: 'requests', code: 'rate_limit_exceeded', message: 'slow' },
+      'limite_uso',
+      'slow',
+      true,
+    ],
+    [499, { message: 'closed' }, 'servidor', 'closed', false],
+    [500, { message: 'oops' }, 'servidor', 'oops', true],
+    [502, { message: 'bad gateway' }, 'servidor', 'bad gateway', true],
+    [503, { message: 'busy' }, 'saturado', 'busy', true],
+    [599, { message: 'edge' }, 'servidor', 'edge', true],
+  ];
+  for (const [estado, error, codigo, detalle, reintentable] of casos) {
+    test(`${estado} ${error.code ?? error.type ?? ''} is ${codigo}`, async () => {
+      assert.deepEqual(forma(await openai.errorDeRespuesta(respuestaError(estado, error))), [
+        'ErrorDeOpenAI',
+        codigo,
+        estado,
+        detalle,
+        reintentable,
+      ]);
+    });
+  }
+
+  for (const saldo of SALDO) {
+    test(`429 with type ${saldo} is sin_saldo and not retried`, async () => {
+      const error = await openai.errorDeRespuesta(
+        respuestaError(429, { type: saldo, message: 'm' }),
+      );
+      assert.deepEqual(forma(error), ['ErrorDeOpenAI', 'sin_saldo', 429, 'm', false]);
+    });
+
+    test(`429 with code ${saldo} is sin_saldo and not retried`, async () => {
+      const error = await openai.errorDeRespuesta(
+        respuestaError(429, { type: 'requests', code: saldo, message: 'm' }),
+      );
+      assert.deepEqual(forma(error), ['ErrorDeOpenAI', 'sin_saldo', 429, 'm', false]);
+    });
+  }
+
+  test('429 without a body is limite_uso and retried', async () => {
+    const error = await openai.errorDeRespuesta(new Response('', { status: 429 }));
+    assert.deepEqual(forma(error), ['ErrorDeOpenAI', 'limite_uso', 429, 'HTTP 429', true]);
+  });
+
+  test('400 with a body that is not JSON is detailed as HTTP 400', async () => {
+    const error = await openai.errorDeRespuesta(new Response('<html>', { status: 400 }));
+    assert.deepEqual(forma(error), ['ErrorDeOpenAI', 'peticion', 400, 'HTTP 400', false]);
+  });
+
+  test('a JSON body without error is detailed with the status', async () => {
+    const error = await openai.errorDeRespuesta(new Response('{}', { status: 500 }));
+    assert.equal(error.detalle, 'HTTP 500');
+  });
+});
+
+describe('openai stream errors', () => {
+  const casos = [
+    ['invalid_api_key', 'clave_invalida', 401],
+    ...SALDO.map((saldo) => [saldo, 'sin_saldo', 429]),
+    ['rate_limit_exceeded', 'limite_uso', 429],
+    ['slow_down', 'limite_uso', 429],
+    ['server_is_overloaded', 'saturado', 503],
+    ['server_error', 'servidor', 500],
+    ['algo_nuevo', 'servidor', 500],
+  ];
+  for (const [code, codigo, estado] of casos) {
+    test(`an error event with ${code} throws ${codigo}`, () => {
+      const { event, data } = errorEvent(code, `mensaje ${code}`);
+      const lectura = openai.crearLectura();
+      assert.throws(
+        () => lectura.aplicar({ evento: event, datos: data }),
+        (error) => {
+          assert.deepEqual(forma(error), [
+            'ErrorDeOpenAI',
+            codigo,
+            estado,
+            `mensaje ${code}`,
+            undefined,
+          ]);
+          return true;
+        },
+      );
+    });
+
+    test(`response.failed with ${code} throws ${codigo}`, () => {
+      const { event, data } = responseFailed(code, `fallo ${code}`);
+      const lectura = openai.crearLectura();
+      assert.throws(
+        () => lectura.aplicar({ evento: event, datos: data }),
+        (error) => {
+          assert.deepEqual(forma(error), [
+            'ErrorDeOpenAI',
+            codigo,
+            estado,
+            `fallo ${code}`,
+            undefined,
+          ]);
+          return true;
+        },
+      );
+    });
+  }
+});
+
+describe('openai other errors', () => {
+  test('errorDeRed is red with status 0', () => {
+    assert.deepEqual(forma(openai.errorDeRed('Failed to fetch')), [
+      'ErrorDeOpenAI',
+      'red',
+      0,
+      'Failed to fetch',
+      undefined,
+    ]);
+  });
+
+  test('errorDesconocido is a 500 server error', () => {
+    assert.deepEqual(forma(openai.errorDesconocido('roto')), [
+      'ErrorDeOpenAI',
+      'servidor',
+      500,
+      'roto',
+      undefined,
+    ]);
+  });
+
+  test('is an Error with the detail as message', () => {
+    const error = openai.errorDesconocido('roto');
+    assert.ok(error instanceof Error);
+    assert.equal(error.message, 'roto');
   });
 });
