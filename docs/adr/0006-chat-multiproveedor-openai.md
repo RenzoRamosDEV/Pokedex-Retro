@@ -25,7 +25,8 @@ El chat de `chat.html` (1.2.0, [ADR 0005](0005-chat-byok-fetch-directo.md)) solo
 - Riesgos:
   - La clave de OpenAI vive en el navegador, con las mismas mitigaciones de la ADR 0005 (CSP cerrada, `textContent`, `sessionStorage` por defecto, `OLVIDAR CLAVE`) más el aislamiento por proveedor.
   - Con modelos de razonamiento, `max_output_tokens` 8000 puede agotarse antes del texto (la guía de razonamiento recomienda reservar hasta 25 000 al experimentar). Se trata como respuesta cortada; subir el límite es cambiar una constante de `openai.js`.
-  - Los formatos de eventos se reconstruyen de la documentación oficial; la verificación real con una clave falsa cubre CORS, cabeceras, la aceptación del cuerpo hasta la autenticación y el 401, sin coste.
+  - Las respuestas de error de `POST /v1/responses` no llevan `Access-Control-Allow-Origin` (comprobado con `curl` el 2026-10-24: el 401 de una clave falsa llega sin ella, mientras que `GET /v1/models` con la misma clave responde 401 con `access-control-allow-origin: *`), así que el navegador solo ve un fallo de red. Mitigación: ante ese fallo, un único `GET /v1/models` con la misma clave distingue clave inválida (401), un rechazo con clave válida, probablemente por saldo o límites (200, `OpenAI rechazó la petición. Revisa el saldo y los límites de tu cuenta en platform.openai.com.`) y falta de conexión (cualquier otra cosa). Si OpenAI añade CORS a sus errores, se usan directamente las respuestas legibles. No se distingue el 429 de saldo del de ritmo ni de un 5xx cuando no son legibles.
+  - Los formatos de eventos se reconstruyen de la documentación oficial; la verificación real con una clave falsa cubre CORS, cabeceras, la aceptación del cuerpo hasta la autenticación y el 401 a través del diagnóstico, sin coste.
 - La mutación del chat se reparte en tres configuraciones encadenadas de ≤ 180 s (`chat:core`, `chat:openai` y `chat`).
 
 ## Alternativas
