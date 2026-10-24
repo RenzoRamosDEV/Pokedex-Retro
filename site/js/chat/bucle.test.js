@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { responder } from './bucle.js';
 import { ENTRADA_NO_JSON } from './herramientas.js';
+import { PROVEEDORES } from './proveedores/index.js';
 import { construirPeticion } from './peticion.js';
 import { MENSAJES } from '../core/mensajes.js';
 import { API, crearPuertoPokeApi } from '../../../tests/support/puerto-pokeapi.js';
@@ -20,6 +21,7 @@ import {
   thinkingBlock,
   toolUseBlock,
 } from '../../../tests/support/claude-sse.js';
+import * as oa from '../../../tests/support/openai-sse.js';
 
 const POKEMON = JSON.parse(
   readFileSync(new URL('../mappers/fixtures/pokemon.json', import.meta.url), 'utf8'),
@@ -632,5 +634,256 @@ describe('responder with an injected provider', () => {
     assert.equal(resultado.estado, 'rechazo');
     assert.deepEqual(resultado.mensajes, []);
     assert.deepEqual(pokeApi.calls, []);
+  });
+});
+
+const oaTexto = (texto, uso = oa.usage()) =>
+  oa.respuestaSse(
+    oa.respuesta({ items: [oa.messageItem({ texto })], final: oa.responseCompleted(uso) }),
+  );
+const oaLlamadas = (items, final = oa.responseCompleted()) =>
+  oa.respuestaSse(oa.respuesta({ items, final }));
+const oaEfectividad = oa.functionCallItem({
+  id: 'fc_1',
+  callId: 'call_1',
+  name: 'efectividad_tipos',
+  args: { atacante: 'electric', defensor: ['water', 'flying'] },
+});
+const prepararOpenai = (respuestas, opciones = {}) =>
+  preparar(respuestas, {
+    proveedor: PROVEEDORES.openai,
+    modelo: 'gpt-6.1-sol',
+    clave: 'sk-proj-prueba',
+    ...opciones,
+  });
+
+describe('responder with OpenAI', () => {
+  test('ends with the final text, incorporates the turn and reports the usage', async () => {
+    const { llamada, peticiones, eventos } = prepararOpenai([
+      oaTexto('Gyarados', oa.usage({ entrada: 7, cache: 2, salida: 3 })),
+    ]);
+    const resultado = await responder(llamada);
+    assert.deepEqual(resultado, {
+      estado: 'fin',
+      mensajes: [{ role: 'user', content: 'hola' }, oa.messageItem({ texto: 'Gyarados' })],
+      uso: { entrada: 7, salida: 3 },
+    });
+    assert.equal(peticiones[0].url, 'https://api.openai.com/v1/responses');
+    assert.equal(peticiones[0].opciones.headers.authorization, 'Bearer sk-proj-prueba');
+    assert.deepEqual(textos(eventos), ['Gyarados']);
+    assert.deepEqual(eventos.at(-1), { tipo: 'uso', uso: { entrada: 7, salida: 3 } });
+  });
+
+  test('runs efectividad_tipos and sends back the identical items and its output', async () => {
+    const razonamiento = oa.reasoningItem({ cifrado: 'gAAAA-razonamiento' });
+    const { llamada, peticiones, eventos } = prepararOpenai([
+      oaLlamadas(
+        [razonamiento, oaEfectividad],
+        oa.responseCompleted(oa.usage({ entrada: 100, cache: 40, salida: 20 })),
+      ),
+      oaTexto('×4', oa.usage({ entrada: 200, cache: 150, salida: 30 })),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'fin');
+    assert.equal(peticiones.length, 2);
+    const [pregunta, item1, item2, salida] = peticiones[1].cuerpo.input;
+    assert.deepEqual(pregunta, { role: 'user', content: 'hola' });
+    assert.deepEqual([item1, item2], [razonamiento, oaEfectividad]);
+    assert.equal(salida.type, 'function_call_output');
+    assert.equal(salida.call_id, 'call_1');
+    assert.match(salida.output, /"multiplicador": 4/);
+    assert.deepEqual(
+      eventos.filter((e) => e.tipo === 'herramienta'),
+      [{ tipo: 'herramienta', nombre: 'efectividad_tipos' }],
+    );
+    assert.deepEqual(resultado.uso, { entrada: 300, salida: 50 });
+  });
+
+  test('answers two obtener_pokemon calls in order, one of them failed', async () => {
+    const { llamada, peticiones } = prepararOpenai([
+      oaLlamadas([
+        oa.functionCallItem({
+          id: 'fc_1',
+          callId: 'call_1',
+          name: 'obtener_pokemon',
+          args: { nombre_o_id: 'gyarados' },
+        }),
+        oa.functionCallItem({
+          id: 'fc_2',
+          callId: 'call_2',
+          name: 'obtener_pokemon',
+          args: { nombre_o_id: 'xyz' },
+        }),
+      ]),
+      oaTexto('listo'),
+    ]);
+    await responder(llamada);
+    const salidas = peticiones[1].cuerpo.input.slice(3);
+    assert.deepEqual(
+      salidas.map((s) => [s.type, s.call_id]),
+      [
+        ['function_call_output', 'call_1'],
+        ['function_call_output', 'call_2'],
+      ],
+    );
+    assert.match(salidas[0].output, /^Pokémon gyarados \(#130\)\./);
+    assert.equal(
+      salidas[1].output,
+      'No existe el Pokémon "xyz". Usa buscar_pokemon para encontrar el nombre exacto.',
+    );
+  });
+
+  test('stops after 8 tool iterations with exactly 9 requests and drops the question', async () => {
+    const anterior = [{ role: 'user', content: 'a' }, oa.messageItem({ texto: 'b' })];
+    const respuestas = Array.from({ length: 10 }, (_, i) =>
+      oaLlamadas([oa.functionCallItem({ callId: `call_${i}`, name: 'naturalezas' })]),
+    );
+    const { llamada, peticiones } = prepararOpenai(respuestas, { mensajes: anterior });
+    const resultado = await responder(llamada);
+    assert.equal(peticiones.length, 9);
+    assert.equal(resultado.estado, 'limite');
+    assert.deepEqual(resultado.mensajes, anterior);
+  });
+
+  test('a cut answer with a call runs nothing and is not incorporated', async () => {
+    const { llamada, peticiones, pokeApi } = prepararOpenai([
+      oaLlamadas([oaEfectividad], oa.responseIncomplete('max_output_tokens')),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'cortada');
+    assert.deepEqual(resultado.mensajes, []);
+    assert.equal(peticiones.length, 1);
+    assert.deepEqual(pokeApi.calls, []);
+  });
+
+  test('a refusal runs nothing and is not incorporated', async () => {
+    const { llamada, pokeApi } = prepararOpenai([
+      oaLlamadas([oa.messageItem({ rechazo: 'No.' }), oaEfectividad]),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'rechazo');
+    assert.deepEqual(resultado.mensajes, []);
+    assert.deepEqual(pokeApi.calls, []);
+  });
+
+  test('retries a rate limit 429 after 1 s and then shows the answer', async () => {
+    const { llamada, peticiones, esperas } = prepararOpenai([
+      oa.respuestaError(429, { type: 'requests', code: 'rate_limit_exceeded' }),
+      oaTexto('ok'),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'fin');
+    assert.equal(peticiones.length, 2);
+    assert.deepEqual(esperas, [1000]);
+  });
+
+  test('does not retry an insufficient_quota 429', async () => {
+    const { llamada, peticiones, esperas } = prepararOpenai([
+      oa.respuestaError(429, { type: 'insufficient_quota', code: 'insufficient_quota' }),
+      oaTexto('nunca'),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(peticiones.length, 1);
+    assert.deepEqual(esperas, []);
+    assert.equal(resultado.error.codigo, 'sin_saldo');
+  });
+
+  test('gives up after three 503 responses', async () => {
+    const { llamada, peticiones, esperas } = prepararOpenai([
+      oa.respuestaError(503),
+      oa.respuestaError(503),
+      oa.respuestaError(503),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(peticiones.length, 3);
+    assert.deepEqual(esperas, [1000, 2000]);
+    assert.deepEqual([resultado.error.codigo, resultado.error.estado], ['saturado', 503]);
+  });
+
+  test('does not retry a 401', async () => {
+    const { llamada, peticiones } = prepararOpenai([
+      oa.respuestaError(401, { type: 'invalid_request_error', code: 'invalid_api_key' }),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(peticiones.length, 1);
+    assert.deepEqual(
+      [resultado.error.name, resultado.error.codigo],
+      ['ErrorDeOpenAI', 'clave_invalida'],
+    );
+  });
+
+  test('maps a network failure to red', async () => {
+    const { llamada } = prepararOpenai([new TypeError('Failed to fetch')]);
+    const resultado = await responder(llamada);
+    assert.deepEqual([resultado.error.name, resultado.error.codigo], ['ErrorDeOpenAI', 'red']);
+  });
+
+  test('keeps the text received before response.failed and does not retry', async () => {
+    const eventosSse = [
+      oa.responseCreated(),
+      oa.textDelta(0, 'Hola'),
+      oa.responseFailed('server_error'),
+    ];
+    const { llamada, peticiones, eventos } = prepararOpenai([
+      oa.respuestaSse(eventosSse),
+      oaTexto('nunca'),
+    ]);
+    const resultado = await responder(llamada);
+    assert.deepEqual(textos(eventos), ['Hola']);
+    assert.deepEqual([resultado.error.codigo, resultado.error.estado], ['servidor', 500]);
+    assert.equal(peticiones.length, 1);
+  });
+
+  test('aborts in the middle of the stream', async () => {
+    const controller = new AbortController();
+    const primero = new TextEncoder().encode(
+      oa.serializar([oa.responseCreated(), oa.textDelta(0, 'Hola')]),
+    );
+    const colgado = new Response(
+      new ReadableStream({
+        start(c) {
+          c.enqueue(primero);
+        },
+        pull: () => new Promise(() => {}),
+      }),
+    );
+    const { llamada, peticiones } = prepararOpenai([colgado, oaTexto('nunca')], {
+      signal: controller.signal,
+      alEvento: (evento) => {
+        if (evento.tipo === 'texto') controller.abort();
+      },
+    });
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'abortada');
+    assert.equal(peticiones.length, 1);
+  });
+
+  test('aborts while a tool runs', async () => {
+    const controller = new AbortController();
+    const { llamada, peticiones } = prepararOpenai([oaLlamadas([oaEfectividad]), oaTexto('no')], {
+      signal: controller.signal,
+      port: () =>
+        new Promise((_, reject) => {
+          controller.signal.addEventListener('abort', () => reject(controller.signal.reason));
+          queueMicrotask(() => controller.abort());
+        }),
+    });
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'abortada');
+    assert.equal(peticiones.length, 1);
+  });
+
+  test('the next question resends the previous one, its items and outputs in order', async () => {
+    const primera = prepararOpenai([oaLlamadas([oaEfectividad]), oaTexto('×4')]);
+    const { mensajes } = await responder(primera.llamada);
+    const segunda = prepararOpenai([oaTexto('vale')], { mensajes, pregunta: 'y otra' });
+    await responder(segunda.llamada);
+    const entrada = segunda.peticiones[0].cuerpo.input;
+    assert.deepEqual(
+      entrada.map((item) => item.type ?? item.role),
+      ['user', 'function_call', 'function_call_output', 'message', 'user'],
+    );
+    assert.deepEqual(entrada.at(-1), { role: 'user', content: 'y otra' });
+    assert.deepEqual(entrada[1], oaEfectividad);
   });
 });
