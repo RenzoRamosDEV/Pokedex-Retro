@@ -46,6 +46,17 @@ Los errores llegan como resultado con `isError: true` y no cierran la sesión:
 
 Si una búsqueda carga solo parte de los resultados, la respuesta es correcta y el resumen indica cuántos no se pudieron cargar.
 
+## Efectividad de tipos y naturalezas
+
+Los nombres de tipo y de estadística van en inglés, como en PokéAPI.
+
+| Tool                | Entrada                                                                                    | Salida                                                                                                                                            | Ejemplo                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `efectividad_tipos` | `atacante` (tipo); `defensor` opcional (1 o 2 tipos distintos)                             | Con defensor, `{ atacante, defensor, multiplicador }` (producto de 2, 0.5, 0 o 1); sin defensor, `{ atacante, multiplicadores }` con los 18 tipos | `{ "atacante": "electric", "defensor": ["water", "flying"] }` → `multiplicador` 4 |
+| `naturalezas`       | `estadistica` opcional: `attack`, `defense`, `special-attack`, `special-defense` o `speed` | `{ naturalezas }` ordenadas por número; con `estadistica`, solo las que la suben o la bajan                                                       | `{ "estadistica": "speed" }`                                                      |
+
+Un tipo que no está entre los 18 responde `El tipo "fuego" no existe. Tipos válidos: normal, fighting, flying, …`.
+
 ## Variables de entorno
 
 | Variable                 | Valores                                | Efecto                                                                                                                                                                                      |

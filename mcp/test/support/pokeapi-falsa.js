@@ -25,46 +25,66 @@ const CHAR_NAMES = [
   [2004, 'char-extra-4'],
 ];
 
+const mcpFixture = (name) =>
+  JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8'));
+
+/** Catalog whose details are the captured PokéAPI entries themselves. */
+function capturedCatalog(name) {
+  const items = mcpFixture(name);
+  return {
+    entries: items.map((item) => [item.id, item.name]),
+    detail: (id) => items.find((item) => item.id === id),
+  };
+}
+
+/** Catalog whose details clone one web fixture with the entry's id and name. */
+function clonedCatalog(entries, fixtureName) {
+  const fixture = webFixture(fixtureName);
+  return { entries, detail: (id, name) => ({ ...fixture, id, name }) };
+}
+
 function pokemonCatalog() {
   const named = new Map([...CHAR_NAMES, [25, 'pikachu'], [94, 'gengar'], [122, 'mr-mime']]);
   for (let id = 1; id <= 40; id += 1) if (!named.has(id)) named.set(id, `pokemon-${id}`);
   return [...named].sort(([a], [b]) => a - b);
 }
 
-/** Resource → { entries: [id, name][], fixture }. */
+/** Resource → { entries: [id, name][], detail(id, name) }. */
 export const CATALOGO = {
-  pokemon: { entries: pokemonCatalog(), fixture: webFixture('pokemon') },
-  move: {
-    entries: [
+  pokemon: clonedCatalog(pokemonCatalog(), 'pokemon'),
+  move: clonedCatalog(
+    [
       [9, 'thunder-punch'],
       [33, 'tackle'],
       [85, 'thunderbolt'],
       [87, 'thunder'],
     ],
-    fixture: webFixture('move'),
-  },
-  ability: {
-    entries: [
+    'move',
+  ),
+  ability: clonedCatalog(
+    [
       [1, 'stench'],
       [2, 'drizzle'],
     ],
-    fixture: webFixture('ability'),
-  },
-  item: {
-    entries: [
+    'ability',
+  ),
+  item: clonedCatalog(
+    [
       [1, 'master-ball'],
       [2, 'ultra-ball'],
     ],
-    fixture: webFixture('item'),
-  },
-  berry: {
-    entries: [
+    'item',
+  ),
+  berry: clonedCatalog(
+    [
       [1, 'cheri'],
       [2, 'chesto'],
       [3, 'pecha'],
     ],
-    fixture: webFixture('berry'),
-  },
+    'berry',
+  ),
+  type: capturedCatalog('tipos'),
+  nature: capturedCatalog('naturalezas'),
 };
 
 const json = (status, body, headers) =>
@@ -93,7 +113,7 @@ function serveCatalog(url) {
   }
   const entry = catalog.entries.find(([id, name]) => name === rest || String(id) === rest);
   if (!entry) return json(404, { detail: 'Not found.' });
-  return json(200, { ...catalog.fixture, id: entry[0], name: entry[1] });
+  return json(200, catalog.detail(entry[0], entry[1]));
 }
 
 /**
