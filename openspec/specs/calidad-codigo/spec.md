@@ -46,7 +46,7 @@ El repositorio SHALL usar Prettier con `singleQuote: true`, `printWidth: 100` y 
 - **THEN** los fixtures de respuestas reales de `site/js/mappers/fixtures/` no se modifican
 
 ### Requirement: Typecheck sin build
-`npm run typecheck` SHALL comprobar tipos con `tsc -p tsconfig.json` sin emitir ficheros (`allowJs`, `checkJs`, `noEmit`, `strict: false`, `NodeNext`) sobre los módulos no-test de `site/js/core`, `site/js/mappers` y `site/js/api`, cada uno con `// @ts-check` en la primera línea. La web MUST seguir desplegándose sin compilación.
+`npm run typecheck` SHALL comprobar tipos con `tsc -p tsconfig.json` sin emitir ficheros (`allowJs`, `checkJs`, `noEmit`, `strict: false`, `NodeNext`) sobre los módulos no-test de `site/js/core`, `site/js/mappers`, `site/js/api` y `mcp/src`, cada uno con `// @ts-check` en la primera línea. La web y el servidor MCP MUST seguir ejecutándose sin compilación.
 
 #### Scenario: Error de tipos
 - **WHEN** un módulo de `site/js/core` invoca un método inexistente sobre un número literal
@@ -54,6 +54,10 @@ El repositorio SHALL usar Prettier con `singleQuote: true`, `printWidth: 100` y 
 
 #### Scenario: Error de tipos en el cliente HTTP
 - **WHEN** un módulo de `site/js/api` invoca un método inexistente sobre un número literal
+- **THEN** `npm run typecheck` informa el error y termina con código distinto de 0
+
+#### Scenario: Error de tipos en el servidor MCP
+- **WHEN** un módulo de `mcp/src` invoca un método inexistente sobre un número literal
 - **THEN** `npm run typecheck` informa el error y termina con código distinto de 0
 
 #### Scenario: Sin artefactos generados
@@ -72,7 +76,7 @@ Al hacer `git commit` SHALL ejecutarse un hook de pre-commit que aplique `eslint
 - **THEN** el commit se crea con el fichero ya formateado
 
 ### Requirement: Comprobaciones de cierre de fase
-`npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation`, `npm run test:mutation:ui`, `npm run e2e` y `npm run lhci` SHALL terminar en verde al cerrar la fase; `npm test` MUST ejecutar al menos 387 tests; `npm run test:mutation` MUST abortarse si supera 180 s y mantener `thresholds.break` en 95 sobre `site/js/core` y `site/js/mappers`.
+`npm test`, `npm run mcp:test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation`, `npm run test:mutation:ui`, `npm run mcp:test:mutation`, `npm run e2e` y `npm run lhci` SHALL terminar en verde al cerrar la fase; `npm test` MUST ejecutar al menos 586 tests; `npm run test:mutation` MUST abortarse si supera 180 s y mantener `thresholds.break` en 95 sobre `site/js/core` y `site/js/mappers`.
 
 #### Scenario: Mutación dentro de presupuesto
 - **WHEN** se ejecuta `npm run test:mutation`
@@ -80,7 +84,7 @@ Al hacer `git commit` SHALL ejecutarse un hook de pre-commit que aplique `eslint
 
 #### Scenario: Número de tests
 - **WHEN** se ejecuta `npm test`
-- **THEN** el resumen informa 387 tests o más, todos en verde
+- **THEN** el resumen informa 586 tests o más, todos en verde
 
 ### Requirement: Cabeceras HTML coherentes
 `npm run check:html` SHALL comparar el bloque `<header>…</header>` de cada página HTML de `site/` con el de `index.html`, ignorando solo la marca de página activa del enlace a la propia página (clase `active` y `aria-current="page"`), y MUST terminar con código 1 nombrando cada fichero divergente. `404.html` MUST quedar excluida de la comparación (usa rutas absolutas y no forma parte de la navegación). No SHALL requerir dependencias.
@@ -166,3 +170,14 @@ La versión de la web SHALL vivir en `site/js/version.js` (`export const VERSION
 #### Scenario: Presupuestos cumplidos
 - **WHEN** las dos páginas obtienen al menos 0,95 en las cuatro categorías
 - **THEN** `npm run lhci` termina con código 0
+
+### Requirement: Mutación del servidor MCP
+`npm run mcp:test:mutation` SHALL ejecutar Stryker sobre los módulos no-test de `mcp/src` con los tests de `mcp/test`, `thresholds.break` 85 y cada ejecución abortada si supera 180 s; si una única ejecución no cabe en ese tiempo, MUST dividirse en varias configuraciones que se ejecutan en secuencia y cumplen cada una ambos límites.
+
+#### Scenario: Mutación del MCP dentro de presupuesto
+- **WHEN** se ejecuta `npm run mcp:test:mutation`
+- **THEN** cada ejecución de Stryker termina en menos de 180 s con una puntuación igual o superior al 85 %
+
+#### Scenario: Puntuación insuficiente del MCP
+- **WHEN** la puntuación de mutación de `mcp/src` baja del 85 %
+- **THEN** `npm run mcp:test:mutation` termina con código distinto de 0
