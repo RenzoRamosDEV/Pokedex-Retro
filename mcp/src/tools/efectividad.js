@@ -2,7 +2,7 @@
 import { MENSAJES } from '../../../site/js/core/mensajes.js';
 import { errorResult, okResult } from '../results.js';
 import { EFECTIVIDAD, ENTRADA_EFECTIVIDAD } from '../schemas.js';
-import { loadTypeChart } from '../type-chart.js';
+import { loadTypeChart } from '../../../site/js/core/type-chart.js';
 
 const NOMBRE = 'efectividad_tipos';
 
