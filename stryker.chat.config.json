@@ -8,7 +8,9 @@
     "site/js/chat/**/*.js",
     "!site/js/chat/**/*.test.js",
     "!site/js/chat/herramientas.js",
-    "!site/js/chat/proveedores/openai.js"
+    "!site/js/chat/proveedores/openai.js",
+    "!site/js/chat/bucle.js",
+    "!site/js/chat/agentes/**"
   ],
   "ignorePatterns": ["tsconfig.json"],
   "thresholds": {
