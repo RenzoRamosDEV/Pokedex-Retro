@@ -125,6 +125,16 @@ describe('chat.html', () => {
     tagsOf(html, '[a-z]+').find((tag) => attribute(tag, 'id') === id) ?? assert.fail(id);
   const labelFor = (id) =>
     html.match(new RegExp(`<label\\b[^>]*\\sfor="${id}"[^>]*>([\\s\\S]*?)</label>`))?.[1].trim();
+  const selectOf = (id) =>
+    html.match(new RegExp(`<select\\b[^>]*\\sid="${id}"[^>]*>[\\s\\S]*?</select>`))?.[0] ??
+    assert.fail(id);
+  const optionsOf = (id) =>
+    [...selectOf(id).matchAll(/<option value="([^"]*)"( selected)?>([^<]*)<\/option>/g)].map(
+      ([, value, selected, text]) => [value, Boolean(selected), plain(text)],
+    );
+  /** The element whose opening tag is `tag`, up to its matching closing tag of the same name. */
+  const blockOf = (pattern, name) =>
+    html.match(new RegExp(`${pattern}[\\s\\S]*?</${name}>`))?.[0] ?? assert.fail(pattern);
 
   test('the message area is a polite log', () => {
     const logs = tagsOf(html, '[a-z]+').filter((tag) => attribute(tag, 'role') === 'log');
@@ -133,7 +143,14 @@ describe('chat.html', () => {
     assert.ok(mainOf(html).includes(logs[0]));
   });
 
-  for (const id of ['chat-clave', 'chat-recordar', 'chat-modelo', 'chat-mensaje']) {
+  for (const id of [
+    'chat-proveedor',
+    'chat-clave',
+    'chat-recordar',
+    'chat-modelo',
+    'chat-modelo-openai',
+    'chat-mensaje',
+  ]) {
     test(`#${id} has an associated label with text`, () => {
       byId(id);
       assert.ok(labelFor(id), id);
@@ -154,10 +171,7 @@ describe('chat.html', () => {
   });
 
   test('the model selector offers the three models with their prices, Opus 5.5 selected', () => {
-    const options = [
-      ...html.matchAll(/<option value="([^"]*)"( selected)?>([^<]*)<\/option>/g),
-    ].map(([, value, selected, text]) => [value, Boolean(selected), plain(text)]);
-    assert.deepEqual(options, [
+    assert.deepEqual(optionsOf('chat-modelo'), [
       ['claude-opus-5-5', true, 'Claude Opus 5.5 — $4 / $20 por millón de tokens'],
       ['claude-sonnet-5-5', false, 'Claude Sonnet 5.5 — $2 / $10'],
       ['claude-haiku-5-5', false, 'Claude Haiku 5.5 — $0,10 / $0,50'],
@@ -167,8 +181,40 @@ describe('chat.html', () => {
   test('shows the privacy and cost notice next to the key form', () => {
     assert.match(
       plain(html),
-      /Tu clave se queda en este navegador y solo se envía a api\.anthropic\.com\. Las conversaciones se cobran en tu cuenta de Anthropic\./,
+      /Tu clave de Anthropic u OpenAI se queda en este navegador y solo se envía a la API de su proveedor \(api\.anthropic\.com o api\.openai\.com\)\. Las conversaciones se cobran en tu cuenta de ese proveedor\./,
     );
+  });
+
+  test('the title names both providers', () => {
+    assert.match(mainOf(html), /<h2 class="page-title">CHAT CON CLAUDE U OPENAI<\/h2>/);
+  });
+
+  test('the provider selector is labelled PROVEEDOR and offers Claude (selected) and OpenAI', () => {
+    assert.equal(plain(labelFor('chat-proveedor')), 'PROVEEDOR');
+    assert.deepEqual(optionsOf('chat-proveedor'), [
+      ['anthropic', true, 'Claude (Anthropic)'],
+      ['openai', false, 'OpenAI'],
+    ]);
+  });
+
+  test('the provider selector is outside the key form and the conversation', () => {
+    const select = selectOf('chat-proveedor');
+    assert.ok(mainOf(html).includes(select));
+    assert.equal(blockOf('<form class="chat-panel chat-key"', 'form').includes(select), false);
+    assert.equal(blockOf('<section class="chat-panel chat"', 'section').includes(select), false);
+  });
+
+  test('the OpenAI model selector is labelled MODELO, hidden, with GPT-6.1 Sol selected', () => {
+    assert.equal(plain(labelFor('chat-modelo-openai')), 'MODELO');
+    assert.deepEqual(optionsOf('chat-modelo-openai'), [
+      ['gpt-6.1-sol', true, 'GPT-6.1 Sol (equilibrado) — $2 / $10 por millón de tokens'],
+      ['gpt-6-astra', false, 'GPT-6 Astra (más capaz, más caro) — $10 / $50'],
+      ['gpt-6-luna', false, 'GPT-6 Luna (más barato) — $0,10 / $0,50'],
+    ]);
+    const contenedor = blockOf('<div class="chat-modelos" data-modelos="openai" hidden>', 'div');
+    assert.ok(contenedor.includes(selectOf('chat-modelo-openai')));
+    const claude = blockOf('<div class="chat-modelos" data-modelos="anthropic">', 'div');
+    assert.ok(claude.includes(selectOf('chat-modelo')));
   });
 
   test('offers ENVIAR, DETENER, NUEVA CONVERSACIÓN and OLVIDAR CLAVE', () => {
