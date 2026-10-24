@@ -4,6 +4,25 @@ Todos los cambios relevantes de este proyecto se documentan en este fichero.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-10-24
+
+### Añadido
+
+- Página `chat.html` para preguntar a Claude en lenguaje natural con la clave de Anthropic del propio visitante, en streaming, con selector de modelo (Opus 5.5, Sonnet 5.5 y Haiku 5.5), botones `ENVIAR`, `DETENER`, `NUEVA CONVERSACIÓN` y `OLVIDAR CLAVE`, y uso de tokens por pregunta.
+- Las 12 herramientas del servidor MCP se ejecutan en el navegador con los mismos nombres, límites y textos de error, validadas antes de ejecutarse, con reintentos ante 429, 529 y 5xx y mensajes de error en español.
+- Enlace `CHAT` en la navegación de todas las páginas y `chat.html` en `sitemap.xml`.
+- ADR 0005 y mutación propia del chat (`npm run test:mutation:chat`, umbral 95 %), con e2e contra la API de Claude simulada.
+
+### Cambiado
+
+- La lógica de las tools (búsquedas, detalles, efectividad, naturalezas, tabla de tipos, textos y descripciones) pasa a `site/js/core` y la comparten la web y el MCP; el MCP no cambia de comportamiento.
+- El panel INFO cuenta 8 secciones.
+
+### Seguridad
+
+- La CSP de todas las páginas permite además `connect-src https://api.anthropic.com`; el resto de la política no cambia.
+- La clave del visitante solo vive en su navegador (`sessionStorage` por defecto) y solo se envía a `api.anthropic.com`; todo texto del chat se inserta escapado.
+
 ## [1.1.1] - 2026-10-24
 
 ### Corregido
@@ -64,6 +83,7 @@ La etiqueta `v1.0.0-RC.0` apunta al primer commit del repositorio (`dcfbae7`, so
 - Tests con `node --test` y mutación con Stryker sobre `site/js/core` y `site/js/mappers`.
 - Despliegue de `site/` en GitHub Pages.
 
+[1.2.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.0.0-RC.0...v1.1.0
 [1.0.0-RC.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/releases/tag/v1.0.0-RC.0
