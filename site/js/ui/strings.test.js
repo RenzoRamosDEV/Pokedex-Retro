@@ -15,6 +15,7 @@ const GUARDED_FILES = [
   'layout.js',
   'main.js',
   'arranque.js',
+  'chat-view.js',
 ];
 
 const LETTER = /\p{L}/u;
@@ -117,6 +118,7 @@ test('STRINGS is frozen at every level', () => {
 test('STRINGS is grouped by view and every value is a non-empty string', () => {
   assert.deepEqual(Object.keys(STRINGS).sort(), [
     'bayas',
+    'chat',
     'comun',
     'habilidades',
     'movimientos',
