@@ -11,6 +11,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - OpenAI como segundo proveedor del chat: selector `PROVEEDOR` con `Claude (Anthropic)` (por defecto) y `OpenAI`, con la clave de OpenAI del propio visitante y la Responses API en streaming (`store: false`).
 - Modelos de OpenAI con sus precios: GPT-6.1 Sol (por defecto), GPT-6 Astra y GPT-6 Luna.
 - Las 12 herramientas como funciones estrictas para OpenAI, con los mismos nombres, límites y textos, y mensajes de error de OpenAI en español, incluido `Tu cuenta de OpenAI no tiene saldo.` sin reintento.
+- Diagnóstico con `GET /v1/models` cuando un error de OpenAI llega sin cabeceras CORS, para mostrar si la clave no es válida o si OpenAI rechazó la petición con una clave válida.
 - ADR 0006 y mutación propia del adaptador de OpenAI (`stryker.chat-openai.config.json`), con e2e contra la API de OpenAI simulada.
 
 ### Cambiado
