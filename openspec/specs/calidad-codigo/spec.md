@@ -98,7 +98,7 @@ Al hacer `git commit` SHALL ejecutarse un hook de pre-commit que aplique `eslint
 - **THEN** termina con código 1 e indica `bayas.html`
 
 #### Scenario: Cabeceras iguales
-- **WHEN** las 7 páginas solo difieren en la marca de su propio enlace y se ejecuta `npm run check:html`
+- **WHEN** las 8 páginas, incluida `chat.html`, solo difieren en la marca de su propio enlace y se ejecuta `npm run check:html`
 - **THEN** termina con código 0
 
 #### Scenario: Página 404 excluida
@@ -106,10 +106,14 @@ Al hacer `git commit` SHALL ejecutarse un hook de pre-commit que aplique `eslint
 - **THEN** termina con código 0 y no menciona `404.html`
 
 ### Requirement: Pureza de core y mappers
-`npm test` SHALL incluir un test que, tras comprobar que `globalThis.window` y `globalThis.document` son `undefined`, importa todos los módulos no-test de `site/js/core` y `site/js/mappers` en Node y falla si alguna importación lanza.
+`npm test` SHALL incluir un test que, tras comprobar que `globalThis.window` y `globalThis.document` son `undefined`, importa todos los módulos no-test de `site/js/core`, `site/js/mappers` y `site/js/chat` en Node y falla si alguna importación lanza.
 
 #### Scenario: Acceso al DOM al importar
 - **WHEN** un módulo de `site/js/core` lee `document.title` en su nivel superior
+- **THEN** el test de pureza falla nombrando ese módulo
+
+#### Scenario: Chat sin DOM
+- **WHEN** un módulo de `site/js/chat` accede a `window` o `document` en su nivel superior
 - **THEN** el test de pureza falla nombrando ese módulo
 
 ### Requirement: Versión sincronizada
@@ -135,18 +139,18 @@ La versión de la web SHALL vivir en `site/js/version.js` (`export const VERSION
 - **THEN** la salida tiene 18 tarjetas y 18 diálogos con ids únicos
 
 ### Requirement: Mutación de la capa de interfaz
-`npm run test:mutation:ui` SHALL ejecutar Stryker sobre los módulos no-test de `site/js/ui`, excepto el de arranque y el de tema, con una configuración propia y `thresholds.break: 85`, y MUST abortarse si supera 180 s. La guarda de literales de `strings.test.js`, que lee el código fuente, MUST quedar fuera de esa ejecución.
+`npm run test:mutation:ui` SHALL ejecutar Stryker sobre los módulos no-test de `site/js/ui`, excepto los de arranque y el de tema, con configuraciones propias y `thresholds.break: 85`, y cada ejecución MUST abortarse si supera 180 s; si no cabe en ese tiempo, MUST dividirse en varias configuraciones en secuencia. La guarda de literales de `strings.test.js`, que lee el código fuente, MUST quedar fuera de esas ejecuciones.
 
 #### Scenario: Mutación de ui dentro de presupuesto
 - **WHEN** se ejecuta `npm run test:mutation:ui`
-- **THEN** termina en menos de 180 s con una puntuación igual o superior al 85 %
+- **THEN** cada ejecución termina en menos de 180 s con una puntuación igual o superior al 85 %
 
 #### Scenario: Puntuación insuficiente
 - **WHEN** la puntuación de mutación de `ui` es inferior al 85 %
 - **THEN** el comando termina con código distinto de 0
 
 ### Requirement: Pruebas e2e con PokéAPI simulada
-`npm run e2e` SHALL ejecutar en Chromium, sobre `site/` servido por un servidor estático local, un smoke que simula todas las peticiones a `https://pokeapi.co/**` con datos derivados de los fixtures de los mappers y no hace peticiones externas. MUST cubrir las 7 páginas, búsqueda, paginación, diálogo con teclado, tema persistido y 0 violaciones axe `serious`/`critical` por página y tema.
+`npm run e2e` SHALL ejecutar en Chromium, sobre `site/` servido por un servidor estático local, pruebas que simulan todas las peticiones a `https://pokeapi.co/**` con datos derivados de los fixtures de los mappers y todas las peticiones a `https://api.anthropic.com/**` con respuestas SSE sintéticas, y no hacen peticiones externas. MUST cubrir las 8 páginas, búsqueda, paginación, diálogo con teclado, tema persistido, el flujo del chat y 0 violaciones axe `serious`/`critical` por página y tema.
 
 #### Scenario: Sin red externa
 - **WHEN** se ejecuta `npm run e2e` sin acceso a internet
@@ -159,6 +163,10 @@ La versión de la web SHALL vivir en `site/js/version.js` (`export const VERSION
 #### Scenario: Violación de CSP
 - **WHEN** una página produce una violación de la política de seguridad de contenidos durante el smoke
 - **THEN** el comando falla
+
+#### Scenario: Flujo del chat simulado
+- **WHEN** en `chat.html` se guarda una clave, se pregunta y la API simulada pide una tool y después responde texto
+- **THEN** la página muestra `CONSULTANDO: <tool>`, después el texto final y la línea de tokens, sin peticiones externas reales
 
 ### Requirement: Presupuestos de Lighthouse
 `npm run lhci` SHALL auditar con Lighthouse `index.html` y `tipos.html` servidos localmente, 3 ejecuciones por página, y MUST fallar si accesibilidad, buenas prácticas o SEO bajan de 0,95. Performance SHALL exigir 0,95; solo si la cifra medida es inferior por la latencia real de PokéAPI su aserción MUST pasar a aviso y la cifra documentarse en el PR.
@@ -181,3 +189,21 @@ La versión de la web SHALL vivir en `site/js/version.js` (`export const VERSION
 #### Scenario: Puntuación insuficiente del MCP
 - **WHEN** la puntuación de mutación de `mcp/src` baja del 85 %
 - **THEN** `npm run mcp:test:mutation` termina con código distinto de 0
+
+### Requirement: Mutación del chat y de la lógica compartida
+`npm run test:mutation:chat` SHALL ejecutar Stryker con una configuración propia sobre los módulos puros no-test del chat y los de `site/js/core` que comparten la web y el MCP para las herramientas, con `thresholds.break: 95`, y MUST abortarse si supera 180 s. Esos módulos de `core` MUST quedar fuera de `npm run test:mutation` para no repetir su mutación.
+
+#### Scenario: Mutación del chat dentro de presupuesto
+- **WHEN** se ejecuta `npm run test:mutation:chat`
+- **THEN** termina en menos de 180 s con una puntuación igual o superior al 95 %
+
+#### Scenario: Puntuación insuficiente
+- **WHEN** la puntuación de mutación del chat es inferior al 95 %
+- **THEN** el comando termina con código distinto de 0
+
+### Requirement: Tests del chat sin red
+Los tests unitarios del chat SHALL usar un `fetch` falso que devuelve streams SSE sintéticos con el formato documentado de la API de Claude y MUST NOT hacer peticiones de red reales.
+
+#### Scenario: Sin acceso a internet
+- **WHEN** se ejecuta `npm test` sin acceso a internet
+- **THEN** todos los tests del chat pasan

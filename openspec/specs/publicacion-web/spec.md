@@ -17,11 +17,11 @@ Ficheros que acompañan a las páginas en GitHub Pages para rutas inexistentes, 
 - **THEN** todos empiezan por `/Pokedex-Retro/`
 
 ### Requirement: Indicaciones a rastreadores
-`site/robots.txt` SHALL permitir el rastreo de todo el sitio e indicar `Sitemap: https://renzoramosdev.github.io/Pokedex-Retro/sitemap.xml`. `site/sitemap.xml` SHALL ser un sitemap XML válido que lista exactamente las 7 páginas de la web con esa base, sin incluir la página 404.
+`site/robots.txt` SHALL permitir el rastreo de todo el sitio e indicar `Sitemap: https://renzoramosdev.github.io/Pokedex-Retro/sitemap.xml`. `site/sitemap.xml` SHALL ser un sitemap XML válido que lista exactamente las 8 páginas de la web con esa base, incluida `chat.html`, sin incluir la página 404.
 
 #### Scenario: Sitemap completo
 - **WHEN** se leen las entradas `<loc>` de `site/sitemap.xml`
-- **THEN** hay 7, una por página, todas con la base `https://renzoramosdev.github.io/Pokedex-Retro/`, y ninguna apunta a `404.html`
+- **THEN** hay 8, una por página e incluida `chat.html`, todas con la base `https://renzoramosdev.github.io/Pokedex-Retro/`, y ninguna apunta a `404.html`
 
 #### Scenario: Robots apunta al sitemap
 - **WHEN** se lee `site/robots.txt`
