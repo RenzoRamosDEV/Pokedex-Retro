@@ -20,7 +20,7 @@ async function fetchListing(fetchJson, config, { page, query }) {
   if (config.pageSize === null) {
     const { results } = await fetchList(fetchJson, `${resourceUrl}?limit=${config.listLimit}`);
     const entries = filterByName(results, query);
-    return { entries, page: 1, totalPages: Math.min(entries.length, 1) };
+    return { entries, page: 1, totalPages: Math.min(entries.length, 1), total: entries.length };
   }
   if (query !== null) {
     const { results } = await fetchList(fetchJson, `${resourceUrl}?limit=${FULL_LIST_LIMIT}`);
@@ -29,6 +29,7 @@ async function fetchListing(fetchJson, config, { page, query }) {
       entries: sliceFor(matches, page, config.pageSize),
       page,
       totalPages: totalPages(matches.length, config.pageSize),
+      total: matches.length,
     };
   }
   const offset = offsetFor(page, config.pageSize);
@@ -36,10 +37,10 @@ async function fetchListing(fetchJson, config, { page, query }) {
     fetchJson,
     `${resourceUrl}?limit=${config.pageSize}&offset=${offset}`,
   );
-  return { entries: results, page, totalPages: totalPages(count, config.pageSize) };
+  return { entries: results, page, totalPages: totalPages(count, config.pageSize), total: count };
 }
 
-async function fetchDetail(fetchJson, config, name) {
+export async function fetchDetail(fetchJson, config, name) {
   const url = `${API_BASE}/${config.resource}/${name}`;
   const response = await fetchJson(url);
   if (!response.ok) throw new Error(`Detail request failed: ${url}`);
@@ -66,6 +67,7 @@ export async function loadSection(fetchJson, config, parsedQuery) {
     items: loaded.map((detail) => detail.value).sort((a, b) => a.id - b.id),
     page: listing.page,
     totalPages: listing.totalPages,
+    total: listing.total,
     rawQuery: parsedQuery.query === null ? null : parsedQuery.rawQuery,
     failedCount: details.length - loaded.length,
   };

@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadSection } from './load-section.js';
+import { fetchDetail, loadSection } from './load-section.js';
 import { parseQuery } from './query.js';
 import { SECTIONS } from './sections.js';
 
@@ -41,6 +41,7 @@ describe('loadSection on a paginated section with a search query', () => {
       items: [detail(122, 'mr-mime').json, detail(10168, 'mr-mime-galar').json],
       page: 1,
       totalPages: 1,
+      total: 2,
       rawQuery: 'Mr Mime',
       failedCount: 0,
     });
@@ -63,6 +64,7 @@ describe('loadSection on a paginated section with a search query', () => {
       items: [],
       page: 1,
       totalPages: 0,
+      total: 0,
       rawQuery: 'zzzz',
       failedCount: 0,
     });
@@ -100,6 +102,7 @@ describe('loadSection on a paginated section with a search query', () => {
       items: [],
       page: 2,
       totalPages: 1,
+      total: 2,
       rawQuery: 'ch',
       failedCount: 0,
     });
@@ -122,6 +125,7 @@ describe('loadSection on a paginated section without a query', () => {
       items: [detail(85, 'thunderbolt').json, detail(87, 'thunder').json],
       page: 3,
       totalPages: 59,
+      total: 937,
       rawQuery: null,
       failedCount: 0,
     });
@@ -244,6 +248,7 @@ describe('loadSection on an unpaginated section', () => {
       items: [detail(1, 'hardy').json, detail(11, 'adamant').json],
       page: 1,
       totalPages: 1,
+      total: 2,
       rawQuery: null,
       failedCount: 0,
     });
@@ -379,5 +384,74 @@ describe('loadSection detail concurrency and failures', () => {
     const result = await loadSection(fetchJson, section('pokedex'), parseQuery(''));
 
     assert.deepEqual([result.items, result.failedCount], [[], 18]);
+  });
+});
+
+describe('loadSection total', () => {
+  test('equals count on the paginated path without a query', async () => {
+    const { fetchJson } = fakeFetchJson({
+      [`${API}/pokemon?limit=18&offset=0`]: listOf(['bulbasaur'], 1302),
+      [`${API}/pokemon/bulbasaur`]: detail(1, 'bulbasaur'),
+    });
+
+    const result = await loadSection(fetchJson, section('pokedex'), parseQuery(''));
+
+    assert.equal(result.total, 1302);
+  });
+
+  test('equals the number of matches with a query', async () => {
+    const names = Array.from({ length: 12 }, (_, i) => `char-${i + 1}`);
+    const routes = { [`${API}/pokemon?limit=100000`]: listOf(['pikachu', ...names]) };
+    names.forEach((name, i) => (routes[`${API}/pokemon/${name}`] = detail(i + 1, name)));
+    const { fetchJson } = fakeFetchJson(routes);
+    const config = { ...section('pokedex'), pageSize: 10 };
+
+    const result = await loadSection(fetchJson, config, parseQuery('?q=char&page=2'));
+
+    assert.deepEqual([result.total, result.totalPages, result.items.length], [12, 2, 2]);
+  });
+
+  test('counts the entries before exclude when not paginating', async () => {
+    const types = Array.from({ length: 19 }, (_, i) => `type-${i + 1}`);
+    const routes = { [`${API}/type?limit=100`]: listOf([...types, 'unknown', 'shadow']) };
+    types.forEach((name, i) => (routes[`${API}/type/${name}`] = detail(i + 1, name)));
+    const { fetchJson, requested } = fakeFetchJson(routes);
+
+    const result = await loadSection(fetchJson, section('tipos'), parseQuery(''));
+
+    assert.equal(result.total, 21);
+    assert.equal(result.items.length, 19);
+    assert.ok(!requested.some((url) => /unknown|shadow/.test(url)));
+  });
+});
+
+describe('fetchDetail', () => {
+  test('resolves with the mapper applied to the detail', async () => {
+    const { fetchJson, requested } = fakeFetchJson({
+      [`${API}/pokemon/gengar`]: { json: { id: 94, name: 'gengar', extra: true } },
+    });
+
+    const result = await fetchDetail(fetchJson, section('pokedex'), 'gengar');
+
+    assert.deepStrictEqual(result, { id: 94, name: 'gengar' });
+    assert.deepEqual(requested, [`${API}/pokemon/gengar`]);
+  });
+
+  test('propagates the same error object the port rejects with', async () => {
+    const notFound = Object.assign(new Error('HTTP 404'), { status: 404 });
+    const { fetchJson } = fakeFetchJson({ [`${API}/pokemon/xyz`]: notFound });
+
+    await assert.rejects(fetchDetail(fetchJson, section('pokedex'), 'xyz'), (error) => {
+      assert.equal(error, notFound);
+      return true;
+    });
+  });
+
+  test('rejects when the port answers ok: false', async () => {
+    const { fetchJson } = fakeFetchJson({});
+
+    await assert.rejects(fetchDetail(fetchJson, section('pokedex'), 'xyz'), {
+      message: `Detail request failed: ${API}/pokemon/xyz`,
+    });
   });
 });
