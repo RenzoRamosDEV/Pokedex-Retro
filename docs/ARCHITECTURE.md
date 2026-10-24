@@ -5,7 +5,7 @@
 Pokédex Retro tiene tres entradas que comparten la misma lógica:
 
 - **La web** (`site/`): HTML, CSS y JavaScript puro en módulos ES, sin frameworks ni build. El navegador pide los datos directamente a [PokéAPI v2](https://pokeapi.co/) y GitHub Pages publica la carpeta tal cual.
-- **El chat** (`site/chat.html`): el navegador llama a la API de Claude con la clave del visitante y ejecuta en local las mismas herramientas que el servidor MCP ([ADR 0005](adr/0005-chat-byok-fetch-directo.md)).
+- **El chat** (`site/chat.html`): el navegador llama a la API de Claude o de OpenAI con la clave del visitante y ejecuta en local las mismas herramientas que el servidor MCP ([ADR 0005](adr/0005-chat-byok-fetch-directo.md), [ADR 0006](adr/0006-chat-multiproveedor-openai.md)).
 - **El servidor MCP** (`mcp/`): proceso Node local por stdio que expone la Pokédex a un cliente MCP (Claude Desktop, Claude Code u otro) importando los mismos módulos de `site/js`.
 
 El código es JavaScript con tipos en JSDoc y `// @ts-check`, comprobado con `tsc` sin emitir ficheros ([ADR 0004](adr/0004-javascript-jsdoc-ts-check.md)).
@@ -28,15 +28,20 @@ flowchart LR
 ```mermaid
 flowchart LR
   html["chat.html"] --> ui["ui<br/>chat-main.js · chat-view.js"]
-  ui --> chat["chat<br/>bucle · sse · peticion · herramientas · errores · clave"]
+  ui --> chat["chat<br/>bucle · herramientas · clave · modelos"]
   chat --> core["core / mappers / api<br/>consultas · type-chart · load-section"]
   core --> pokeapi[("PokéAPI v2")]
-  chat -->|fetch en streaming + x-api-key| anthropic[("api.anthropic.com")]
+  chat --> proveedores["chat/proveedores<br/>puerto de proveedor"]
+  proveedores --> adAnthropic["anthropic.js<br/>peticion · sse · historial · errores"]
+  proveedores --> adOpenai["openai.js"]
+  adAnthropic -->|fetch en streaming + x-api-key| anthropic[("api.anthropic.com")]
+  adOpenai -->|fetch en streaming + authorization: Bearer| openai[("api.openai.com")]
 ```
 
 - `site/js/chat` son módulos puros: `fetch`, el almacenamiento, la espera y el puerto de PokéAPI se inyectan, y se prueban con un `fetch` falso que devuelve streams SSE sintéticos.
-- `bucle.js` envía la conversación (`peticion.js`), lee el stream (`sse.js`), ejecuta en paralelo las herramientas pedidas (`herramientas.js`, que valida cada entrada como el MCP y llama a `core/consultas.js`) y repite hasta 8 iteraciones por pregunta. Reintenta 429, 529 y 5xx (`errores.js`).
-- `ui/chat-view.js` pinta todo con `textContent`; `ui/chat-main.js` conecta formularios, almacenamiento y `AbortController`. La clave se guarda con `clave.js` en `sessionStorage` o `localStorage` y solo viaja en `x-api-key`.
+- `bucle.js` solo conoce el puerto de proveedor (`proveedores/index.js`): construye la petición, trocea el SSE (`sse.js`) y deja que el adaptador lo convierta en un turno normalizado (motivo, historial, llamadas y uso), ejecuta en paralelo las herramientas pedidas (`herramientas.js`, que valida cada entrada como el MCP y llama a `core/consultas.js`) y repite hasta 8 iteraciones por pregunta. Reintenta lo que el adaptador marca como reintentable.
+- `proveedores/anthropic.js` compone `peticion.js`, `sse.js`, `historial.js` y `errores.js` (Messages API; reintenta 429, 529 y 5xx). `proveedores/openai.js` habla con la Responses API con `store: false`, declara las tools como `function` estrictas y reenvía los elementos de salida tal cual; no reintenta los 429 de saldo.
+- `ui/chat-view.js` pinta todo con `textContent`; `ui/chat-main.js` conecta formularios, almacenamiento y `AbortController`. Cada proveedor tiene su clave, guardada con `clave.js` en `sessionStorage` o `localStorage` (`pokedex:chat:apikey` y `pokedex:chat:apikey:openai`); la de Anthropic solo viaja en `x-api-key` a `api.anthropic.com` y la de OpenAI solo en `authorization: Bearer` a `api.openai.com`.
 
 ## Servidor MCP
 
@@ -55,22 +60,23 @@ flowchart LR
 
 ## Carpetas
 
-| Carpeta            | Responsabilidad                                                                                                                                                                                                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `site/`            | Web publicada: ocho páginas HTML (siete secciones y el chat), `404.html`, `css/`, `fonts/` (woff2 y `OFL.txt`), `images/`, `manifest.webmanifest`, `robots.txt`, `sitemap.xml`                                                                                                                          |
-| `site/js/api/`     | Cliente HTTP con reintentos, plazo y cancelación (`client.js`) y cachés de listas y detalles (`cache.js`)                                                                                                                                                                                               |
-| `site/js/core/`    | Lógica pura: URL (`query.js`), búsqueda (`search.js`), paginación (`pagination.js`), carga de secciones (`load-section.js`), límite de peticiones (`limit.js`), configuración de secciones (`sections.js`) y lógica de las tools compartida con el MCP (`consultas.js`, `type-chart.js`, `mensajes.js`) |
-| `site/js/chat/`    | Núcleo puro del chat: lector SSE, petición a la API de Claude, herramientas y validación, errores y reintentos, clave y bucle de herramientas                                                                                                                                                           |
-| `site/js/mappers/` | Respuestas de PokéAPI → datos de vista, con fixtures de respuestas reales                                                                                                                                                                                                                               |
-| `site/js/ui/`      | Arranque (`main.js`, `chat-main.js` y lo común en `arranque.js`), vistas `render-*.js` y del chat (`chat-view.js`), diálogo, desplegables, tema, cancelación al salir y textos de la interfaz (`strings.js`)                                                                                            |
-| `mcp/bin/`         | Ejecutable del servidor MCP (`pokedex-mcp.js`)                                                                                                                                                                                                                                                          |
-| `mcp/src/`         | Servidor MCP: registro de tools, resources y prompts, cliente de PokéAPI, caché en disco, registros y ciclo de vida                                                                                                                                                                                     |
-| `mcp/test/`        | Tests del servidor MCP con PokéAPI simulada, sin red                                                                                                                                                                                                                                                    |
-| `scripts/`         | Utilidades de Node: comprobación de cabeceras HTML, servidor estático local, sincronización de la versión y captura de la demo                                                                                                                                                                          |
-| `tests/e2e/`       | Smoke e2e con Playwright y las simulaciones de PokéAPI y de la API de Claude                                                                                                                                                                                                                            |
-| `docs/`            | Plan, ADR, este documento y la demo (`media/`)                                                                                                                                                                                                                                                          |
-| `.github/`         | Workflows de CI y Pages, Dependabot y plantilla de pull request                                                                                                                                                                                                                                         |
-| `openspec/`        | Especificaciones vigentes y cambios archivados de cada fase                                                                                                                                                                                                                                             |
+| Carpeta                     | Responsabilidad                                                                                                                                                                                                                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `site/`                     | Web publicada: ocho páginas HTML (siete secciones y el chat), `404.html`, `css/`, `fonts/` (woff2 y `OFL.txt`), `images/`, `manifest.webmanifest`, `robots.txt`, `sitemap.xml`                                                                                                                          |
+| `site/js/api/`              | Cliente HTTP con reintentos, plazo y cancelación (`client.js`) y cachés de listas y detalles (`cache.js`)                                                                                                                                                                                               |
+| `site/js/core/`             | Lógica pura: URL (`query.js`), búsqueda (`search.js`), paginación (`pagination.js`), carga de secciones (`load-section.js`), límite de peticiones (`limit.js`), configuración de secciones (`sections.js`) y lógica de las tools compartida con el MCP (`consultas.js`, `type-chart.js`, `mensajes.js`) |
+| `site/js/chat/`             | Núcleo puro del chat: lector SSE, petición a la API de Claude, herramientas y validación, errores y reintentos, clave por proveedor, modelos y bucle de herramientas                                                                                                                                    |
+| `site/js/chat/proveedores/` | Puerto de proveedor y sus dos adaptadores: `anthropic.js` (Messages API) y `openai.js` (Responses API), registrados en `index.js`                                                                                                                                                                       |
+| `site/js/mappers/`          | Respuestas de PokéAPI → datos de vista, con fixtures de respuestas reales                                                                                                                                                                                                                               |
+| `site/js/ui/`               | Arranque (`main.js`, `chat-main.js` y lo común en `arranque.js`), vistas `render-*.js` y del chat (`chat-view.js`), diálogo, desplegables, tema, cancelación al salir y textos de la interfaz (`strings.js`)                                                                                            |
+| `mcp/bin/`                  | Ejecutable del servidor MCP (`pokedex-mcp.js`)                                                                                                                                                                                                                                                          |
+| `mcp/src/`                  | Servidor MCP: registro de tools, resources y prompts, cliente de PokéAPI, caché en disco, registros y ciclo de vida                                                                                                                                                                                     |
+| `mcp/test/`                 | Tests del servidor MCP con PokéAPI simulada, sin red                                                                                                                                                                                                                                                    |
+| `scripts/`                  | Utilidades de Node: comprobación de cabeceras HTML, servidor estático local, sincronización de la versión y captura de la demo                                                                                                                                                                          |
+| `tests/e2e/`                | Smoke e2e con Playwright y las simulaciones de PokéAPI y de la API de Claude                                                                                                                                                                                                                            |
+| `docs/`                     | Plan, ADR, este documento y la demo (`media/`)                                                                                                                                                                                                                                                          |
+| `.github/`                  | Workflows de CI y Pages, Dependabot y plantilla de pull request                                                                                                                                                                                                                                         |
+| `openspec/`                 | Especificaciones vigentes y cambios archivados de cada fase                                                                                                                                                                                                                                             |
 
 ## Flujo de una búsqueda
 
@@ -101,7 +107,7 @@ Estrategia decidida en la [ADR 0002](adr/0002-estrategia-cache.md):
 
 ## Seguridad
 
-- Cada página declara una `Content-Security-Policy` en `<meta>` (GitHub Pages no permite cabeceras HTTP) sin `'unsafe-inline'` ni `'unsafe-eval'`: scripts, estilos y fuentes solo del propio sitio, imágenes del propio sitio y de `raw.githubusercontent.com`, y conexiones solo a `pokeapi.co` y `api.anthropic.com` (`connect-src https://pokeapi.co https://api.anthropic.com`).
+- Cada página declara una `Content-Security-Policy` en `<meta>` (GitHub Pages no permite cabeceras HTTP) sin `'unsafe-inline'` ni `'unsafe-eval'`: scripts, estilos y fuentes solo del propio sitio, imágenes del propio sitio y de `raw.githubusercontent.com`, y conexiones solo a `pokeapi.co`, `api.anthropic.com` y `api.openai.com` (`connect-src https://pokeapi.co https://api.anthropic.com https://api.openai.com`).
 - El chat inserta todo texto con `textContent`, sin Markdown ni HTML; la clave del visitante no se escribe en el DOM, la consola ni la URL ([ADR 0005](adr/0005-chat-byok-fetch-directo.md)).
 - No hay estilos, scripts ni manejadores de eventos en línea, ni en los HTML ni en el HTML que genera la interfaz; un test lo comprueba. La anchura de las barras de estadísticas va en `data-valor` y se aplica con la propiedad CSS `--ancho` desde JavaScript.
 - Las fuentes Press Start 2P y VT323 se sirven desde `site/fonts/` en woff2, con su licencia SIL Open Font License 1.1 en `site/fonts/OFL.txt`; no se usa Google Fonts.
@@ -131,3 +137,4 @@ Estrategia decidida en la [ADR 0002](adr/0002-estrategia-cache.md):
 - [ADR 0003: servidor MCP por stdio](adr/0003-mcp-stdio.md)
 - [ADR 0004: JavaScript con JSDoc y `// @ts-check` en lugar de TypeScript](adr/0004-javascript-jsdoc-ts-check.md)
 - [ADR 0005: chat con la clave del visitante y `fetch` directo a la API de Claude](adr/0005-chat-byok-fetch-directo.md)
+- [ADR 0006: chat también con la clave de OpenAI tras un puerto de proveedor](adr/0006-chat-multiproveedor-openai.md)
