@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const PURE_DIRS = ['core', 'mappers', 'chat', 'chat/proveedores'];
+const PURE_DIRS = ['core', 'mappers', 'chat', 'chat/proveedores', 'chat/agentes'];
 
 const modulesIn = (dir) =>
   readdirSync(join(import.meta.dirname, dir))
