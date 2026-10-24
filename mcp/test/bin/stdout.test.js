@@ -23,6 +23,11 @@ test('stdout only carries JSON-RPC and logs go to stderr', { timeout: 5000 }, as
   await server.exited;
 
   assert.deepEqual(response.result.serverInfo, { name: 'pokedex-retro', version });
+  assert.deepEqual(Object.keys(response.result.capabilities).sort(), [
+    'prompts',
+    'resources',
+    'tools',
+  ]);
   assert.equal(search.result.structuredContent.total, 12);
   assert.ok(server.lines.length >= 2);
   for (const line of server.lines) assert.ok(isJsonRpcLine(line), `línea no JSON-RPC: ${line}`);

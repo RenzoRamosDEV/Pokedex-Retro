@@ -45,6 +45,14 @@ test('identifies itself as pokedex-retro with the given version', async (t) => {
   assert.deepEqual(client.getServerVersion(), { name: 'pokedex-retro', version: '1.0.0' });
 });
 
+test('initialize announces tools, resources and prompts', async (t) => {
+  const { client } = await setup(t);
+  const capabilities = client.getServerCapabilities();
+  assert.ok(capabilities.tools);
+  assert.ok(capabilities.resources);
+  assert.ok(capabilities.prompts);
+});
+
 const DOCE = [
   'buscar_pokemon',
   'obtener_pokemon',
@@ -117,4 +125,16 @@ test('tools/list matches the golden file', async (t) => {
   const { client } = await setup(t);
   const { tools } = await client.listTools();
   assertGolden('tools-list.golden.json', tools);
+});
+
+test('resources/list matches the golden file', async (t) => {
+  const { client } = await setup(t);
+  const { resources } = await client.listResources();
+  assertGolden('resources-list.golden.json', resources);
+});
+
+test('prompts/list matches the golden file', async (t) => {
+  const { client } = await setup(t);
+  const { prompts } = await client.listPrompts();
+  assertGolden('prompts-list.golden.json', prompts);
 });

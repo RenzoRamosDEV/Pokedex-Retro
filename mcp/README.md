@@ -57,6 +57,20 @@ Los nombres de tipo y de estadística van en inglés, como en PokéAPI.
 
 Un tipo que no está entre los 18 responde `El tipo "fuego" no existe. Tipos válidos: normal, fighting, flying, …`.
 
+## Resources
+
+| URI                     | Nombre        | Contenido (`application/json`)                                                                                            |
+| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `pokedex://tipos/tabla` | `tabla-tipos` | `{ tipos, multiplicadores }`: los 18 tipos en orden de número y, por cada atacante, el multiplicador contra cada defensor |
+| `pokedex://secciones`   | `secciones`   | `{ secciones }`: una entrada `{ clave, recurso, tamano_pagina }` por sección de la web (`null` si no está paginada)       |
+
+## Prompts
+
+| Prompt               | Argumentos                      | Qué pide al modelo                                                                                           |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `comparar_pokemon`   | `a` y `b` (obligatorios)        | Comparar dos Pokémon con `obtener_pokemon` y `efectividad_tipos` y resumir quién tiene ventaja               |
+| `equipo_contra_tipo` | `tipo` (obligatorio, en inglés) | Proponer un equipo de 6 Pokémon contra un tipo con `efectividad_tipos`, `buscar_pokemon` y `obtener_pokemon` |
+
 ## Variables de entorno
 
 | Variable                 | Valores                                | Efecto                                                                                                                                                                                      |
