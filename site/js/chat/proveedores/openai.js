@@ -99,9 +99,13 @@ function errorPorEstado(estado, { type, code }, detalle) {
   );
 }
 
-/** @param {{ code?: string, message: string }} error */
-const errorDeStream = ({ code, message }) =>
-  errorPorEstado(ESTADO_POR_CODIGO[code] ?? 500, { code }, message);
+/** @param {{ type?: string, code?: string, message: string }} error */
+const errorDeStream = ({ type, code, message }) =>
+  errorPorEstado(
+    ESTADO_POR_CODIGO[code] ?? ESTADO_POR_CODIGO[type] ?? 500,
+    { type, code },
+    message,
+  );
 
 /** @param {string} detalle */
 const errorDeRed = (detalle) => crearError('red', 0, detalle);
@@ -182,7 +186,7 @@ export const openai = {
             return '';
           }
           case 'error':
-            throw errorDeStream(datos);
+            throw errorDeStream(datos.error ?? datos);
           case 'response.failed':
             throw errorDeStream(datos.response.error);
           case 'response.completed':

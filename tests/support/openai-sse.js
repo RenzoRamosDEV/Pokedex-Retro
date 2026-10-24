@@ -105,7 +105,7 @@ export const responseFailed = (code, message = code, id = 'resp_1') =>
     response: respuestaBase(id, 'failed', { error: { code, message } }),
   });
 export const errorEvent = (code, message = code) =>
-  evento('error', { code, message, param: null, sequence_number: 1 });
+  evento('error', { error: { type: code, code, message, param: null }, sequence_number: 1 });
 
 /**
  * Events of one output item: added, the text deltas of a message (by default its whole text)
