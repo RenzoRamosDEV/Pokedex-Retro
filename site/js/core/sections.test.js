@@ -40,7 +40,7 @@ describe('SECTIONS', () => {
         pageSize: null,
         listLimit: 100,
         mapper: mapType,
-        exclude: ['unknown', 'shadow'],
+        exclude: ['stellar', 'unknown', 'shadow'],
       },
       habilidades: {
         resource: 'ability',
