@@ -134,5 +134,5 @@ Cada petición a PokéAPI lleva `User-Agent: pokedex-retro-mcp/<versión> (+http
 
 - Usa la PokéAPI pública: haz un uso razonable. La caché de 24 h y el máximo de 4 peticiones simultáneas reducen la carga, y `POKEDEX_MCP_DISK_CACHE=1` la conserva entre sesiones.
 - Los nombres de Pokémon, movimientos, tipos y estadísticas van en inglés, como en PokéAPI.
-- La tabla de tipos tiene 18 tipos: `stellar` (que PokéAPI lista sin relaciones de daño), `unknown` y `shadow` quedan fuera. La web, en cambio, sí muestra `stellar` en su página de tipos.
+- La tabla de tipos tiene 18 tipos: `stellar` (que PokéAPI lista sin relaciones de daño), `unknown` y `shadow` quedan fuera, igual que en la página de tipos de la web.
 - El paquete es `private` y se ejecuta desde el clon: reutiliza `site/js/core`, `site/js/mappers` y `site/js/api`, que están fuera de `mcp/` y npm no incluiría en el paquete. Publicarlo en npm exigirá empaquetar esos módulos; `server.json` queda preparado para el registro MCP.

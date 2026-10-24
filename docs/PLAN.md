@@ -2,7 +2,7 @@
 
 Punto de partida: rama `main`, commit `73b20e6` (tag `v1.0.0-RC.0`).
 
-Estado: fases 1–6 completadas; publicado como `v1.1.0`.
+Estado: fases 1–6 completadas; publicado como `v1.1.0` y corregido en `v1.1.1`.
 
 ## 1. Resumen
 
@@ -54,7 +54,7 @@ Estado: fases 1–6 completadas; publicado como `v1.1.0`.
 
 ### Observaciones fuera de alcance (no se actúa en este plan)
 
-- Precio de objetos: el mapper lee `json.cost ?? null` (`site/js/mappers/item.js:7`) y el fixture real de PokéAPI no trae `cost`, así que la columna PRECIO muestra `—` (`render-items.js:8-10`). Queda como seguimiento.
+- Precio de objetos: el mapper lee `json.cost ?? null` (`site/js/mappers/item.js:7`) y el fixture real de PokéAPI no trae `cost`, así que la columna PRECIO muestra `—` (`render-items.js:8-10`). Queda como seguimiento (resuelto en `v1.1.1` con la lista `prices`).
 - `og:image` / `twitter:image` con URL relativa (`site/index.html:17`, `:27`); los rastreadores esperan URL absoluta.
 
 ## 3. Estructura objetivo
