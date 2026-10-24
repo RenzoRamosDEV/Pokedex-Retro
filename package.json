@@ -9,8 +9,9 @@
   "scripts": {
     "test": "node --test \"site/js/**/*.test.js\" \"scripts/**/*.test.mjs\"",
     "test:mutation": "timeout 180 stryker run",
-    "test:mutation:chat": "npm run test:mutation:chat:core && timeout 180 stryker run stryker.chat.config.json",
+    "test:mutation:chat": "npm run test:mutation:chat:core && npm run test:mutation:chat:openai && timeout 180 stryker run stryker.chat.config.json",
     "test:mutation:chat:core": "timeout 180 stryker run stryker.chat-core.config.json",
+    "test:mutation:chat:openai": "timeout 180 stryker run stryker.chat-openai.config.json",
     "test:mutation:ui": "npm run test:mutation:ui:render && timeout 180 stryker run stryker.ui.config.json",
     "test:mutation:ui:render": "timeout 180 stryker run stryker.ui-render.config.json",
     "mcp:start": "node mcp/bin/pokedex-mcp.js",

@@ -379,6 +379,35 @@ describe('openai.crearLectura', () => {
     assert.equal(resultado.llamadas[0].entrada, ENTRADA_NO_JSON);
   });
 
+  test('arguments that parse to a non-object are called with ENTRADA_NO_JSON', () => {
+    for (const json of ['5', '"char"', 'true']) {
+      const resultado = turno({ items: [functionCallItem({ name: 'naturalezas', json })] });
+      assert.equal(resultado.llamadas[0].entrada, ENTRADA_NO_JSON, json);
+    }
+  });
+
+  test('a message with text and a refusal part ends as rechazo', () => {
+    const mixto = {
+      ...messageItem({ texto: 'Hola' }),
+      content: [
+        { type: 'output_text', text: 'Hola', annotations: [] },
+        { type: 'refusal', refusal: 'No.' },
+      ],
+    };
+    assert.equal(turno({ items: [mixto] }).motivo, 'rechazo');
+  });
+
+  test('incomplete without details ends as cortada', () => {
+    const final = responseIncomplete('max_output_tokens');
+    delete final.data.response.incomplete_details;
+    assert.equal(turno({ items: [MENSAJE], final }).motivo, 'cortada');
+  });
+
+  test('a missing output index leaves no gap in the history', () => {
+    const { lectura } = leer([itemDone(1, MENSAJE), responseCompleted()]);
+    assert.deepEqual(lectura.terminar().historial, [MENSAJE]);
+  });
+
   test('the usage is input_tokens and output_tokens, adding up to the spec scenario', () => {
     const primero = turno({
       items: [LLAMADA],
@@ -495,6 +524,13 @@ describe('openai.errorDeRespuesta', () => {
       assert.deepEqual(forma(error), ['ErrorDeOpenAI', 'sin_saldo', 429, 'm', false]);
     });
   }
+
+  test('a quota code outside a 429 keeps the code of its status', async () => {
+    const error = await openai.errorDeRespuesta(
+      respuestaError(403, { type: 'insufficient_quota', code: 'insufficient_quota', message: 'm' }),
+    );
+    assert.deepEqual(forma(error), ['ErrorDeOpenAI', 'permiso', 403, 'm', false]);
+  });
 
   test('429 without a body is limite_uso and retried', async () => {
     const error = await openai.errorDeRespuesta(new Response('', { status: 429 }));
