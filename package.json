@@ -15,6 +15,7 @@
     "mcp:test": "node --test \"mcp/test/**/*.test.js\"",
     "mcp:test:mutation": "npm run mcp:test:mutation:base && timeout 180 stryker run stryker.mcp.config.json",
     "mcp:test:mutation:base": "timeout 180 stryker run stryker.mcp-base.config.json",
+    "mcp:inspect": "npx @modelcontextprotocol/inspector@2.12.0 node mcp/bin/pokedex-mcp.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
