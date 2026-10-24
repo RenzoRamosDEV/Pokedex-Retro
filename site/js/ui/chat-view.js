@@ -67,6 +67,12 @@ export function createChatView({ document, log, status, send, stop, reset, selec
     showTool(name) {
       showStatus(STRINGS.chat.consultando.replace('{nombre}', name));
     },
+    showSubagent(name) {
+      showStatus(STRINGS.chat.subagente.replace('{nombre}', name));
+    },
+    showSkill(name) {
+      showStatus(STRINGS.chat.skill.replace('{nombre}', name));
+    },
     showError({ codigo, detalle, estado }) {
       showStatus(
         texts()

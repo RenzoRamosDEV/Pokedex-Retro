@@ -80,7 +80,11 @@ function onEvent(event) {
     view.appendText(event.texto);
   } else if (event.tipo === 'herramienta') {
     view.showTool(event.nombre);
-  } else {
+  } else if (event.tipo === 'subagente') {
+    view.showSubagent(event.nombre);
+  } else if (event.tipo === 'skill') {
+    view.showSkill(event.nombre);
+  } else if (event.tipo === 'uso') {
     view.showUsage(event.uso);
   }
 }

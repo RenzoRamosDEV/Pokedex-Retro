@@ -181,7 +181,7 @@ describe('chat.html', () => {
   test('shows the privacy and cost notice next to the key form', () => {
     assert.match(
       plain(html),
-      /Tu clave de Anthropic u OpenAI se queda en este navegador y solo se envía a la API de su proveedor \(api\.anthropic\.com o api\.openai\.com\)\. Las conversaciones se cobran en tu cuenta de ese proveedor\./,
+      /Tu clave de Anthropic u OpenAI se queda en este navegador y solo se envía a la API de su proveedor \(api\.anthropic\.com o api\.openai\.com\)\. Las conversaciones se cobran en tu cuenta de ese proveedor\. Delegar en subagentes consume tokens adicionales\./,
     );
   });
 

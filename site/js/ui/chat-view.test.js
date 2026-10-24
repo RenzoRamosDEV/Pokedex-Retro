@@ -288,4 +288,20 @@ describe('createChatView', () => {
     view.showRefusal();
     assert.equal(elements.status.textContent, 'Claude no puede responder a esta petición.');
   });
+
+  test('shows the subagent at work in the status region', () => {
+    const { elements, view } = setup();
+    view.showSubagent('estratega-tipos');
+    assert.equal(elements.status.textContent, 'SUBAGENTE: estratega-tipos');
+    view.clearStatus();
+    assert.equal(elements.status.textContent, '');
+  });
+
+  test('shows the loaded skill in the status region', () => {
+    const { elements, view } = setup();
+    view.showSkill('comparar-pokemon');
+    assert.equal(elements.status.textContent, 'SKILL: comparar-pokemon');
+    view.clearStatus();
+    assert.equal(elements.status.textContent, '');
+  });
 });

@@ -229,3 +229,8 @@ test('chatOpenai only overrides texts that exist in chat or are OpenAI only', ()
   assert.equal(STRINGS.chat.claveAnthropic, 'CLAVE DE ANTHROPIC');
   assert.equal(STRINGS.chat.claveOpenai, 'CLAVE DE OPENAI');
 });
+
+test('chat names the subagent and the skill at work', () => {
+  assert.equal(STRINGS.chat.subagente, 'SUBAGENTE: {nombre}');
+  assert.equal(STRINGS.chat.skill, 'SKILL: {nombre}');
+});
