@@ -40,7 +40,7 @@ Toda afirmación factual de `README.md`, `docs/ARCHITECTURE.md` y `CONTRIBUTING.
 - **THEN** la revisión de cierre de la fase lo rechaza
 
 ### Requirement: Demo animada reproducible
-`docs/media/demo.gif` SHALL ocupar como máximo 3 000 000 bytes y durar como máximo 15 s, y SHALL generarse con `node scripts/capture-demo.mjs` sobre `site/` servido localmente con PokéAPI simulada, sin peticiones externas. El script MUST NOT formar parte de CI.
+`docs/media/demo.gif` SHALL ocupar como máximo 3 000 000 bytes y durar como máximo 15 s, y SHALL generarse con `node scripts/capture-demo.mjs` sobre `site/` servido localmente con PokéAPI simulada, sin peticiones externas. El script MUST NOT formar parte de CI. La PokéAPI simulada SHALL dar a `#25 pikachu` su tipo real `electric`, de modo que la demo no muestre datos contradictorios.
 
 #### Scenario: Límites del GIF
 - **WHEN** se inspecciona `docs/media/demo.gif`
@@ -57,6 +57,10 @@ Toda afirmación factual de `README.md`, `docs/ARCHITECTURE.md` y `CONTRIBUTING.
 #### Scenario: Fuera de CI
 - **WHEN** se revisan los workflows de `.github/workflows/`
 - **THEN** ninguno ejecuta `scripts/capture-demo.mjs`
+
+#### Scenario: PIKACHU eléctrico
+- **WHEN** la demo o el e2e abren el diálogo de `#25 pikachu`
+- **THEN** muestra el tipo `ELECTRIC` y no el tipo del fixture genérico
 
 ### Requirement: Arquitectura documentada
 `docs/ARCHITECTURE.md` SHALL contener un diagrama Mermaid del flujo `HTML → ui → core → api → PokéAPI`, otro del flujo `Claude → mcp → core/mappers → PokéAPI`, las responsabilidades de cada carpeta, el flujo de una búsqueda, la estrategia de caché y enlaces a las ADR.
