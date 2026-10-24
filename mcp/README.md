@@ -71,6 +71,10 @@ Un tipo que no está entre los 18 responde `El tipo "fuego" no existe. Tipos vá
 | `comparar_pokemon`   | `a` y `b` (obligatorios)        | Comparar dos Pokémon con `obtener_pokemon` y `efectividad_tipos` y resumir quién tiene ventaja               |
 | `equipo_contra_tipo` | `tipo` (obligatorio, en inglés) | Proponer un equipo de 6 Pokémon contra un tipo con `efectividad_tipos`, `buscar_pokemon` y `obtener_pokemon` |
 
+## Cierre
+
+El servidor termina cuando el cliente cierra stdin. Con `SIGINT` o `SIGTERM` cierra el transporte y sale con código 0 en menos de 2 s; si el cierre no termina en 1,5 s, sale igualmente.
+
 ## Variables de entorno
 
 | Variable                 | Valores                                | Efecto                                                                                                                                                                                      |
