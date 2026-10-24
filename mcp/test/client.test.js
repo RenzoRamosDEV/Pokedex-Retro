@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readdirSync, rmSync, existsSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createPokeApiClient } from '../src/client.js';
@@ -220,3 +220,16 @@ test('debug logs GET <url> per call and caché <url> per hit', async (t) => {
   await port(PIKACHU);
   assert.deepEqual(lines, [`debug: GET ${PIKACHU}`, `debug: caché ${PIKACHU}`]);
 });
+
+test(
+  'a read-only cache directory still answers from the network and logs an error',
+  { skip: process.getuid?.() === 0 && 'root ignora los permisos' },
+  async (t) => {
+    const xdg = tempDir(t);
+    mkdirSync(join(xdg, 'pokedex-mcp'), { mode: 0o500 });
+    const { port, lines } = setup(t, { env: { POKEDEX_MCP_DISK_CACHE: '1', XDG_CACHE_HOME: xdg } });
+    const response = await port(PIKACHU);
+    assert.equal(response.json.name, 'pikachu');
+    assert.equal(lines.filter((line) => line.startsWith('error: caché en disco: ')).length, 1);
+  },
+);

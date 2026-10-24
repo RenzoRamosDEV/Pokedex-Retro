@@ -8,9 +8,12 @@ import { createFakePokeApi } from './pokeapi-falsa.js';
 
 /**
  * Connects an SDK client to a fresh server over an in-memory transport, backed by the fake PokéAPI.
+ * The log level is `debug` unless `level` is given, even as `undefined` (no POKEDEX_MCP_LOG).
  * @param {{ respuestas?: object, level?: string, version?: string }} [options]
  */
-export async function conectar({ respuestas, level = 'debug', version = '1.0.0' } = {}) {
+export async function conectar(options = {}) {
+  const { respuestas, version = '1.0.0' } = options;
+  const level = 'level' in options ? options.level : 'debug';
   const logs = [];
   const log = createLogger({ level, write: (line) => logs.push(line) });
   const fake = createFakePokeApi({ respuestas });
