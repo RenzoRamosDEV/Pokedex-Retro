@@ -14,6 +14,7 @@ const GUARDED_FILES = [
     .sort(),
   'layout.js',
   'main.js',
+  'arranque.js',
 ];
 
 const LETTER = /\p{L}/u;
