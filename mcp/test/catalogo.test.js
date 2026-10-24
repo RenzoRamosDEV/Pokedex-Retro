@@ -369,3 +369,10 @@ test('a network outage logs the error name without a status', async (t) => {
   assert.equal(textOf(result), CAIDA);
   assert.deepEqual(logs, ['[pokedex-mcp] error: tool obtener_objeto: TypeError\n']);
 });
+
+test('the default level writes nothing for a successful call', async (t) => {
+  const { call, logs } = await setup(t, { level: undefined });
+  const result = await call('obtener_pokemon', { nombre_o_id: 'pikachu' });
+  assert.equal(result.isError, undefined);
+  assert.deepEqual(logs, []);
+});
