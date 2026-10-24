@@ -24,7 +24,7 @@ const view = createChatView({
   send: byId('chat-enviar'),
   stop: stopButton,
   reset: byId('chat-nueva'),
-  model,
+  selectors: [model],
 });
 const pokeApiPort = createPokeApiPort();
 
@@ -122,7 +122,7 @@ keyForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const key = keyInput.value.trim();
   if (!esClaveValida(key)) {
-    view.showKeyFormatError();
+    view.showKeyError('formato');
     return;
   }
   guardarClave(storages, key, remember.checked);

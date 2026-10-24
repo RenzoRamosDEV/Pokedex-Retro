@@ -1,22 +1,34 @@
 import { STRINGS } from './strings.js';
 
-const ERROR_TEXTS = {
-  clave_invalida: STRINGS.chat.errorClave,
-  permiso: STRINGS.chat.errorPermiso,
-  peticion: STRINGS.chat.errorPeticion,
-  demasiado_larga: STRINGS.chat.errorLongitud,
-  limite_uso: STRINGS.chat.errorLimiteUso,
-  saturado: STRINGS.chat.errorSaturado,
-  red: STRINGS.chat.errorRed,
-  servidor: STRINGS.chat.errorServidor,
+const TEXTS = {
+  anthropic: STRINGS.chat,
+  openai: { ...STRINGS.chat, ...STRINGS.chatOpenai },
 };
+
+const REPLY_MODIFIERS = { anthropic: 'claude', openai: 'openai' };
+
+const ERROR_KEYS = {
+  clave_invalida: 'errorClave',
+  permiso: 'errorPermiso',
+  peticion: 'errorPeticion',
+  demasiado_larga: 'errorLongitud',
+  limite_uso: 'errorLimiteUso',
+  sin_saldo: 'errorSinSaldo',
+  saturado: 'errorSaturado',
+  red: 'errorRed',
+  servidor: 'errorServidor',
+};
+
+const KEY_ERROR_KEYS = { formato: 'claveFormato', otro_proveedor: 'otroProveedor' };
 
 /**
  * Chat conversation view. Every text goes through `textContent`, so nothing from the model,
  * the user or a tool is ever parsed as HTML.
  */
-export function createChatView({ document, log, status, send, stop, reset, model }) {
+export function createChatView({ document, log, status, send, stop, reset, selectors }) {
   let replyText = null;
+  let providerId = 'anthropic';
+  const texts = () => TEXTS[providerId];
 
   function addMessage(modifier, author) {
     const message = document.createElement('div');
@@ -36,11 +48,14 @@ export function createChatView({ document, log, status, send, stop, reset, model
   };
 
   return {
+    setProvider(id) {
+      providerId = id;
+    },
     addUserMessage(text) {
       addMessage('user', STRINGS.chat.tu).textContent = text;
     },
     startReply() {
-      replyText = addMessage('claude', STRINGS.chat.claude);
+      replyText = addMessage(REPLY_MODIFIERS[providerId], texts().asistente);
     },
     appendText(text) {
       replyText.textContent += text;
@@ -53,12 +68,14 @@ export function createChatView({ document, log, status, send, stop, reset, model
     },
     showError({ codigo, detalle, estado }) {
       showStatus(
-        ERROR_TEXTS[codigo].replace('{detalle}', detalle).replace('{estado}', String(estado)),
+        texts()
+          [ERROR_KEYS[codigo]].replace('{detalle}', detalle)
+          .replace('{estado}', String(estado)),
       );
     },
     showLimit: () => showStatus(STRINGS.chat.limite),
-    showRefusal: () => showStatus(STRINGS.chat.rechazo),
-    showKeyFormatError: () => showStatus(STRINGS.chat.claveFormato),
+    showRefusal: () => showStatus(texts().rechazo),
+    showKeyError: (motivo) => showStatus(texts()[KEY_ERROR_KEYS[motivo]]),
     clearStatus: () => showStatus(''),
     showUsage({ entrada, salida }) {
       const line = document.createElement('p');
@@ -70,7 +87,9 @@ export function createChatView({ document, log, status, send, stop, reset, model
     },
     setBusy(busy) {
       send.disabled = busy;
-      model.disabled = busy;
+      selectors.forEach((selector) => {
+        selector.disabled = busy;
+      });
       reset.disabled = busy;
       stop.disabled = !busy;
     },
