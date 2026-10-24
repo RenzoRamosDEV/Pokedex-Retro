@@ -223,7 +223,7 @@ test('chatOpenai only overrides texts that exist in chat or are OpenAI only', ()
       'OpenAI rechazó la petición. Revisa el saldo y los límites de tu cuenta en platform.openai.com.',
     errorSaturado: 'OpenAI está saturado. Inténtalo en unos minutos.',
     errorRed: 'Sin conexión con OpenAI.',
-    errorServidor: 'Error de OpenAI ({estado}). Inténtalo de nuevo.',
+    errorServidor: 'Error de OpenAI ({estado}): {detalle}',
   });
   assert.equal(STRINGS.chat.asistente, 'CLAUDE');
   assert.equal(STRINGS.chat.claveAnthropic, 'CLAVE DE ANTHROPIC');
