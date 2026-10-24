@@ -44,6 +44,13 @@ export function crearErrorDeClaude(estado, detalle) {
 }
 
 /**
+ * A request that never got an HTTP answer, or whose stream broke off.
+ * @param {string} detalle
+ */
+export const errorDeRed = (detalle) =>
+  Object.assign(crearErrorDeClaude(0, detalle), { codigo: /** @type {CodigoError} */ ('red') });
+
+/**
  * @param {{ status: number, json(): Promise<any> }} respuesta
  */
 export async function errorDeRespuesta(respuesta) {

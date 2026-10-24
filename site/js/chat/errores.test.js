@@ -1,6 +1,12 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { errorDeEvento, errorDeRespuesta, esReintentable, esperaReintento } from './errores.js';
+import {
+  errorDeEvento,
+  errorDeRed,
+  errorDeRespuesta,
+  esReintentable,
+  esperaReintento,
+} from './errores.js';
 import { respuestaError } from '../../../tests/support/claude-sse.js';
 
 const NOW = () => Date.parse('Sat, 24 Oct 2026 10:00:00 GMT');
@@ -101,4 +107,14 @@ describe('esperaReintento', () => {
       );
     });
   }
+});
+
+describe('errorDeRed', () => {
+  test('classifies a request without an HTTP answer as red', () => {
+    const error = errorDeRed('Failed to fetch');
+    assert.deepEqual(
+      { name: error.name, codigo: error.codigo, detalle: error.detalle },
+      { name: 'ErrorDeClaude', codigo: 'red', detalle: 'Failed to fetch' },
+    );
+  });
 });
