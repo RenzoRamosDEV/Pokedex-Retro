@@ -112,6 +112,10 @@ npm run lhci
 
 Para servir la web en local sin Python: `node scripts/serve-site.mjs` (puerto `4173`, o el de `PORT`).
 
+## Servidor MCP
+
+`mcp/` contiene un servidor [Model Context Protocol](https://modelcontextprotocol.io) local por stdio que permite consultar la Pokédex desde Claude Desktop, Claude Code u otro cliente MCP. Llama directamente a PokéAPI y reutiliza `site/js/core`, `site/js/mappers` y `site/js/api`. Tools, resources, prompts, instalación y variables de entorno: [`mcp/README.md`](mcp/README.md).
+
 ## Estructura
 
 ```
