@@ -17,11 +17,13 @@ function createFakeFetch(script) {
       });
     }
     const text = typeof next.body === 'string' ? next.body : JSON.stringify(next.body ?? {});
-    return Promise.resolve({
+    const response = {
       ok: next.status >= 200 && next.status < 300,
       status: next.status,
       json: async () => JSON.parse(text),
-    });
+    };
+    if (next.headers) response.headers = new Headers(next.headers);
+    return Promise.resolve(response);
   };
   return { fetch: fakeFetch, calls };
 }
@@ -285,4 +287,90 @@ test('error messages describe the cause', async (t) => {
   await advance(10000);
   assert.equal(notFound.error.message, 'HTTP 404');
   assert.match(timedOut.error.message, /agotado/);
+});
+
+const NOW_MS = Date.UTC(2026, 9, 24, 12, 0, 0);
+const fixedNow = () => NOW_MS;
+
+async function expectSecondCallAt(t, retryAfter, ms, options = {}) {
+  const advance = useClock(t);
+  const fake = createFakeFetch([
+    { status: options.status ?? 429, headers: { 'Retry-After': retryAfter } },
+    { status: 200, body: { id: 9 } },
+  ]);
+  const result = track(createFetchJson({ fetch: fake.fetch, now: fixedNow })(URL_A));
+  if (ms > 0) {
+    await advance(ms - 1);
+    assert.equal(fake.calls.length, 1);
+    assert.equal(result.settled, false);
+    await advance(1);
+  } else {
+    await advance(0);
+  }
+  assert.equal(fake.calls.length, 2);
+  assert.deepEqual(result.value, { id: 9 });
+}
+
+test('429 with Retry-After: 1 retries at 1000 ms and not at 999', async (t) => {
+  await expectSecondCallAt(t, '1', 1000);
+});
+
+test('429 with Retry-After: 0 retries without waiting', async (t) => {
+  await expectSecondCallAt(t, '0', 0);
+});
+
+test('429 with an HTTP date 2 s ahead retries at 2000 ms', async (t) => {
+  await expectSecondCallAt(t, new Date(NOW_MS + 2000).toUTCString(), 2000);
+});
+
+test('429 with an HTTP date in the past retries without waiting', async (t) => {
+  await expectSecondCallAt(t, new Date(NOW_MS - 5000).toUTCString(), 0);
+});
+
+for (const value of ['pronto', '1pronto', 'pronto1']) {
+  test(`429 with Retry-After: ${value} falls back to 500 ms`, async (t) => {
+    await expectSecondCallAt(t, value, 500);
+  });
+}
+
+test('429 without headers falls back to 500 ms without throwing', async (t) => {
+  const advance = useClock(t);
+  const fake = createFakeFetch([{ status: 429 }, { status: 200, body: { id: 9 } }]);
+  const result = track(createFetchJson({ fetch: fake.fetch, now: fixedNow })(URL_A));
+  await advance(499);
+  assert.equal(fake.calls.length, 1);
+  await advance(1);
+  assert.equal(fake.calls.length, 2);
+  assert.deepEqual(result.value, { id: 9 });
+});
+
+test('503 ignores Retry-After and waits 500 ms', async (t) => {
+  await expectSecondCallAt(t, '5', 500, { status: 503 });
+});
+
+test('Retry-After longer than the timeout rejects with TimeoutError after 1 call', async (t) => {
+  const advance = useClock(t);
+  const fake = createFakeFetch([{ status: 429, headers: { 'Retry-After': '60' } }]);
+  const result = track(
+    createFetchJson({ fetch: fake.fetch, timeoutMs: 10000, now: fixedNow })(URL_A),
+  );
+  await advance(9999);
+  assert.equal(result.settled, false);
+  await advance(1);
+  assert.equal(result.error.name, 'TimeoutError');
+  assert.equal(fake.calls.length, 1);
+});
+
+test('abort during a Retry-After wait rejects with AbortError', async (t) => {
+  const advance = useClock(t);
+  const fake = createFakeFetch([{ status: 429, headers: { 'Retry-After': '5' } }]);
+  const controller = new AbortController();
+  const result = track(
+    createFetchJson({ fetch: fake.fetch, now: fixedNow })(URL_A, { signal: controller.signal }),
+  );
+  await advance(100);
+  controller.abort();
+  await advance(10000);
+  assert.equal(fake.calls.length, 1);
+  assert.equal(result.error.name, 'AbortError');
 });

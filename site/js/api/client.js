@@ -4,14 +4,21 @@ const BACKOFF_BASE_MS = 500;
 
 /**
  * @typedef {{ get(url: string): unknown, set(url: string, value: unknown): unknown }} JsonCache
- * @typedef {{ ok: boolean, status: number, json(): Promise<unknown> }} ResponseLike
+ * @typedef {{ get(name: string): string | null }} HeadersLike
+ * @typedef {{ ok: boolean, status: number, headers?: HeadersLike, json(): Promise<unknown> }} ResponseLike
  * @typedef {(url: string, init: { signal: AbortSignal }) => Promise<ResponseLike>} FetchLike
  */
 
 /**
- * @param {{ fetch?: FetchLike, cache?: JsonCache, timeoutMs?: number, retries?: number }} [options]
+ * @param {{ fetch?: FetchLike, cache?: JsonCache, timeoutMs?: number, retries?: number, now?: () => number }} [options]
  */
-export function createFetchJson({ fetch, cache, timeoutMs = 10000, retries = 2 } = {}) {
+export function createFetchJson({
+  fetch,
+  cache,
+  timeoutMs = 10000,
+  retries = 2,
+  now = Date.now,
+} = {}) {
   /**
    * @param {string} url
    * @param {{ signal?: AbortSignal }} [options]
@@ -25,7 +32,7 @@ export function createFetchJson({ fetch, cache, timeoutMs = 10000, retries = 2 }
     const combined = signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal;
     try {
       const fetchImpl = fetch ?? /** @type {FetchLike} */ (globalThis.fetch);
-      const json = await fetchWithRetries(fetchImpl, url, combined, retries);
+      const json = await fetchWithRetries(fetchImpl, url, combined, retries, now);
       cache?.set(url, json);
       return json;
     } catch (error) {
@@ -43,17 +50,32 @@ export function createFetchJson({ fetch, cache, timeoutMs = 10000, retries = 2 }
  * @param {string} url
  * @param {AbortSignal} signal
  * @param {number} retries
+ * @param {() => number} now
  */
-async function fetchWithRetries(fetchImpl, url, signal, retries) {
+async function fetchWithRetries(fetchImpl, url, signal, retries, now) {
   for (let attempt = 0; ; attempt += 1) {
     signal.throwIfAborted();
+    let delayMs = BACKOFF_BASE_MS * 2 ** attempt;
     try {
       return await fetchOnce(fetchImpl, url, signal);
     } catch (error) {
       if (attempt >= retries || !isRetriable(error) || signal.aborted) throw error;
+      if (error.status === 429) delayMs = retryAfterMs(error.headers, now) ?? delayMs;
     }
-    await waitBackoff(BACKOFF_BASE_MS * 2 ** attempt, signal);
+    await waitBackoff(delayMs, signal);
   }
+}
+
+/**
+ * @param {HeadersLike | undefined} headers
+ * @param {() => number} now
+ * @returns {number | null}
+ */
+function retryAfterMs(headers, now) {
+  const value = headers?.get('Retry-After') ?? '';
+  if (/^\d+$/.test(value)) return Number(value) * 1000;
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? null : Math.max(0, date - now());
 }
 
 /**
@@ -63,15 +85,18 @@ async function fetchWithRetries(fetchImpl, url, signal, retries) {
  */
 async function fetchOnce(fetchImpl, url, signal) {
   const response = await fetchImpl(url, { signal });
-  if (!response.ok) throw httpError(response.status);
+  if (!response.ok) throw httpError(response.status, response.headers);
   return response.json();
 }
 
-/** @param {number} status */
-function httpError(status) {
+/**
+ * @param {number} status
+ * @param {HeadersLike} [headers]
+ */
+function httpError(status, headers) {
   const error = new Error(`HTTP ${status}`);
   error.name = 'HttpError';
-  return Object.assign(error, { status });
+  return Object.assign(error, { status, headers });
 }
 
 /** @param {any} error */
