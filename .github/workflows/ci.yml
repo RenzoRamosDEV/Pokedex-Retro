@@ -40,6 +40,8 @@ jobs:
       - run: npm run mcp:test
       - run: npm run test:mutation
         if: matrix.node == 24
+      - run: npm run test:mutation:chat
+        if: matrix.node == 24
       - run: npm run test:mutation:ui
         if: matrix.node == 24
       - run: npm run mcp:test:mutation
