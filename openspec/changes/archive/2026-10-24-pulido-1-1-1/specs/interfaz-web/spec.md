@@ -35,14 +35,3 @@ El precio de un objeto SHALL ser `cost` si PokéAPI lo devuelve como número (in
 #### Scenario: Compatibilidad con cost
 - **WHEN** PokéAPI devuelve `cost` numérico, aunque también haya `prices`
 - **THEN** el precio es `cost`
-
-### Requirement: Precarga del grafo de módulos
-Cada página HTML que carga `js/ui/main.js` SHALL declarar, antes de ese `<script>`, un `<link rel="modulepreload">` por cada módulo que `main.js` importa de forma estática, directa o transitivamente, y ninguno más. Las rutas MUST ser relativas al mismo origen, compatibles con la CSP vigente.
-
-#### Scenario: Lista sincronizada
-- **WHEN** se añade o elimina una importación estática en un módulo alcanzable desde `main.js` sin actualizar los HTML
-- **THEN** `npm test` falla nombrando la página y los módulos que sobran o faltan
-
-#### Scenario: Sin precargas obsoletas
-- **WHEN** un HTML precarga un módulo que ya no forma parte del grafo
-- **THEN** `npm test` falla

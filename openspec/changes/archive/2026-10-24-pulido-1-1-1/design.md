@@ -44,11 +44,21 @@ Se añaden a cada HTML con `js/ui/main.js` los `<link rel="modulepreload" href="
 
 Se mide con `npm run lhci` antes y después (medianas de 3 ejecuciones por página). Si la mediana de rendimiento de alguna página baja, se revierte el cambio de HTML y el test, y se documenta.
 
+**Resultado (descartado).** Tres rondas alternas en la misma máquina, rendimiento mediano y LCP mediano de `index.html` / rendimiento de `tipos.html`:
+
+| Ronda | Sin precarga | Con precarga |
+| --- | --- | --- |
+| 1 | 0,85 (LCP 4 272 ms) / 0,91 | 0,81 (LCP 5 036 ms) / 0,91 |
+| 2 | 0,82 (LCP 4 885 ms) / 0,91 | 0,81 (LCP 5 039 ms) / 0,91 |
+| 3 | 0,82 (LCP 4 888 ms) / 0,92 | 0,81 (LCP 5 036 ms) / 0,91 |
+
+FCP y TBT no cambian; el LCP de `index.html` (sprites que dependen de PokéAPI) empeora ~150 ms porque las 31 precargas compiten con los recursos críticos bajo la limitación simulada de Lighthouse. La cascada de módulos no es el cuello de botella, así que se revierte el cambio de HTML y su test; la sección «Precarga del grafo de módulos» no entra en las specs.
+
 Alternativa descartada: empaquetar con un bundler; el proyecto es estático sin build por decisión (ADR).
 
 ### D5. Dependabot
 
-En las dos entradas `npm` (`/` y `/mcp`) se añade:
+En la entrada `npm` de `/`, la única que declara `@types/node`, se añade:
 
 ```yaml
 ignore:
@@ -56,7 +66,7 @@ ignore:
     update-types: ['version-update:semver-major']
 ```
 
-`/mcp` no declara hoy `@types/node`; se incluye igualmente para que la regla no dependa de dónde se añada en el futuro. Tras fusionar, `gh pr close 6` con un comentario en español; la rama la borra Dependabot.
+`/mcp` no declara `@types/node`, así que su entrada no cambia (una regla sin dependencia que la use sería configuración muerta). Tras fusionar, `gh pr close 6` con un comentario en español; la rama la borra Dependabot.
 
 ### D6. Versión 1.1.1
 
