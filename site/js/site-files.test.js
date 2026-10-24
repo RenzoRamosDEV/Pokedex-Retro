@@ -42,11 +42,12 @@ test('robots.txt allows everything and points to the sitemap', () => {
   assert.ok(lines.includes(`Sitemap: ${BASE_URL}sitemap.xml`));
 });
 
-test('sitemap.xml lists exactly the 7 navigation pages under the site base', () => {
+test('sitemap.xml lists exactly the 8 navigation pages under the site base', () => {
   const xml = readSite('sitemap.xml');
   assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
   const locations = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
-  assert.equal(NAVIGATION_PAGES.length, 7);
+  assert.equal(NAVIGATION_PAGES.length, 8);
+  assert.ok(locations.includes(`${BASE_URL}chat.html`));
   assert.deepEqual(
     locations.sort(),
     NAVIGATION_PAGES.map((page) => BASE_URL + page),

@@ -12,6 +12,8 @@ const PAGES = [
   { file: 'bayas.html', title: 'BAYAS — Pokédex Retro', item: '.berry-card' },
 ];
 
+const NAVIGATION_FILES = [...PAGES.map((page) => page.file), 'chat.html'];
+
 let record;
 
 test.beforeEach(async ({ page }) => {
@@ -224,6 +226,17 @@ test('Elegir tema: DMG chosen with the keyboard applies gb and returns focus', a
 
 const menuButton = (page) => page.locator('#nav-btn');
 
+test('Menú en las 8 páginas: the navigation of every page ends with CHAT', async ({ page }) => {
+  for (const file of NAVIGATION_FILES) {
+    await page.goto(file);
+    await menuButton(page).click();
+    const last = page.locator('#nav-menu .nav-link').last();
+    await expect(last).toBeVisible();
+    await expect(last).toHaveText('CHAT');
+    await expect(last).toHaveAttribute('href', 'chat.html');
+  }
+});
+
 test('Abrir el menú: Enter shows the navigation and its first link is reachable', async ({
   page,
 }) => {
@@ -263,7 +276,7 @@ for (const [scheme, expected] of [
     page,
   }) => {
     await page.emulateMedia({ colorScheme: scheme });
-    for (const { file } of PAGES) {
+    for (const file of NAVIGATION_FILES) {
       await page.goto(file);
       await expect(page.locator('body')).toHaveAttribute('data-theme', expected);
     }

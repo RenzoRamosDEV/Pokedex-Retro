@@ -16,11 +16,13 @@ const GUARDED_FILES = [
   'main.js',
   'arranque.js',
   'chat-view.js',
+  'chat-main.js',
 ];
 
 const LETTER = /\p{L}/u;
 const UPPERCASE = /[A-ZÁÉÍÓÚÑ]/;
 const CAMEL_CASE_IDENTIFIER = /^[a-z]+(?:[A-Z][a-z]+)+$/;
+const KEYBOARD_KEY = /^(?:Enter|Escape|Tab)$/;
 const VISIBLE_ATTRIBUTE = /\b(?:aria-label|placeholder|title|alt)="([^"]*)"/g;
 
 function skipQuoted(source, start) {
@@ -84,7 +86,7 @@ function isVisibleText({ kind, text }) {
     const attributeValues = [...text.matchAll(VISIBLE_ATTRIBUTE)].map((match) => match[1]);
     return LETTER.test(textOutsideTags) || attributeValues.some((value) => LETTER.test(value));
   }
-  return UPPERCASE.test(text) && !CAMEL_CASE_IDENTIFIER.test(text);
+  return UPPERCASE.test(text) && !CAMEL_CASE_IDENTIFIER.test(text) && !KEYBOARD_KEY.test(text);
 }
 
 export const visibleLiterals = (source) =>
@@ -157,6 +159,7 @@ test('the literal guard ignores markup, symbols and code identifiers', () => {
   assert.deepEqual(visibleLiterals("const a = `<td>×2 ½ ✕ ₽ #${x}</td>`; // Comentario 'X'"), []);
   assert.deepEqual(visibleLiterals("const a = { '2x': 'a\\'b' };"), []);
   assert.deepEqual(visibleLiterals("read('localStorage', 'sessionStorage');"), []);
+  assert.deepEqual(visibleLiterals("if (event.key === 'Enter') send();"), []);
 });
 
 for (const file of GUARDED_FILES) {
