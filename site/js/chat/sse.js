@@ -36,7 +36,7 @@ function parsearEvento(bloque) {
     .split(/\r?\n/)
     .filter((linea) => linea.startsWith('data:'))
     .map((linea) => linea.slice(5));
-  if (datos.length === 0) return null;
+  if (datos.length === 0 || datos.join('').trim() === '[DONE]') return null;
   const json = JSON.parse(datos.join('\n'));
   return json.type === 'ping' ? null : { evento: json.type, datos: json };
 }
