@@ -84,6 +84,19 @@ Y sobre la capa de interfaz `site/js/ui` (sin el arranque `main.js` ni `theme.js
 npm run test:mutation:ui
 ```
 
+Tests del servidor MCP (`mcp/`), sin red, con un transporte en memoria, una PokéAPI simulada y procesos reales del binario; necesitan antes `npm ci --prefix mcp`:
+
+```bash
+npm ci --prefix mcp
+npm run mcp:test
+```
+
+Mutación con Stryker sobre `mcp/src`, umbral del 85 %, en dos ejecuciones de hasta 180 s: los módulos base (`stryker.mcp-base.config.json`) y después tools, resources y prompts (`stryker.mcp.config.json`):
+
+```bash
+npm run mcp:test:mutation
+```
+
 Smoke e2e en Chromium con Playwright: sirve `site/` con `scripts/serve-site.mjs` y simula todas las peticiones a PokéAPI y a los sprites con los fixtures, así que no usa la red; falla si la página pide algo externo sin simular o si hay violaciones de la CSP:
 
 ```bash
