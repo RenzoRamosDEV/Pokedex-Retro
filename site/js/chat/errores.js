@@ -54,8 +54,8 @@ export const errorDeRed = (detalle) =>
  * @param {{ status: number, json(): Promise<any> }} respuesta
  */
 export async function errorDeRespuesta(respuesta) {
-  const cuerpo = await respuesta.json().catch(() => null);
-  return crearErrorDeClaude(respuesta.status, cuerpo?.error?.message ?? `HTTP ${respuesta.status}`);
+  const cuerpo = await respuesta.json().catch(() => ({}));
+  return crearErrorDeClaude(respuesta.status, cuerpo.error?.message ?? `HTTP ${respuesta.status}`);
 }
 
 /** @param {{ tipo: string, message: string }} error */

@@ -27,20 +27,18 @@ export function crearLectorSse() {
 }
 
 /**
+ * Every Messages API event repeats its name as `type` in the data, so the `event:` line is not needed.
  * @param {string} bloque
  * @returns {EventoSse | null}
  */
 function parsearEvento(bloque) {
-  let evento = null;
-  const datos = [];
-  for (const linea of bloque.split(/\r?\n/)) {
-    if (linea.startsWith('event:')) evento = linea.slice(6).trim();
-    else if (linea.startsWith('data:')) datos.push(linea.slice(5).trimStart());
-  }
+  const datos = bloque
+    .split(/\r?\n/)
+    .filter((linea) => linea.startsWith('data:'))
+    .map((linea) => linea.slice(5));
   if (datos.length === 0) return null;
   const json = JSON.parse(datos.join('\n'));
-  const nombre = evento ?? json.type;
-  return nombre === 'ping' ? null : { evento: nombre, datos: json };
+  return json.type === 'ping' ? null : { evento: json.type, datos: json };
 }
 
 /** @returns {Mensaje} */

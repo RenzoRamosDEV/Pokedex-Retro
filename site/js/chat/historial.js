@@ -10,12 +10,11 @@ const ANTERIORES_OMITIDOS = ['thinking', 'redacted_thinking', 'tool_use'];
  * @returns {any[]}
  */
 export function bloquesParaHistorial(content) {
-  const ultimoFallback = content.map((bloque) => bloque.type).lastIndexOf('fallback');
-  return content
-    .filter(
-      (bloque, index) => index >= ultimoFallback || !ANTERIORES_OMITIDOS.includes(bloque.type),
-    )
-    .map(sinEntradaInvalida);
+  const corte = Math.max(content.map((bloque) => bloque.type).lastIndexOf('fallback'), 0);
+  const anteriores = content
+    .slice(0, corte)
+    .filter((bloque) => !ANTERIORES_OMITIDOS.includes(bloque.type));
+  return [...anteriores, ...content.slice(corte)].map(sinEntradaInvalida);
 }
 
 /** @param {any} bloque */

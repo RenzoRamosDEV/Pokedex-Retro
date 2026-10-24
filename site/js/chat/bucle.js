@@ -1,5 +1,4 @@
 // @ts-check
-import { MENSAJES } from '../core/mensajes.js';
 import {
   crearErrorDeClaude,
   errorDeEvento,
@@ -34,7 +33,7 @@ async function enviar({ fetch, url, opciones, esperar, signal, ahora }) {
     try {
       respuesta = await fetch(url, { ...opciones, signal });
     } catch (error) {
-      if (signal?.aborted || error.name === 'AbortError') throw error;
+      if (error.name === 'AbortError') throw error;
       throw errorDeRed(error.message);
     }
     if (respuesta.ok) return respuesta;
@@ -56,20 +55,15 @@ async function leerMensaje(respuesta, alTexto, signal) {
   const lector = crearLectorSse();
   const mensaje = crearMensaje();
   const reader = respuesta.body.getReader();
-  const cancelar = () => reader.cancel().catch(() => {});
-  signal?.addEventListener('abort', cancelar, { once: true });
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      signal?.throwIfAborted();
-      if (done) break;
-      for (const evento of lector.leer(value)) {
-        const texto = aplicarEventoClasificado(mensaje, evento);
-        if (texto !== '') alTexto(texto);
-      }
+  signal?.addEventListener('abort', () => reader.cancel().catch(() => {}));
+  for (;;) {
+    const { done, value } = await reader.read();
+    signal?.throwIfAborted();
+    if (done) break;
+    for (const evento of lector.leer(value)) {
+      const texto = aplicarEventoClasificado(mensaje, evento);
+      if (texto !== '') alTexto(texto);
     }
-  } finally {
-    signal?.removeEventListener('abort', cancelar);
   }
   if (mensaje.stop_reason === null) throw errorDeRed('stream incompleto');
   return mensaje;
@@ -83,31 +77,24 @@ function aplicarEventoClasificado(mensaje, evento) {
   try {
     return aplicarEvento(mensaje, evento);
   } catch (error) {
-    throw error.name === 'ErrorDeStream' ? errorDeEvento(error) : error;
+    throw errorDeEvento(error);
   }
 }
 
 /**
- * Runs every tool use of the turn in parallel; a failure becomes an `is_error` result.
+ * Runs every tool use of the turn in parallel; a failure comes back as an `is_error` result.
  * @param {any[]} turno assistant blocks as they go back to the API
  * @param {Set<string>} sinJson ids of tool uses whose input did not parse
  * @param {import('./herramientas.js').PokeApiPort} port
  * @param {(evento: EventoChat) => void} alEvento
- * @param {AbortSignal} [signal]
  */
-function ejecutarTurno(turno, sinJson, port, alEvento, signal) {
+function ejecutarTurno(turno, sinJson, port, alEvento) {
   const usos = turno.filter((bloque) => bloque.type === 'tool_use');
   return Promise.all(
     usos.map(async ({ id, name, input }) => {
       alEvento({ tipo: 'herramienta', nombre: name });
       const entrada = sinJson.has(id) ? ENTRADA_NO_JSON : input;
-      let resultado;
-      try {
-        resultado = await ejecutarHerramienta(port, name, entrada);
-      } catch (error) {
-        if (signal?.aborted) throw error;
-        resultado = { contenido: MENSAJES.caida, esError: true };
-      }
+      const resultado = await ejecutarHerramienta(port, name, entrada);
       return {
         type: 'tool_result',
         tool_use_id: id,
@@ -188,12 +175,12 @@ export async function responder({
       const sinJson = new Set(
         mensaje.content.filter((b) => 'entrada_invalida' in b).map((b) => b.id),
       );
-      const resultados = await ejecutarTurno(turno, sinJson, port, alEvento, signal);
+      const resultados = await ejecutarTurno(turno, sinJson, port, alEvento);
       signal?.throwIfAborted();
       conversacion.push({ role: 'user', content: resultados });
     }
   } catch (error) {
-    if (signal?.aborted || error.name === 'AbortError') return terminar('abortada');
+    if (error.name === 'AbortError') return terminar('abortada');
     const clasificado =
       error.name === 'ErrorDeClaude' ? error : crearErrorDeClaude(500, error.message);
     return terminar('error', false, clasificado);
