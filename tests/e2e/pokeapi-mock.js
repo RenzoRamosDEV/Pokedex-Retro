@@ -69,9 +69,21 @@ function listBody(resource, searchParams) {
   };
 }
 
+const typeRef = (name) => ({ name, url: `${API}/type/${TYPE_NAMES.indexOf(name) + 1}/` });
+
 const OVERRIDES = {
   'pokemon/pikachu': {
     types: [{ slot: 1, type: { name: 'electric', url: `${API}/type/13/` } }],
+  },
+  'type/electric': {
+    damage_relations: {
+      double_damage_to: ['water', 'flying'].map(typeRef),
+      half_damage_to: ['electric', 'grass', 'dragon'].map(typeRef),
+      no_damage_to: ['ground'].map(typeRef),
+      double_damage_from: ['ground'].map(typeRef),
+      half_damage_from: ['flying', 'steel', 'electric'].map(typeRef),
+      no_damage_from: [],
+    },
   },
 };
 

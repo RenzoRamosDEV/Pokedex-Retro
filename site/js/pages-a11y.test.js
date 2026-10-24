@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -12,12 +12,18 @@ const SECTION_PAGES = [
   'naturalezas.html',
   'objetos.html',
   'bayas.html',
+  'chat.html',
 ];
 
 const readSite = (file) => readFileSync(join(SITE_DIR, file), 'utf8');
 const tagsOf = (html, name) => html.match(new RegExp(`<${name}\\b[^>]*>`, 'gi')) ?? [];
 const attribute = (tag, name) => tag.match(new RegExp(`\\s${name}="([^"]*)"`, 'i'))?.[1] ?? null;
 const mainOf = (html) => html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+const plain = (text) => text.replace(/\s+/g, ' ').trim();
+const navLinksOf = (html) =>
+  [...html.matchAll(/<a href="([^"]*)" class="nav-link[^"]*"[^>]*>([^<]*)<\/a>/g)].map(
+    ([, href, text]) => [href, text],
+  );
 
 for (const page of SECTION_PAGES) {
   const html = readSite(page);
@@ -86,6 +92,16 @@ for (const page of SECTION_PAGES) {
     assert.match(nav, /\shidden(?=[\s>])/);
   });
 
+  test(`${page}: the navigation ends with CHAT and the INFO panel counts 8 sections`, () => {
+    const links = navLinksOf(html);
+    assert.equal(links.length, 8);
+    assert.deepEqual(links.at(-1), ['chat.html', 'CHAT']);
+    assert.match(
+      html,
+      /<span class="info-label">SECCIONES<\/span>\s*<span class="info-value">8<\/span>/,
+    );
+  });
+
   test(`${page}: main has a noscript notice`, () => {
     assert.match(
       mainOf(html),
@@ -101,4 +117,71 @@ test('pokedex.css disables transitions and animations under prefers-reduced-moti
   const block = css.slice(start);
   assert.match(block, /transition:\s*none\s*!important/);
   assert.match(block, /animation:\s*none\s*!important/);
+});
+
+describe('chat.html', () => {
+  const html = readSite('chat.html');
+  const byId = (id) =>
+    tagsOf(html, '[a-z]+').find((tag) => attribute(tag, 'id') === id) ?? assert.fail(id);
+  const labelFor = (id) =>
+    html.match(new RegExp(`<label\\b[^>]*\\sfor="${id}"[^>]*>([\\s\\S]*?)</label>`))?.[1].trim();
+
+  test('the message area is a polite log', () => {
+    const logs = tagsOf(html, '[a-z]+').filter((tag) => attribute(tag, 'role') === 'log');
+    assert.equal(logs.length, 1);
+    assert.equal(attribute(logs[0], 'aria-live'), 'polite');
+    assert.ok(mainOf(html).includes(logs[0]));
+  });
+
+  for (const id of ['chat-clave', 'chat-recordar', 'chat-modelo', 'chat-mensaje']) {
+    test(`#${id} has an associated label with text`, () => {
+      byId(id);
+      assert.ok(labelFor(id), id);
+    });
+  }
+
+  test('the key field is a password without autocomplete', () => {
+    const input = byId('chat-clave');
+    assert.equal(attribute(input, 'type'), 'password');
+    assert.equal(attribute(input, 'autocomplete'), 'off');
+  });
+
+  test('remembering the key is an unchecked checkbox labelled «Recordar en este navegador»', () => {
+    const checkbox = byId('chat-recordar');
+    assert.equal(attribute(checkbox, 'type'), 'checkbox');
+    assert.doesNotMatch(checkbox, /\schecked/);
+    assert.equal(plain(labelFor('chat-recordar')), 'Recordar en este navegador');
+  });
+
+  test('the model selector offers the three models with their prices, Opus 5.5 selected', () => {
+    const options = [
+      ...html.matchAll(/<option value="([^"]*)"( selected)?>([^<]*)<\/option>/g),
+    ].map(([, value, selected, text]) => [value, Boolean(selected), plain(text)]);
+    assert.deepEqual(options, [
+      ['claude-opus-5-5', true, 'Claude Opus 5.5 — $4 / $20 por millón de tokens'],
+      ['claude-sonnet-5-5', false, 'Claude Sonnet 5.5 — $2 / $10'],
+      ['claude-haiku-5-5', false, 'Claude Haiku 5.5 — $0,10 / $0,50'],
+    ]);
+  });
+
+  test('shows the privacy and cost notice next to the key form', () => {
+    assert.match(
+      plain(html),
+      /Tu clave se queda en este navegador y solo se envía a api\.anthropic\.com\. Las conversaciones se cobran en tu cuenta de Anthropic\./,
+    );
+  });
+
+  test('offers ENVIAR, DETENER, NUEVA CONVERSACIÓN and OLVIDAR CLAVE', () => {
+    const buttons = [...html.matchAll(/<button\b[^>]*>([^<]*)<\/button>/g)].map(([, text]) =>
+      plain(text),
+    );
+    for (const name of ['ENVIAR', 'DETENER', 'NUEVA CONVERSACIÓN', 'OLVIDAR CLAVE']) {
+      assert.ok(buttons.includes(name), name);
+    }
+  });
+
+  test('marks only its own CHAT link as the current page', () => {
+    const current = tagsOf(html, 'a').filter((tag) => attribute(tag, 'aria-current') === 'page');
+    assert.deepEqual(current, ['<a href="chat.html" class="nav-link active" aria-current="page">']);
+  });
 });

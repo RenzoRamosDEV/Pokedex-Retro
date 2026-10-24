@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es" prefix="og: https://ogp.me/ns#">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https://raw.githubusercontent.com; connect-src https://pokeapi.co https://api.anthropic.com; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    />
+    <title>CHAT — Pokédex Retro</title>
+
+    <meta
+      name="description"
+      content="Pregunta en lenguaje natural por los Pokémon, movimientos, tipos y más de la Pokédex Retro con tu propia clave de Anthropic."
+    />
+    <meta name="keywords" content="pokedex, pokemon, retro, stats, tipos, habilidades, pokeapi" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#cc2200" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pokédex Retro" />
+    <meta property="og:title" content="CHAT — Pokédex Retro" />
+    <meta
+      property="og:description"
+      content="Explora los Pokémon con estética de consola clásica de los 90. Stats, tipos, habilidades y más."
+    />
+    <meta property="og:image" content="images/logo-pokeball.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="400" />
+    <meta property="og:image:height" content="400" />
+    <meta property="og:image:alt" content="Pokébola — Pokédex Retro" />
+    <meta property="og:locale" content="es_ES" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="CHAT — Pokédex Retro" />
+    <meta
+      name="twitter:description"
+      content="Explora los Pokémon con estética de consola clásica de los 90. Stats, tipos, habilidades y más."
+    />
+    <meta name="twitter:image" content="images/logo-pokeball.png" />
+    <meta name="twitter:image:alt" content="Pokébola — Pokédex Retro" />
+
+    <link rel="icon" type="image/png" sizes="32x32" href="images/logo-pokeball.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="images/logo-pokeball.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="images/logo-pokeball.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+
+    <link
+      rel="preload"
+      href="fonts/press-start-2p-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/vt323-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="css/pokedex.css" />
+    <script type="module" src="js/ui/chat-main.js"></script>
+  </head>
+  <body class="section-chat">
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <button
+          type="button"
+          id="nav-btn"
+          class="hamburger"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+          aria-controls="nav-menu"
+        >
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </button>
+        <div class="theme-picker-wrap">
+          <button
+            type="button"
+            id="theme-btn"
+            class="theme-cycle-btn"
+            title="Cambiar tema"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="theme-dropdown"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2 A10 10 0 0 1 12 22 Z" fill="currentColor" stroke="none" />
+              <line x1="12" y1="2" x2="12" y2="22" />
+            </svg>
+          </button>
+          <div id="theme-dropdown" class="theme-dropdown" hidden>
+            <button class="theme-option" data-value="normal">NORMAL</button>
+            <button class="theme-option" data-value="gb">DMG</button>
+            <button class="theme-option" data-value="gray">MONO</button>
+          </div>
+        </div>
+
+        <div class="info-wrap">
+          <button
+            type="button"
+            id="info-btn"
+            class="theme-cycle-btn"
+            title="Información"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="info-dropdown"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="8" stroke-width="3" stroke-linecap="round" />
+              <line x1="12" y1="12" x2="12" y2="17" />
+            </svg>
+          </button>
+          <div id="info-dropdown" class="theme-dropdown info-panel" hidden>
+            <div class="info-row info-title">POKEDEX RETRO</div>
+            <div class="info-row">
+              <span class="info-label">AUTOR</span>
+              <span class="info-value">RENZO RAMOS</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">VERSIÓN</span>
+              <span class="info-value" data-version></span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">STACK</span>
+              <span class="info-value">JAVASCRIPT</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">DATOS</span>
+              <span class="info-value">POKEAPI.CO</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">SECCIONES</span>
+              <span class="info-value">8</span>
+            </div>
+          </div>
+        </div>
+        <h1 class="site-title"><a href="index.html" class="site-title-link">POKEDEX</a></h1>
+        <div class="header-badge">RENZO RAMOS</div>
+      </div>
+
+      <nav id="nav-menu" class="nav-menu" aria-label="Navegación principal" hidden>
+        <a href="index.html" class="nav-link">POKEDEX</a>
+        <a href="movimientos.html" class="nav-link">MOVIMIENTOS</a>
+        <a href="tipos.html" class="nav-link">TIPOS</a>
+        <a href="habilidades.html" class="nav-link">HABILIDADES</a>
+        <a href="naturalezas.html" class="nav-link">NATURALEZAS</a>
+        <a href="objetos.html" class="nav-link">OBJETOS</a>
+        <a href="bayas.html" class="nav-link">BAYAS</a>
+        <a href="chat.html" class="nav-link active" aria-current="page">CHAT</a>
+      </nav>
+    </header>
+
+    <main id="contenido" class="site-main" tabindex="-1">
+      <div class="page-header">
+        <h2 class="page-title">CHAT CON CLAUDE</h2>
+      </div>
+      <noscript><p class="page-info">ESTA POKÉDEX NECESITA JAVASCRIPT</p></noscript>
+      <p class="page-info estado" role="status" aria-live="polite" data-estado></p>
+
+      <form class="chat-panel chat-key" data-clave-form hidden>
+        <label class="chat-label" for="chat-clave">CLAVE DE ANTHROPIC</label>
+        <input
+          id="chat-clave"
+          class="chat-input"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          aria-describedby="chat-aviso"
+        />
+        <div class="chat-check">
+          <input id="chat-recordar" type="checkbox" />
+          <label for="chat-recordar">Recordar en este navegador</label>
+        </div>
+        <button type="submit" class="page-btn">GUARDAR CLAVE</button>
+        <p id="chat-aviso" class="chat-notice">
+          Tu clave se queda en este navegador y solo se envía a api.anthropic.com. Las
+          conversaciones se cobran en tu cuenta de Anthropic.
+        </p>
+      </form>
+
+      <section class="chat-panel chat" data-chat aria-label="Conversación" hidden>
+        <div class="chat-toolbar">
+          <label class="chat-label" for="chat-modelo">MODELO</label>
+          <select id="chat-modelo" class="chat-input">
+            <option value="claude-opus-5-5" selected>
+              Claude Opus 5.5 — $4 / $20 por millón de tokens
+            </option>
+            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 — $2 / $10</option>
+            <option value="claude-haiku-5-5">Claude Haiku 5.5 — $0,10 / $0,50</option>
+          </select>
+          <button type="button" class="page-btn" id="chat-nueva">NUEVA CONVERSACIÓN</button>
+          <button type="button" class="page-btn" id="chat-olvidar">OLVIDAR CLAVE</button>
+        </div>
+        <div class="chat-log" role="log" aria-live="polite" data-registro></div>
+        <form class="chat-question" data-pregunta-form>
+          <label class="chat-label" for="chat-mensaje">MENSAJE</label>
+          <textarea id="chat-mensaje" class="chat-input" rows="3"></textarea>
+          <div class="chat-actions">
+            <button type="submit" class="page-btn" id="chat-enviar">ENVIAR</button>
+            <button type="button" class="page-btn" id="chat-detener" disabled>DETENER</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

@@ -133,7 +133,7 @@ test('the CLI ignores 404.html even with a different header', (t) => {
 test('the CLI exits 0 on the real site', () => {
   const result = runCli([]);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /7/);
+  assert.match(result.stdout, /8/);
 });
 
 test('importing the module does not run the CLI', (t) => {
