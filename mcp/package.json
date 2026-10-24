@@ -1,6 +1,6 @@
 {
   "name": "pokedex-retro-mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Servidor MCP local por stdio para consultar la Pokédex Retro sobre PokéAPI",
   "license": "MIT",
   "private": true,
