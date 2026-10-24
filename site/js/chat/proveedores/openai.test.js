@@ -5,6 +5,23 @@ import { DEFINICIONES } from '../herramientas.js';
 import { SISTEMA } from '../peticion.js';
 import { MODELOS_OPENAI } from '../modelos.js';
 import { DESCRIPCIONES } from '../../core/consultas.js';
+import { ENTRADA_NO_JSON } from '../herramientas.js';
+import { crearLectorSse } from '../sse.js';
+import {
+  functionCallItem,
+  itemDone,
+  itemEvents,
+  messageItem,
+  reasoningItem,
+  respuesta,
+  responseCompleted,
+  responseCreated,
+  responseIncomplete,
+  serializar,
+  textDelta,
+  trocear,
+  usage,
+} from '../../../../tests/support/openai-sse.js';
 
 const CLAVE = 'sk-proj-prueba';
 const HISTORIAL = [{ role: 'user', content: 'hola' }];
@@ -174,5 +191,228 @@ describe('FUNCIONES', () => {
     const buscar = DEFINICIONES.find((d) => d.name === 'buscar_pokemon');
     assert.deepEqual(buscar.input_schema.required, ['consulta']);
     assert.equal(buscar.input_schema.properties.pagina.type, 'integer');
+  });
+});
+
+/** Feeds SSE events to a fresh reading and returns the visible texts and the reading. */
+function leer(eventos) {
+  const lectura = openai.crearLectura();
+  const textos = eventos.map(({ event, data }) => lectura.aplicar({ evento: event, datos: data }));
+  return { textos, lectura };
+}
+
+/** Same as `leer`, but through the wire format cut at the given byte offsets. */
+function leerTrozos(eventos, cortes) {
+  const lector = crearLectorSse();
+  const lectura = openai.crearLectura();
+  let texto = '';
+  for (const trozo of trocear(serializar(eventos), cortes)) {
+    for (const evento of lector.leer(trozo)) texto += lectura.aplicar(evento);
+  }
+  return { texto, turno: lectura.terminar() };
+}
+
+const turno = (opciones) => leer(respuesta(opciones)).lectura.terminar();
+
+const RAZONAMIENTO = reasoningItem({ cifrado: 'gAAAAB-cifrado' });
+const MENSAJE = messageItem({ texto: 'Gyarádos ⚡ es ×4' });
+const LLAMADA = functionCallItem({
+  callId: 'call_9',
+  name: 'efectividad_tipos',
+  args: { atacante: 'electric', defensor: ['water', 'flying'] },
+});
+const MUESTRA = respuesta({
+  items: [RAZONAMIENTO, MENSAJE, LLAMADA],
+  final: responseCompleted(usage({ entrada: 12, salida: 7 })),
+});
+
+describe('openai.crearLectura', () => {
+  test('rebuilds the sample stream into its turn', () => {
+    assert.deepEqual(leerTrozos(MUESTRA, []), {
+      texto: 'Gyarádos ⚡ es ×4',
+      turno: {
+        motivo: 'herramientas',
+        historial: [RAZONAMIENTO, MENSAJE, LLAMADA],
+        llamadas: [
+          {
+            id: 'call_9',
+            nombre: 'efectividad_tipos',
+            entrada: { atacante: 'electric', defensor: ['water', 'flying'] },
+          },
+        ],
+        uso: { entrada: 12, salida: 7 },
+      },
+    });
+  });
+
+  test('every cut point of the sample stream gives the same text and turn', () => {
+    const esperado = leerTrozos(MUESTRA, []);
+    const longitud = new TextEncoder().encode(serializar(MUESTRA)).length;
+    for (let corte = 1; corte < longitud; corte += 1) {
+      assert.deepEqual(leerTrozos(MUESTRA, [corte]), esperado, `corte ${corte}`);
+    }
+  });
+
+  test('a text delta split in three, once inside a multibyte character, reads the same', () => {
+    const eventos = [responseCreated(), textDelta(0, '⚡ Gyarádos'), responseCompleted()];
+    const serie = serializar(eventos);
+    const inicio = new TextEncoder().encode(serie.slice(0, serie.indexOf('⚡'))).length;
+    const { texto } = leerTrozos(eventos, [inicio + 1, inicio + 20]);
+    assert.equal(texto, '⚡ Gyarádos');
+  });
+
+  test('returns each output_text delta as visible text, in order', () => {
+    const { textos } = leer([responseCreated(), textDelta(0, 'Gyara'), textDelta(0, 'dos')]);
+    assert.deepEqual(textos, ['', 'Gyara', 'dos']);
+  });
+
+  test('ignores unknown and intermediate events', () => {
+    const { textos, lectura } = leer([
+      { event: 'response.reasoning_summary_text.delta', data: { type: 'x', delta: 'no' } },
+      { event: 'response.function_call_arguments.delta', data: { delta: '{"a"' } },
+      { event: 'response.desconocido', data: { delta: 'no' } },
+      responseCompleted(),
+    ]);
+    assert.deepEqual(textos, ['', '', '', '']);
+    assert.deepEqual(lectura.terminar().historial, []);
+  });
+
+  test('keeps the output_index order even when the done events arrive out of order', () => {
+    const { lectura } = leer([
+      itemDone(2, LLAMADA),
+      itemDone(0, RAZONAMIENTO),
+      itemDone(1, MENSAJE),
+      responseCompleted(),
+    ]);
+    assert.deepEqual(lectura.terminar().historial, [RAZONAMIENTO, MENSAJE, LLAMADA]);
+  });
+
+  test('drops created_by and keeps the rest of every item identical', () => {
+    const conAutor = [
+      reasoningItem({ cifrado: 'gAAAA-x', createdBy: 'resp_1' }),
+      messageItem({ texto: 'Hola', phase: 'final_answer', createdBy: 'resp_1' }),
+      functionCallItem({ name: 'naturalezas', createdBy: 'resp_1' }),
+    ];
+    const { historial } = turno({ items: conAutor });
+    assert.deepEqual(historial, [
+      reasoningItem({ cifrado: 'gAAAA-x' }),
+      messageItem({ texto: 'Hola', phase: 'final_answer' }),
+      functionCallItem({ name: 'naturalezas' }),
+    ]);
+    assert.equal(historial[1].phase, 'final_answer');
+    assert.equal(historial[0].encrypted_content, 'gAAAA-x');
+  });
+
+  test('completed without calls ends as fin', () => {
+    assert.equal(turno({ items: [MENSAJE] }).motivo, 'fin');
+  });
+
+  test('incomplete by max_output_tokens ends as cortada, keeping its calls', () => {
+    const resultado = turno({
+      items: [LLAMADA],
+      final: responseIncomplete('max_output_tokens'),
+    });
+    assert.equal(resultado.motivo, 'cortada');
+    assert.equal(resultado.llamadas.length, 1);
+  });
+
+  test('incomplete by content_filter ends as rechazo', () => {
+    assert.equal(
+      turno({ items: [MENSAJE], final: responseIncomplete('content_filter') }).motivo,
+      'rechazo',
+    );
+  });
+
+  test('a refusal part ends as rechazo even with calls', () => {
+    assert.equal(
+      turno({ items: [messageItem({ rechazo: 'No puedo.' }), LLAMADA] }).motivo,
+      'rechazo',
+    );
+  });
+
+  test('a stream without a final event is a lost connection', () => {
+    const { lectura } = leer([responseCreated(), ...itemEvents(0, MENSAJE)]);
+    assert.throws(() => lectura.terminar(), {
+      name: 'ErrorDeOpenAI',
+      codigo: 'red',
+      estado: 0,
+      detalle: 'stream incompleto',
+    });
+  });
+
+  test('drops top-level nulls from the parsed arguments', () => {
+    const { llamadas } = turno({
+      items: [
+        functionCallItem({
+          callId: 'call_1',
+          name: 'buscar_pokemon',
+          json: '{"consulta":"char","pagina":null,"tamano_pagina":null}',
+        }),
+      ],
+    });
+    assert.deepEqual(llamadas, [
+      { id: 'call_1', nombre: 'buscar_pokemon', entrada: { consulta: 'char' } },
+    ]);
+  });
+
+  test('keeps nested nulls and falsy values', () => {
+    const { llamadas } = turno({
+      items: [functionCallItem({ name: 'x', json: '{"a":0,"b":"","c":false,"d":[null]}' })],
+    });
+    assert.deepEqual(llamadas[0].entrada, { a: 0, b: '', c: false, d: [null] });
+  });
+
+  test('arguments that do not parse are called with ENTRADA_NO_JSON and go back unchanged', () => {
+    const roto = functionCallItem({ callId: 'call_2', name: 'naturalezas', json: '{"estad' });
+    const resultado = turno({ items: [roto] });
+    assert.deepEqual(resultado.llamadas, [
+      { id: 'call_2', nombre: 'naturalezas', entrada: ENTRADA_NO_JSON },
+    ]);
+    assert.deepEqual(resultado.historial, [roto]);
+  });
+
+  test('arguments that parse to null are called with ENTRADA_NO_JSON', () => {
+    const resultado = turno({ items: [functionCallItem({ name: 'naturalezas', json: 'null' })] });
+    assert.equal(resultado.llamadas[0].entrada, ENTRADA_NO_JSON);
+  });
+
+  test('the usage is input_tokens and output_tokens, adding up to the spec scenario', () => {
+    const primero = turno({
+      items: [LLAMADA],
+      final: responseCompleted(usage({ entrada: 100, cache: 40, salida: 20 })),
+    });
+    const segundo = turno({
+      items: [MENSAJE],
+      final: responseCompleted(usage({ entrada: 200, cache: 150, salida: 30 })),
+    });
+    assert.deepEqual(primero.uso, { entrada: 100, salida: 20 });
+    assert.deepEqual(segundo.uso, { entrada: 200, salida: 30 });
+    assert.equal(primero.uso.entrada + segundo.uso.entrada, 300);
+    assert.equal(primero.uso.salida + segundo.uso.salida, 50);
+  });
+
+  test('a missing usage counts as zero', () => {
+    const final = responseCompleted();
+    delete final.data.response.usage;
+    assert.deepEqual(turno({ items: [MENSAJE], final }).uso, { entrada: 0, salida: 0 });
+  });
+});
+
+describe('openai history items', () => {
+  test('mensajeUsuario is a user input message', () => {
+    assert.deepEqual(openai.mensajeUsuario('hola'), { role: 'user', content: 'hola' });
+  });
+
+  test('resultados is one function_call_output per call, in order', () => {
+    assert.deepEqual(
+      openai.resultados([
+        { id: 'call_1', contenido: 'Pokémon gyarados (#130).', esError: false },
+        { id: 'call_2', contenido: 'No existe.', esError: true },
+      ]),
+      [
+        { type: 'function_call_output', call_id: 'call_1', output: 'Pokémon gyarados (#130).' },
+        { type: 'function_call_output', call_id: 'call_2', output: 'No existe.' },
+      ],
+    );
   });
 });
