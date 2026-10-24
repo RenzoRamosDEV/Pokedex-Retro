@@ -255,11 +255,11 @@ const oaRespuestaEfectividad = () => ({
   }),
 });
 
-async function abrirChatAmbos(page, { openai = [], anthropic = [] } = {}) {
+async function abrirChatAmbos(page, { openai = [], anthropic = [], modelos = [] } = {}) {
   pokeApi = await mockPokeApi(page);
   const mocks = {
     anthropic: await mockAnthropic(page, anthropic),
-    openai: await mockOpenai(page, openai),
+    openai: await mockOpenai(page, openai, { modelos }),
   };
   await page.goto('chat.html');
   return mocks;
@@ -472,7 +472,33 @@ test('the provider selector is disabled while a reply is held', async ({ page })
   await page.getByRole('button', { name: 'DETENER' }).click();
   await expect(page.getByLabel('PROVEEDOR')).toBeEnabled();
   openai.soltar();
+  expect(openai.modelos).toEqual([]);
 });
+
+for (const [estadoModelos, mensajeEsperado] of [
+  [401, 'Clave de OpenAI no válida. Revísala en platform.openai.com.'],
+  [
+    200,
+    'OpenAI rechazó la petición. Revisa el saldo y los límites de tu cuenta en platform.openai.com.',
+  ],
+]) {
+  test(`an OpenAI error without CORS headers is diagnosed with /v1/models ${estadoModelos}`, async ({
+    page,
+  }) => {
+    const { openai } = await abrirChatAmbos(page, {
+      openai: [{ sinCors: true }, oaRespuestaTexto('nunca')],
+      modelos: [estadoModelos],
+    });
+    await elegirProveedor(page, 'OpenAI');
+    await guardarClaveOpenai(page);
+    await preguntar(page, 'hola');
+    await expect(estado(page)).toHaveText(mensajeEsperado);
+    expect(openai.posts).toHaveLength(1);
+    expect(openai.modelos).toHaveLength(1);
+    expect(openai.modelos[0].headers.authorization).toBe(`Bearer ${CLAVE_OPENAI}`);
+    expect(await page.content()).not.toContain(CLAVE_OPENAI);
+  });
+}
 
 test('changing the OpenAI model starts a new conversation', async ({ page }) => {
   const { openai } = await abrirChatAmbos(page, {
