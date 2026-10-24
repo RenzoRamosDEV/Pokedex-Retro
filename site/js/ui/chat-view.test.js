@@ -241,7 +241,7 @@ describe('createChatView', () => {
     ],
     [{ codigo: 'saturado' }, 'OpenAI está saturado. Inténtalo en unos minutos.'],
     [{ codigo: 'red' }, 'Sin conexión con OpenAI.'],
-    [{ codigo: 'servidor', estado: 500 }, 'Error de OpenAI (500). Inténtalo de nuevo.'],
+    [{ codigo: 'servidor', estado: 500, detalle: 'fallo' }, 'Error de OpenAI (500): fallo'],
     [{ codigo: 'permiso' }, 'Tu clave no tiene permiso para este modelo.'],
     [{ codigo: 'peticion', detalle: 'Bad schema' }, 'Petición no válida: Bad schema'],
     [{ codigo: 'limite_uso' }, 'Límite de uso alcanzado. Espera un momento.'],
