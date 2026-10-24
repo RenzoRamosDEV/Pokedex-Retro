@@ -82,6 +82,8 @@ export const STRINGS = deepFreeze({
     claveAnthropic: 'CLAVE DE ANTHROPIC',
     claveOpenai: 'CLAVE DE OPENAI',
     consultando: 'CONSULTANDO: {nombre}',
+    subagente: 'SUBAGENTE: {nombre}',
+    skill: 'SKILL: {nombre}',
     cortada: ' (respuesta cortada por longitud)',
     limite: 'He alcanzado el límite de consultas para esta pregunta.',
     rechazo: 'Claude no puede responder a esta petición.',
