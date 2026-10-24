@@ -137,6 +137,25 @@ Los errores finales con OpenAI SHALL mostrarse así: 401 `Clave de OpenAI no vá
 - **WHEN** la API responde 500 tres veces seguidas
 - **THEN** se hacen 3 peticiones y se muestra `Error de OpenAI (500). Inténtalo de nuevo.`
 
+### Requirement: Diagnóstico de errores de OpenAI sin respuesta legible
+Cuando el `POST` a `/v1/responses` falla sin respuesta legible (sus errores no llevan `Access-Control-Allow-Origin`) y no por un aborto, el chat SHALL hacer un único diagnóstico `GET https://api.openai.com/v1/models` con la misma `authorization: Bearer <clave>`, sin cuerpo ni reintentos, y elegir el mensaje según su resultado. La pregunta MUST NOT reintentarse.
+
+#### Scenario: Clave inválida sin respuesta legible
+- **WHEN** el `POST` a `/v1/responses` falla sin respuesta legible y el diagnóstico `GET /v1/models` responde 401
+- **THEN** se hacen exactamente un `POST` y un `GET` y se muestra `Clave de OpenAI no válida. Revísala en platform.openai.com.`
+
+#### Scenario: Clave válida sin respuesta legible
+- **WHEN** el `POST` a `/v1/responses` falla sin respuesta legible y el diagnóstico responde 200
+- **THEN** no se reintenta y se muestra `OpenAI rechazó la petición. Revisa el saldo y los límites de tu cuenta en platform.openai.com.`
+
+#### Scenario: Diagnóstico sin conexión
+- **WHEN** el `POST` y el diagnóstico fallan sin respuesta, o el diagnóstico responde otro estado
+- **THEN** se muestra `Sin conexión con OpenAI.`
+
+#### Scenario: Detener no diagnostica
+- **WHEN** el usuario pulsa `DETENER` con una petición a OpenAI en curso
+- **THEN** no se hace ninguna petición a `/v1/models`
+
 ### Requirement: Errores dentro del stream de OpenAI
 Un evento `error` o `response.failed` SHALL mapearse por su código (`invalid_api_key` como 401, códigos de saldo como sin saldo, `rate_limit_exceeded` y `slow_down` como 429, `server_is_overloaded` como 503, cualquier otro como error de servidor 500), sin reintento y conservando el texto ya recibido.
 
@@ -152,8 +171,8 @@ Las respuestas de OpenAI SHALL etiquetarse `OPENAI`. Tras cada respuesta final S
 - **THEN** se muestra `Tokens: 300 entrada · 50 salida`
 
 ### Requirement: Verificación real de OpenAI sin clave válida
-Antes de publicar, el chat SHALL comprobarse en Chromium contra la API real de OpenAI sin ninguna clave válida: el preflight CORS de `api.openai.com` se completa y una petición con una clave falsa muestra el mensaje de clave inválida sin coste ni violaciones de CSP.
+Antes de publicar, el chat SHALL comprobarse en Chromium contra la API real de OpenAI sin ninguna clave válida: el preflight CORS de `api.openai.com` se completa y una petición con una clave falsa muestra, gracias al diagnóstico con `/v1/models`, el mensaje de clave inválida sin coste ni violaciones de CSP.
 
 #### Scenario: Clave falsa contra la API real
-- **WHEN** desde `chat.html` servido en local se elige `OpenAI`, se guarda `sk-falsa-verificacion` y se envía `hola`
-- **THEN** la API responde 401, la página muestra `Clave de OpenAI no válida. Revísala en platform.openai.com.` y la consola no registra violaciones de CSP
+- **WHEN** desde `chat.html` servido en local se elige `OpenAI`, se guarda `sk-falsa-prueba` y se envía `hola`
+- **THEN** se hacen un `POST` a `https://api.openai.com/v1/responses` y un `GET` a `https://api.openai.com/v1/models`, ambos con 401, la página muestra `Clave de OpenAI no válida. Revísala en platform.openai.com.`, la consola no registra violaciones de CSP y la clave no aparece en la URL, el HTML ni la consola

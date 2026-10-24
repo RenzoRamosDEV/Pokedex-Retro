@@ -129,6 +129,14 @@ La guía de códigos de error dice que reintentar errores de saldo «won't resto
 
 `connect-src https://pokeapi.co https://api.anthropic.com https://api.openai.com` en los 8 HTML y `404.html` en el mismo commit que el test exacto de `csp.test.js`, para que `check:html` y los tests pasen a la vez. La CSP sigue impidiendo exfiltrar la clave a cualquier otro origen.
 
+### D10. Diagnóstico de errores sin CORS con `/v1/models`
+
+Evidencia (2026-10-24, `curl` con `Origin: http://127.0.0.1:4181` y `Origin: https://renzoramosdev.github.io`): el preflight de `/v1/responses` devuelve `access-control-allow-origin: *`, pero el `POST /v1/responses` con clave falsa responde `401 invalid_api_key` **sin** `Access-Control-Allow-Origin` (igual que `/v1/chat/completions`), mientras que `GET /v1/models` con la misma clave falsa responde 401 **con** `access-control-allow-origin: *`. En Chromium el 401 de `/v1/responses` llega como `TypeError` (`net::ERR_FAILED`, bloqueo CORS) y se mostraba `Sin conexión con OpenAI.`
+
+Decisión: el puerto añade `errorDeConexion({ fetch, clave, detalle, signal })`, al que `bucle.js` llama cuando `fetch` rechaza sin `AbortError`. Anthropic devuelve `errorDeRed(detalle)` (sin cambios). OpenAI hace un único `GET https://api.openai.com/v1/models` con `authorization: Bearer <clave>` y la misma `signal`, sin cuerpo ni reintentos: 401 → `clave_invalida` (estado 401); 200 → nuevo código `rechazada` (`OpenAI rechazó la petición. Revisa el saldo y los límites de tu cuenta en platform.openai.com.`: con clave válida, el error ilegible más probable es de saldo o límites); fallo de red, otro estado o cualquier otra cosa → `red`. Ninguno se reintenta. Un aborto durante el `POST` o el diagnóstico se propaga como `AbortError` (estado `abortada`, sin diagnóstico tras `DETENER`). Las respuestas legibles siguen la tabla de D6. El `GET` cae dentro de `connect-src` y del confinamiento de la clave (solo `authorization` hacia `api.openai.com`).
+
+Alternativas: mostrar `Sin conexión con OpenAI.` para todo (engaña con una clave mal copiada); cambiar el texto de red por uno ambiguo (no distingue clave de saldo); proxy (descartado en D1 de 1.2.0).
+
 ### D9. Tests y mutación
 
 - `tests/support/openai-sse.js` (fuera de `site/`): constructores de `response.created`, `output_text.delta`, `output_item.done` (`message` con `output_text` o `refusal`, `reasoning` con `encrypted_content`, `function_call`), `response.completed`/`incomplete`/`failed`, `error`, serialización `event:`/`data:` y troceado, reutilizando `trocear`/`respuestaSse` de `claude-sse.js` si encajan. Los usan los tests unitarios y el mock e2e.
