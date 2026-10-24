@@ -17,7 +17,7 @@ const FONT_FILES = ['press-start-2p-latin-400-normal.woff2', 'vt323-latin-400-no
 const CSP =
   "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; " +
   "img-src 'self' https://raw.githubusercontent.com; " +
-  'connect-src https://pokeapi.co https://api.anthropic.com; ' +
+  'connect-src https://pokeapi.co https://api.anthropic.com https://api.openai.com; ' +
   "manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
 const HTML_PAGES = readdirSync(SITE_DIR)
