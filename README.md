@@ -1,10 +1,66 @@
+<div align="center">
+
+<img src="site/images/logo-pokeball.png" alt="Logo de Pokédex Retro" width="120">
+
 # Pokédex Retro
 
-Pokédex estática con estética Game Boy sobre [PokéAPI v2](https://pokeapi.co/), sin frameworks ni build, con un chat con Claude u OpenAI en el navegador y un servidor MCP para consultarla desde Claude.
+**La Pokédex de PokéAPI con estética Game Boy, un chat con IA y un servidor MCP.**
 
-![Demo de la Pokédex Retro](docs/media/demo.gif)
+Web estática sin frameworks ni build, publicada en GitHub Pages. El chat usa tu propia clave de
+Claude u OpenAI desde el navegador, y el servidor MCP deja consultarla desde Claude Code o Claude Desktop.
+
+![JavaScript](https://img.shields.io/badge/JavaScript-ES%20modules-F7DF1E?logo=javascript&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-22+-339933?logo=nodedotjs&logoColor=white)
+![PokéAPI](https://img.shields.io/badge/Pok%C3%A9API-v2-EF5350)
+![MCP](https://img.shields.io/badge/MCP-12%20herramientas-000000)
+![Claude](https://img.shields.io/badge/Claude-API-D97757?logo=anthropic&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-Responses%20API-412991?logo=openai&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33?logo=playwright&logoColor=white)
+![Stryker](https://img.shields.io/badge/Stryker-mutaci%C3%B3n-E74C3C)
+![CI](https://github.com/RenzoRamosDEV/Pokedex-Retro/actions/workflows/ci.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+</div>
+
+---
+
+<div align="center">
+
+<img src="docs/media/demo.gif" alt="Demo de la Pokédex Retro: búsqueda, ficha de un Pokémon y cambio de tema" width="100%">
 
 **Demo:** https://renzoramosdev.github.io/Pokedex-Retro/
+
+</div>
+
+---
+
+## Qué es
+
+[PokéAPI](https://pokeapi.co/) tiene todos los datos de Pokémon, pero en JSON y repartidos en
+miles de URLs. **Pokédex Retro los presenta como una Pokédex de Game Boy**: buscas, paginas y
+abres fichas sin servidor propio, porque todo corre en el navegador y se publica en GitHub Pages.
+
+Encima de esa web hay dos formas de preguntarle en lenguaje natural:
+
+- **Un chat en la propia web** — con tu clave de Claude u OpenAI, que nunca sale de tu navegador
+  salvo hacia la API de su proveedor. Sin backend y sin cuentas.
+- **Un servidor MCP** — para que Claude Code o Claude Desktop consulten la Pokédex con las mismas
+  12 herramientas que usa el chat.
+
+Es un proyecto personal de portafolio, construido por fases con [OpenSpec](https://openspec.dev/),
+con TDD y mutation testing.
+
+## Para qué sirve
+
+- **Consultar Pokémon, movimientos, tipos, habilidades, naturalezas, objetos y bayas** con
+  buscador y paginación que viven en la URL.
+- **Preguntar en lenguaje natural** — «¿qué tipos le hacen x4 a Gyarados?» — y que la IA responda
+  con datos reales de PokéAPI, no de memoria.
+- **Usar la Pokédex desde Claude** — vía MCP, en mitad de una conversación.
+- **Ver una web estática bien hecha** — CSP estricta, WCAG 2.1 AA, caché en el navegador, cero
+  dependencias en producción y CI con Lighthouse.
+
+---
 
 ## Características
 
@@ -16,6 +72,8 @@ Pokédex estática con estética Game Boy sobre [PokéAPI v2](https://pokeapi.co
 - Accesibilidad WCAG 2.1 AA: navegación por teclado, región de estado y contraste en los tres temas, auditado con axe en cada página.
 - Chat con Claude u OpenAI (`chat.html`) usando la clave de Anthropic o de OpenAI del propio visitante: las 12 herramientas del MCP se ejecutan en el navegador, sin backend.
 - Servidor MCP con 12 tools, 2 resources y 2 prompts que reutiliza la lógica de la web.
+
+---
 
 ## Arquitectura
 
@@ -36,6 +94,8 @@ flowchart LR
 
 La web, el chat y el servidor MCP comparten `site/js/core`, `site/js/mappers` y `site/js/api`. Detalle de carpetas, flujo de una búsqueda, caché, seguridad y publicación: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
+---
+
 ## Ejecutar en local
 
 Requiere Node ≥ 22.
@@ -45,6 +105,8 @@ node scripts/serve-site.mjs
 ```
 
 Abre `http://127.0.0.1:4173/` (otro puerto con `PORT=4181 node scripts/serve-site.mjs`). Abrir los HTML con `file://` no funciona porque los módulos ES necesitan HTTP, y la página 404 usa rutas absolutas `/Pokedex-Retro/…`, así que solo se ve bien servida bajo esa ruta, como en GitHub Pages.
+
+---
 
 ## Chat
 
@@ -71,6 +133,8 @@ Si algo falla, el mensaje dice por qué:
 
 Detalles y riesgos de tener la clave en el navegador: [ADR 0005](docs/adr/0005-chat-byok-fetch-directo.md) y [ADR 0006](docs/adr/0006-chat-multiproveedor-openai.md).
 
+---
+
 ## Servidor MCP
 
 ```bash
@@ -79,6 +143,8 @@ claude mcp add pokedex-retro -- node /ruta/a/Pokedex-Retro/mcp/bin/pokedex-mcp.j
 ```
 
 Sustituye la ruta por la de tu clon. Tools, configuración en Claude Desktop, variables de entorno e inspector: [`mcp/README.md`](mcp/README.md).
+
+---
 
 ## Tests
 
@@ -97,6 +163,8 @@ Instala antes las dependencias con `npm ci` y `npm ci --prefix mcp`. Los tests n
 
 Lint, formato, typecheck, `check:html` y el flujo de ramas y commits: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+---
+
 ## Decisiones
 
 - [0001: cabecera y navegación estáticas](docs/adr/0001-cabecera-navegacion-estaticas.md): HTML escrito a mano en cada página y comprobado en CI con `npm run check:html`.
@@ -106,6 +174,8 @@ Lint, formato, typecheck, `check:html` y el flujo de ramas y commits: [`CONTRIBU
 - [0005: chat con clave propia y `fetch` directo](docs/adr/0005-chat-byok-fetch-directo.md): la clave del visitante llama a la API de Claude desde el navegador, sin SDK ni backend.
 - [0006: chat multiproveedor con OpenAI](docs/adr/0006-chat-multiproveedor-openai.md): Responses API con `fetch` directo y `store: false` tras un puerto de proveedor con dos adaptadores y una clave por proveedor.
 
+---
+
 ## Licencia
 
-[MIT](LICENSE). Las fuentes Press Start 2P y VT323 se distribuyen bajo la SIL Open Font License 1.1 ([`site/fonts/OFL.txt`](site/fonts/OFL.txt)).
+[MIT](LICENSE) © Renzo Ramos. Las fuentes Press Start 2P y VT323 se distribuyen bajo la SIL Open Font License 1.1 ([`site/fonts/OFL.txt`](site/fonts/OFL.txt)).
