@@ -71,7 +71,7 @@ async function fetchWithRetries(fetchImpl, url, signal, retries, now) {
  * @param {() => number} now
  * @returns {number | null}
  */
-function retryAfterMs(headers, now) {
+export function retryAfterMs(headers, now) {
   const value = headers?.get('Retry-After') ?? '';
   if (/^\d+$/.test(value)) return Number(value) * 1000;
   const date = Date.parse(value);
