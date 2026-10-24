@@ -1,5 +1,6 @@
 // @ts-check
-import { MENSAJES, errorResult, okResult } from '../results.js';
+import { MENSAJES } from '../../../site/js/core/mensajes.js';
+import { errorResult, okResult } from '../results.js';
 import { EFECTIVIDAD, ENTRADA_EFECTIVIDAD } from '../schemas.js';
 import { loadTypeChart } from '../type-chart.js';
 

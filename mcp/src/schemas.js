@@ -1,14 +1,19 @@
 // @ts-check
 import { z } from 'zod';
+import { MENSAJES_ENTRADA } from '../../site/js/core/mensajes.js';
 
 /** @param {string} error */
 const rules = (error) => ({ error });
 
-const MSG_CONSULTA = 'consulta debe tener entre 1 y 50 caracteres.';
-const MSG_PAGINA = 'pagina debe ser un entero mayor o igual que 1.';
-const MSG_TAMANO = 'tamano_pagina debe estar entre 1 y 50.';
-const MSG_NOMBRE_O_ID =
-  'nombre_o_id debe ser un nombre (letras, números, espacios o guiones) o un entero mayor o igual que 1.';
+const {
+  consulta: MSG_CONSULTA,
+  pagina: MSG_PAGINA,
+  tamano_pagina: MSG_TAMANO,
+  nombre_o_id: MSG_NOMBRE_O_ID,
+  atacante: MSG_ATACANTE,
+  defensor: MSG_DEFENSOR,
+  estadistica: MSG_ESTADISTICA,
+} = MENSAJES_ENTRADA;
 
 export const ENTRADA_BUSQUEDA = {
   consulta: z
@@ -111,11 +116,6 @@ export const busqueda = (item) => ({
   total_paginas: entero,
   total: entero,
 });
-
-const MSG_ATACANTE = 'atacante debe ser un nombre de tipo de PokéAPI, p. ej. fire.';
-const MSG_DEFENSOR = 'defensor debe tener 1 o 2 tipos distintos.';
-const MSG_ESTADISTICA =
-  'estadistica debe ser attack, defense, special-attack, special-defense o speed.';
 
 /** Free text rather than an enum, so an unknown type can be answered with the valid list. */
 const tipo = (/** @type {string} */ message) =>
