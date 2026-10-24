@@ -103,6 +103,12 @@ export const anthropic = {
 
   errorDeRed,
 
+  /**
+   * A request that got no answer at all is a lost connection; nothing else to ask.
+   * @param {{ fetch: (url: string, init: object) => Promise<Response>, clave: string, detalle: string, signal?: AbortSignal }} datos
+   */
+  errorDeConexion: async ({ detalle }) => errorDeRed(detalle),
+
   /** @param {string} detalle */
   errorDesconocido: (detalle) => crearErrorDeClaude(500, detalle),
 };

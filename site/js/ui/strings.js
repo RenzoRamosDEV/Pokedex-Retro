@@ -104,6 +104,8 @@ export const STRINGS = deepFreeze({
     otroProveedor: 'Esa clave es de Anthropic. Elige Claude (Anthropic) en PROVEEDOR.',
     errorClave: 'Clave de OpenAI no válida. Revísala en platform.openai.com.',
     errorSinSaldo: 'Tu cuenta de OpenAI no tiene saldo.',
+    errorRechazada:
+      'OpenAI rechazó la petición. Revisa el saldo y los límites de tu cuenta en platform.openai.com.',
     errorSaturado: 'OpenAI está saturado. Inténtalo en unos minutos.',
     errorRed: 'Sin conexión con OpenAI.',
     errorServidor: 'Error de OpenAI ({estado}). Inténtalo de nuevo.',

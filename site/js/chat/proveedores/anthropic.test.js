@@ -284,3 +284,19 @@ describe('anthropic errors', () => {
     );
   });
 });
+
+describe('anthropic.errorDeConexion', () => {
+  test('is the network error, without any extra request', async () => {
+    const llamadas = [];
+    const error = await anthropic.errorDeConexion({
+      fetch: async (...args) => llamadas.push(args),
+      clave: 'sk-ant-x',
+      detalle: 'Failed to fetch',
+    });
+    assert.deepEqual(
+      [error.name, error.codigo, error.estado, error.detalle],
+      ['ErrorDeClaude', 'red', 0, 'Failed to fetch'],
+    );
+    assert.deepEqual(llamadas, []);
+  });
+});

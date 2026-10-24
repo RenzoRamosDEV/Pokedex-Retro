@@ -503,6 +503,14 @@ function proveedorFalso(turnos, { reintentable = () => false } = {}) {
         reintentable: reintentable(respuesta.status),
       }),
     errorDeRed: (detalle) => Object.assign(new Error(detalle), { codigo: 'red_falsa', detalle }),
+    diagnosticos: [],
+    async errorDeConexion(datos) {
+      this.diagnosticos.push(datos);
+      return Object.assign(new Error(datos.detalle), {
+        codigo: 'red_falsa',
+        detalle: datos.detalle,
+      });
+    },
     errorDesconocido: (detalle) =>
       Object.assign(new Error(detalle), { codigo: 'desconocido', detalle }),
   };
@@ -559,14 +567,32 @@ describe('responder with an injected provider', () => {
     assert.deepEqual([resultado.error.codigo, resultado.error.estado], ['falso', 503]);
   });
 
-  test('a network failure comes from the provider', async () => {
+  test('a network failure is diagnosed by the provider with the fetch, key and signal', async () => {
     const proveedor = proveedorFalso([]);
-    const { llamada } = preparar([new TypeError('Failed to fetch')], { proveedor });
+    const controller = new AbortController();
+    const { llamada } = preparar([new TypeError('Failed to fetch')], {
+      proveedor,
+      signal: controller.signal,
+    });
     const resultado = await responder(llamada);
     assert.deepEqual(
       [resultado.error.codigo, resultado.error.detalle],
       ['red_falsa', 'Failed to fetch'],
     );
+    assert.equal(proveedor.diagnosticos.length, 1);
+    const [{ fetch, clave, detalle, signal }] = proveedor.diagnosticos;
+    assert.deepEqual(
+      [fetch, clave, detalle, signal],
+      [llamada.fetch, CLAVE, 'Failed to fetch', controller.signal],
+    );
+  });
+
+  test('an aborted request is not diagnosed', async () => {
+    const proveedor = proveedorFalso([]);
+    const { llamada } = preparar([new DOMException('abortado', 'AbortError')], { proveedor });
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'abortada');
+    assert.deepEqual(proveedor.diagnosticos, []);
   });
 
   test('an unclassified error ends in errorDesconocido', async () => {
@@ -649,13 +675,32 @@ const oaEfectividad = oa.functionCallItem({
   name: 'efectividad_tipos',
   args: { atacante: 'electric', defensor: ['water', 'flying'] },
 });
-const prepararOpenai = (respuestas, opciones = {}) =>
-  preparar(respuestas, {
+/** Fake fetch for OpenAI that also accepts the bodiless diagnostic GET. */
+function fetchOpenaiFalso(respuestas) {
+  const peticiones = [];
+  const fetch = async (url, opciones) => {
+    const cuerpo = opciones.body === undefined ? undefined : JSON.parse(opciones.body);
+    peticiones.push({ url, opciones, cuerpo });
+    const siguiente = respuestas.shift();
+    if (siguiente instanceof Error) throw siguiente;
+    return siguiente;
+  };
+  return { fetch, peticiones };
+}
+
+function prepararOpenai(respuestas, opciones = {}) {
+  const falso = fetchOpenaiFalso(respuestas);
+  const preparado = preparar([], {
     proveedor: PROVEEDORES.openai,
     modelo: 'gpt-6.1-sol',
     clave: 'sk-proj-prueba',
+    fetch: falso.fetch,
     ...opciones,
   });
+  return { ...preparado, peticiones: falso.peticiones };
+}
+
+const modelos = (status) => new Response(status === 200 ? '{"data":[]}' : '{}', { status });
 
 describe('responder with OpenAI', () => {
   test('ends with the final text, incorporates the turn and reports the usage', async () => {
@@ -812,10 +857,54 @@ describe('responder with OpenAI', () => {
     );
   });
 
-  test('maps a network failure to red', async () => {
-    const { llamada } = prepararOpenai([new TypeError('Failed to fetch')]);
+  test('maps a network failure with a failed diagnosis to red', async () => {
+    const { llamada, peticiones } = prepararOpenai([
+      new TypeError('Failed to fetch'),
+      new TypeError('Failed to fetch'),
+    ]);
     const resultado = await responder(llamada);
     assert.deepEqual([resultado.error.name, resultado.error.codigo], ['ErrorDeOpenAI', 'red']);
+    assert.equal(peticiones.length, 2);
+  });
+
+  test('an unreadable failure with a 401 diagnosis is an invalid key, without retrying', async () => {
+    const { llamada, peticiones, esperas } = prepararOpenai([
+      new TypeError('Failed to fetch'),
+      modelos(401),
+      oaTexto('nunca'),
+    ]);
+    const resultado = await responder(llamada);
+    assert.deepEqual(
+      peticiones.map((p) => [p.opciones.method, p.url]),
+      [
+        ['POST', 'https://api.openai.com/v1/responses'],
+        ['GET', 'https://api.openai.com/v1/models'],
+      ],
+    );
+    assert.equal(peticiones[1].opciones.headers.authorization, 'Bearer sk-proj-prueba');
+    assert.deepEqual(esperas, []);
+    assert.deepEqual([resultado.estado, resultado.error.codigo], ['error', 'clave_invalida']);
+  });
+
+  test('an unreadable failure with a 200 diagnosis is a rejection, without retrying', async () => {
+    const { llamada, peticiones } = prepararOpenai([
+      new TypeError('Failed to fetch'),
+      modelos(200),
+      oaTexto('nunca'),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(peticiones.length, 2);
+    assert.equal(resultado.error.codigo, 'rechazada');
+  });
+
+  test('an abort is not diagnosed', async () => {
+    const { llamada, peticiones } = prepararOpenai([
+      new DOMException('abortado', 'AbortError'),
+      modelos(401),
+    ]);
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'abortada');
+    assert.equal(peticiones.length, 1);
   });
 
   test('keeps the text received before response.failed and does not retry', async () => {

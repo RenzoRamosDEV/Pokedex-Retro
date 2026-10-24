@@ -235,6 +235,10 @@ describe('createChatView', () => {
   for (const [error, expected] of [
     [{ codigo: 'clave_invalida' }, 'Clave de OpenAI no válida. Revísala en platform.openai.com.'],
     [{ codigo: 'sin_saldo' }, 'Tu cuenta de OpenAI no tiene saldo.'],
+    [
+      { codigo: 'rechazada', estado: 0 },
+      'OpenAI rechazó la petición. Revisa el saldo y los límites de tu cuenta en platform.openai.com.',
+    ],
     [{ codigo: 'saturado' }, 'OpenAI está saturado. Inténtalo en unos minutos.'],
     [{ codigo: 'red' }, 'Sin conexión con OpenAI.'],
     [{ codigo: 'servidor', estado: 500 }, 'Error de OpenAI (500). Inténtalo de nuevo.'],

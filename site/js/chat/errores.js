@@ -2,7 +2,7 @@
 
 /**
  * Classifies Messages API failures into the codes the chat view translates, and decides retries.
- * @typedef {'clave_invalida' | 'permiso' | 'peticion' | 'demasiado_larga' | 'limite_uso' | 'sin_saldo' | 'saturado' | 'red' | 'servidor'} CodigoError
+ * @typedef {'clave_invalida' | 'permiso' | 'peticion' | 'demasiado_larga' | 'limite_uso' | 'sin_saldo' | 'rechazada' | 'saturado' | 'red' | 'servidor'} CodigoError
  */
 
 import { retryAfterMs } from '../api/client.js';

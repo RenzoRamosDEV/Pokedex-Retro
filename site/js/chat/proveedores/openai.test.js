@@ -624,3 +624,58 @@ describe('openai other errors', () => {
     assert.equal(error.message, 'roto');
   });
 });
+
+describe('openai.errorDeConexion', () => {
+  /** Fake fetch answering the diagnostic GET with one response or error. */
+  function diagnostico(respuesta) {
+    const llamadas = [];
+    const fetch = async (url, init) => {
+      llamadas.push([url, init]);
+      if (respuesta instanceof Error) throw respuesta;
+      return respuesta;
+    };
+    return { fetch, llamadas };
+  }
+  const conexion = (fetch, signal) =>
+    openai.errorDeConexion({ fetch, clave: CLAVE, detalle: 'Failed to fetch', signal });
+
+  test('makes one bodiless GET to /v1/models with the bearer key and the signal', async () => {
+    const { fetch, llamadas } = diagnostico(new Response('{}', { status: 401 }));
+    const signal = new AbortController().signal;
+    await conexion(fetch, signal);
+    assert.deepEqual(llamadas, [
+      [
+        'https://api.openai.com/v1/models',
+        { method: 'GET', headers: { authorization: `Bearer ${CLAVE}` }, signal },
+      ],
+    ]);
+  });
+
+  for (const [estado, esperado] of [
+    [401, ['ErrorDeOpenAI', 'clave_invalida', 401, 'Failed to fetch']],
+    [200, ['ErrorDeOpenAI', 'rechazada', 0, 'Failed to fetch']],
+    [201, ['ErrorDeOpenAI', 'red', 0, 'Failed to fetch']],
+    [400, ['ErrorDeOpenAI', 'red', 0, 'Failed to fetch']],
+    [403, ['ErrorDeOpenAI', 'red', 0, 'Failed to fetch']],
+    [429, ['ErrorDeOpenAI', 'red', 0, 'Failed to fetch']],
+    [500, ['ErrorDeOpenAI', 'red', 0, 'Failed to fetch']],
+  ]) {
+    test(`a ${estado} diagnosis is ${esperado[1]}`, async () => {
+      const { fetch } = diagnostico(new Response('{}', { status: estado }));
+      const error = await conexion(fetch);
+      assert.deepEqual([error.name, error.codigo, error.estado, error.detalle], esperado);
+      assert.equal(error.message, 'Failed to fetch');
+    });
+  }
+
+  test('a diagnosis without connection is red', async () => {
+    const { fetch } = diagnostico(new TypeError('Failed to fetch'));
+    const error = await conexion(fetch);
+    assert.deepEqual([error.codigo, error.estado], ['red', 0]);
+  });
+
+  test('an abort during the diagnosis propagates', async () => {
+    const { fetch } = diagnostico(new DOMException('abortado', 'AbortError'));
+    await assert.rejects(conexion(fetch), { name: 'AbortError' });
+  });
+});
