@@ -11,6 +11,8 @@
     "test:mutation": "timeout 180 stryker run",
     "test:mutation:ui": "npm run test:mutation:ui:render && timeout 180 stryker run stryker.ui.config.json",
     "test:mutation:ui:render": "timeout 180 stryker run stryker.ui-render.config.json",
+    "mcp:start": "node mcp/bin/pokedex-mcp.js",
+    "mcp:test": "node --test \"mcp/test/**/*.test.js\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

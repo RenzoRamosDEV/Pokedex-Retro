@@ -4,6 +4,7 @@
 
 - Node 22 (usa el último parche de la serie 22). Con `nvm`, ejecuta `nvm use` en la raíz: lee `.nvmrc`.
 - `npm ci` instala las dependencias de desarrollo y el hook de pre-commit.
+- `npm ci --prefix mcp` instala las dependencias del servidor MCP (las necesitan `typecheck` y `mcp:test`).
 - `npx playwright install chromium` descarga el navegador de los tests e2e (una vez por versión de Playwright).
 
 La web (`site/`) no tiene build ni dependencias en runtime: se despliega tal cual en GitHub Pages.
@@ -38,11 +39,13 @@ Conventional Commits con el tipo en inglés y la descripción en español:
 | `npm test`                 | Tests unitarios con `node --test` (`site/js` y `scripts`)                                                                   |
 | `npm run test:mutation`    | Mutación con Stryker sobre `core` y `mappers` (umbral 95 %, 180 s)                                                          |
 | `npm run test:mutation:ui` | Mutación con Stryker sobre `site/js/ui` en dos ejecuciones (`render-*.js` y el resto), umbral 85 % y 180 s cada una         |
+| `npm run mcp:start`        | Arranca el servidor MCP por stdio                                                                                           |
+| `npm run mcp:test`         | Tests del servidor MCP con `node --test`, sin red                                                                           |
 | `npm run lint`             | ESLint sobre todo el JavaScript                                                                                             |
 | `npm run lint:fix`         | ESLint aplicando las correcciones automáticas                                                                               |
 | `npm run format`           | Reescribe el formato con Prettier                                                                                           |
 | `npm run format:check`     | Falla si algún fichero no cumple el formato                                                                                 |
-| `npm run typecheck`        | `tsc` sin emitir ficheros sobre `core`, `mappers` y `api`                                                                   |
+| `npm run typecheck`        | `tsc` sin emitir ficheros sobre `core`, `mappers`, `api` y `mcp/src`                                                        |
 | `npm run check:html`       | Comprueba que la cabecera de las 7 páginas HTML coincide                                                                    |
 | `npm run e2e`              | Smoke e2e en Chromium con Playwright y PokéAPI simulada, sin red                                                            |
 | `npm run lhci`             | Lighthouse CI sobre `index.html` y `tipos.html` (3 ejecuciones, 0,95 por categoría); usa PokéAPI real, así que necesita red |
