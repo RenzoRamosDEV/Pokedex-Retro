@@ -28,6 +28,7 @@ const TYPE_NAMES = [
   'dragon',
   'dark',
   'fairy',
+  'stellar',
   'unknown',
   'shadow',
 ];
@@ -68,10 +69,21 @@ function listBody(resource, searchParams) {
   };
 }
 
+const OVERRIDES = {
+  'pokemon/pikachu': {
+    types: [{ slot: 1, type: { name: 'electric', url: `${API}/type/13/` } }],
+  },
+};
+
 function detailBody(resource, name) {
   const entry = CATALOG[resource].find((candidate) => candidate.name === name);
   if (!entry) return null;
-  return { ...structuredClone(fixture(resource)), id: entry.id, name: entry.name };
+  return {
+    ...structuredClone(fixture(resource)),
+    id: entry.id,
+    name: entry.name,
+    ...OVERRIDES[`${resource}/${name}`],
+  };
 }
 
 function apiResponse(url) {

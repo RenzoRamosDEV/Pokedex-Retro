@@ -163,6 +163,18 @@ test('the dialog accessible name is the Pokémon name', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: 'PIKACHU', exact: true })).toBeVisible();
 });
 
+test('the PIKACHU dialog shows its real electric type', async ({ page }) => {
+  await openPikachuWithKeyboard(page);
+  await expect(openDialog(page).locator('.modal-types')).toHaveText('ELECTRIC');
+});
+
+test('the types matrix has 18 attacker rows and no STELLAR', async ({ page }) => {
+  await page.goto('tipos.html');
+  const rows = page.locator('.matrix-row-header');
+  await expect(rows).toHaveCount(18);
+  await expect(rows.filter({ hasText: 'STELLAR' })).toHaveCount(0);
+});
+
 const themeButton = (page) => page.locator('#theme-btn');
 const infoButton = (page) => page.locator('#info-btn');
 
