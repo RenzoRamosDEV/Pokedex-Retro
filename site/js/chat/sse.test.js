@@ -217,6 +217,27 @@ describe('aplicarEvento', () => {
     });
   });
 
+  test('starts an empty message', () => {
+    assert.deepEqual(crearMensaje(), {
+      id: null,
+      model: null,
+      content: [],
+      stop_reason: null,
+      usage: {},
+    });
+  });
+
+  test('appends thinking deltas without returning visible text', () => {
+    const actual = crearMensaje();
+    const aplicar = ({ event, data }) => aplicarEvento(actual, { evento: event, datos: data });
+    aplicar(blockStart(0, { type: 'thinking', thinking: '', signature: '' }));
+    const devueltos = ['Pienso', ' algo'].map((thinking) =>
+      aplicar(blockDelta(0, { type: 'thinking_delta', thinking })),
+    );
+    assert.deepEqual(devueltos, ['', '']);
+    assert.equal(actual.content[0].thinking, 'Pienso algo');
+  });
+
   test('ignores an unknown event', () => {
     const actual = crearMensaje();
     assert.equal(aplicarEvento(actual, { evento: 'novedad', datos: { type: 'novedad' } }), '');
@@ -229,10 +250,11 @@ describe('aplicarEvento', () => {
       evento: 'content_block_start',
       datos: blockStart(0, { type: 'text', text: 'a' }).data,
     });
-    aplicarEvento(actual, {
+    const devuelto = aplicarEvento(actual, {
       evento: 'content_block_delta',
       datos: blockDelta(0, { type: 'citations_delta' }).data,
     });
+    assert.equal(devuelto, '');
     assert.deepEqual(actual.content, [{ type: 'text', text: 'a' }]);
   });
 });

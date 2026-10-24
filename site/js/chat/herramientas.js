@@ -174,8 +174,7 @@ export const DEFINICIONES = HERRAMIENTAS.map((h) => h.definicion);
  * @returns {Validacion}
  */
 export function validarEntrada(nombre, entrada) {
-  const objeto = entrada !== null && typeof entrada === 'object' ? entrada : {};
-  return POR_NOMBRE.get(nombre).validar(/** @type {Record<string, any>} */ (objeto));
+  return POR_NOMBRE.get(nombre).validar(/** @type {Record<string, any>} */ (entrada ?? {}));
 }
 
 /**

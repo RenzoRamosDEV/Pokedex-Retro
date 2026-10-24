@@ -230,15 +230,19 @@ describe('responder', () => {
     const respuestas = Array.from({ length: 10 }, (_, i) =>
       herramienta([toolUseBlock(0, { id: `toolu_${i}`, name: 'naturalezas', input: {} })]),
     );
-    const { llamada, peticiones } = preparar(respuestas, { mensajes: anterior });
+    const { llamada, peticiones, eventos } = preparar(respuestas, { mensajes: anterior });
     const resultado = await responder(llamada);
     assert.equal(peticiones.length, 9);
     assert.equal(resultado.estado, 'limite');
     assert.deepEqual(resultado.mensajes, anterior);
+    assert.equal(
+      eventos.some((e) => e.tipo === 'uso'),
+      false,
+    );
   });
 
   test('a cut answer with a tool use runs nothing and is not incorporated', async () => {
-    const { llamada, peticiones, pokeApi } = preparar([
+    const { llamada, peticiones, pokeApi, eventos } = preparar([
       respuestaSse(
         mensaje({
           bloques: [
@@ -254,6 +258,10 @@ describe('responder', () => {
     assert.deepEqual(resultado.mensajes, []);
     assert.equal(peticiones.length, 1);
     assert.deepEqual(pokeApi.calls, []);
+    assert.deepEqual(
+      eventos.filter((e) => e.tipo === 'uso'),
+      [{ tipo: 'uso', uso: { entrada: 0, salida: 0 } }],
+    );
   });
 
   test('a cut answer with only text is incorporated', async () => {
@@ -311,13 +319,17 @@ describe('responder', () => {
   });
 
   test('does not retry a 401', async () => {
-    const { llamada, peticiones, esperas } = preparar([
+    const { llamada, peticiones, esperas, eventos } = preparar([
       respuestaError(401, 'authentication_error', 'invalid x-api-key'),
     ]);
     const resultado = await responder(llamada);
     assert.equal(peticiones.length, 1);
     assert.deepEqual(esperas, []);
     assert.equal(resultado.error.codigo, 'clave_invalida');
+    assert.deepEqual(
+      eventos.filter((e) => e.tipo === 'uso'),
+      [],
+    );
   });
 
   test('maps a network failure to red without retrying', async () => {
@@ -347,7 +359,22 @@ describe('responder', () => {
     const resultado = await responder(llamada);
     assert.equal(resultado.estado, 'error');
     assert.equal(resultado.error.codigo, 'red');
+    assert.equal(resultado.error.detalle, 'stream incompleto');
     assert.deepEqual(resultado.mensajes, []);
+  });
+
+  test('answers a malformed event as a server error', async () => {
+    const roto = new Response('event: message_start\ndata: {roto\n\n');
+    const { llamada, eventos } = preparar([roto]);
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'error');
+    assert.deepEqual([resultado.error.codigo, resultado.error.estado], ['servidor', 500]);
+    assert.deepEqual(eventos, []);
+  });
+
+  test('answers abortada when fetch rejects with an abort without a signal', async () => {
+    const { llamada } = preparar([new DOMException('abortado', 'AbortError')]);
+    assert.equal((await responder(llamada)).estado, 'abortada');
   });
 
   test('aborts in the middle of the stream', async () => {
