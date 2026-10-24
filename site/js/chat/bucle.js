@@ -1,59 +1,54 @@
 // @ts-check
-import {
-  crearErrorDeClaude,
-  errorDeEvento,
-  errorDeRed,
-  errorDeRespuesta,
-  esReintentable,
-  esperaReintento,
-} from './errores.js';
-import { ENTRADA_NO_JSON, ejecutarHerramienta } from './herramientas.js';
-import { bloquesParaHistorial } from './historial.js';
-import { construirPeticion } from './peticion.js';
-import { aplicarEvento, crearLectorSse, crearMensaje } from './sse.js';
+import { esperaReintento } from './errores.js';
+import { ejecutarHerramienta } from './herramientas.js';
+import { PROVEEDORES } from './proveedores/index.js';
+import { crearLectorSse } from './sse.js';
 
 /**
- * One user question: streams Claude's answer and runs its tool loop until a final text.
+ * One user question: streams the provider's answer and runs its tool loop until a final text.
  * @typedef {'fin' | 'cortada' | 'rechazo' | 'limite' | 'error' | 'abortada'} Estado
  * @typedef {{ entrada: number, salida: number }} Uso
  * @typedef {{ tipo: 'texto', texto: string } | { tipo: 'herramienta', nombre: string } | { tipo: 'uso', uso: Uso }} EventoChat
  * @typedef {(url: string, init: object) => Promise<Response>} FetchLike
+ * @typedef {typeof PROVEEDORES.anthropic} Proveedor
+ * @typedef {import('./proveedores/anthropic.js').Turno} Turno
  */
 
 const MAX_ITERACIONES = 8;
 const MAX_REINTENTOS = 2;
 
 /**
- * Sends the request, retrying 429, 529 and 5xx before any event arrives.
- * @param {{ fetch: FetchLike, url: string, opciones: object, esperar: (ms: number) => Promise<void>, signal?: AbortSignal, ahora: () => number }} envio
+ * Sends the request, retrying what the provider marks as retryable before any event arrives.
+ * @param {{ proveedor: Proveedor, fetch: FetchLike, url: string, opciones: object, esperar: (ms: number) => Promise<void>, signal?: AbortSignal, ahora: () => number }} envio
  */
-async function enviar({ fetch, url, opciones, esperar, signal, ahora }) {
+async function enviar({ proveedor, fetch, url, opciones, esperar, signal, ahora }) {
   for (let intento = 0; ; intento += 1) {
     let respuesta;
     try {
       respuesta = await fetch(url, { ...opciones, signal });
     } catch (error) {
       if (error.name === 'AbortError') throw error;
-      throw errorDeRed(error.message);
+      throw proveedor.errorDeRed(error.message);
     }
     if (respuesta.ok) return respuesta;
-    if (!esReintentable(respuesta.status) || intento === MAX_REINTENTOS) {
-      throw await errorDeRespuesta(respuesta);
-    }
+    const error = await proveedor.errorDeRespuesta(respuesta);
+    if (!error.reintentable || intento === MAX_REINTENTOS) throw error;
     await esperar(esperaReintento(respuesta.headers, intento, ahora));
     signal?.throwIfAborted();
   }
 }
 
 /**
- * Reads the SSE body into a message, reporting visible text as it arrives.
+ * Reads the SSE body into a turn, reporting visible text as it arrives.
+ * @param {Proveedor} proveedor
  * @param {Response} respuesta
  * @param {(texto: string) => void} alTexto
  * @param {AbortSignal} [signal]
+ * @returns {Promise<Turno>}
  */
-async function leerMensaje(respuesta, alTexto, signal) {
+async function leerTurno(proveedor, respuesta, alTexto, signal) {
   const lector = crearLectorSse();
-  const mensaje = crearMensaje();
+  const lectura = proveedor.crearLectura();
   const reader = respuesta.body.getReader();
   signal?.addEventListener('abort', () => reader.cancel().catch(() => {}));
   for (;;) {
@@ -61,62 +56,36 @@ async function leerMensaje(respuesta, alTexto, signal) {
     signal?.throwIfAborted();
     if (done) break;
     for (const evento of lector.leer(value)) {
-      const texto = aplicarEventoClasificado(mensaje, evento);
+      const texto = lectura.aplicar(evento);
       if (texto !== '') alTexto(texto);
     }
   }
-  if (mensaje.stop_reason === null) throw errorDeRed('stream incompleto');
-  return mensaje;
+  return lectura.terminar();
 }
 
 /**
- * @param {import('./sse.js').Mensaje} mensaje
- * @param {import('./sse.js').EventoSse} evento
- */
-function aplicarEventoClasificado(mensaje, evento) {
-  try {
-    return aplicarEvento(mensaje, evento);
-  } catch (error) {
-    throw errorDeEvento(error);
-  }
-}
-
-/**
- * Runs every tool use of the turn in parallel; a failure comes back as an `is_error` result.
- * @param {any[]} turno assistant blocks as they go back to the API
- * @param {Set<string>} sinJson ids of tool uses whose input did not parse
+ * Runs every call of the turn in parallel; a failure comes back as an error result.
+ * @param {Turno['llamadas']} llamadas
  * @param {import('./herramientas.js').PokeApiPort} port
  * @param {(evento: EventoChat) => void} alEvento
  */
-function ejecutarTurno(turno, sinJson, port, alEvento) {
-  const usos = turno.filter((bloque) => bloque.type === 'tool_use');
+function ejecutarLlamadas(llamadas, port, alEvento) {
   return Promise.all(
-    usos.map(async ({ id, name, input }) => {
-      alEvento({ tipo: 'herramienta', nombre: name });
-      const entrada = sinJson.has(id) ? ENTRADA_NO_JSON : input;
-      const resultado = await ejecutarHerramienta(port, name, entrada);
-      return {
-        type: 'tool_result',
-        tool_use_id: id,
-        content: resultado.contenido,
-        ...(resultado.esError ? { is_error: true } : {}),
-      };
+    llamadas.map(async ({ id, nombre, entrada }) => {
+      alEvento({ tipo: 'herramienta', nombre });
+      return { id, ...(await ejecutarHerramienta(port, nombre, entrada)) };
     }),
   );
 }
 
 /**
  * @param {Uso} uso
- * @param {Record<string, number>} usage
+ * @param {Uso} otro
  * @returns {Uso}
  */
-const sumarUso = (uso, usage) => ({
-  entrada:
-    uso.entrada +
-    (usage.input_tokens ?? 0) +
-    (usage.cache_read_input_tokens ?? 0) +
-    (usage.cache_creation_input_tokens ?? 0),
-  salida: uso.salida + (usage.output_tokens ?? 0),
+const sumarUso = (uso, otro) => ({
+  entrada: uso.entrada + otro.entrada,
+  salida: uso.salida + otro.salida,
 });
 
 /**
@@ -124,6 +93,7 @@ const sumarUso = (uso, usage) => ({
  *   mensajes: object[], pregunta: string, modelo: string, clave: string, fetch: FetchLike,
  *   port: import('./herramientas.js').PokeApiPort, signal?: AbortSignal,
  *   esperar: (ms: number) => Promise<void>, alEvento: (evento: EventoChat) => void, ahora?: () => number,
+ *   proveedor?: Proveedor,
  * }} datos
  * @returns {Promise<{ estado: Estado, mensajes: object[], uso: Uso, error?: any }>}
  */
@@ -138,10 +108,11 @@ export async function responder({
   esperar,
   alEvento,
   ahora = Date.now,
+  proveedor = PROVEEDORES.anthropic,
 }) {
-  const conversacion = [...mensajes, { role: 'user', content: pregunta }];
+  const conversacion = [...mensajes, proveedor.mensajeUsuario(pregunta)];
   let uso = { entrada: 0, salida: 0 };
-  /** Turns are committed only on a final text, so no tool use is ever left without its result. */
+  /** Turns are committed only on a final text, so no tool call is ever left without its result. */
   const terminar = (estado, incorporar = false, error = undefined) => {
     if (estado === 'fin' || estado === 'cortada') alEvento({ tipo: 'uso', uso });
     return {
@@ -153,36 +124,35 @@ export async function responder({
   };
   try {
     for (let iteracion = 0; ; iteracion += 1) {
-      const { url, opciones } = construirPeticion({ modelo, clave, mensajes: conversacion });
-      const respuesta = await enviar({ fetch, url, opciones, esperar, signal, ahora });
-      const mensaje = await leerMensaje(
+      const { url, opciones } = proveedor.construirPeticion({
+        modelo,
+        clave,
+        historial: conversacion,
+      });
+      const respuesta = await enviar({ proveedor, fetch, url, opciones, esperar, signal, ahora });
+      const turno = await leerTurno(
+        proveedor,
         respuesta,
         (texto) => alEvento({ tipo: 'texto', texto }),
         signal,
       );
-      uso = sumarUso(uso, mensaje.usage);
-      const turno = bloquesParaHistorial(mensaje.content);
-      const conHerramientas = turno.some((bloque) => bloque.type === 'tool_use');
-      if (mensaje.stop_reason === 'refusal') return terminar('rechazo');
-      if (mensaje.stop_reason === 'max_tokens') {
-        if (conHerramientas) return terminar('cortada');
-        conversacion.push({ role: 'assistant', content: turno });
+      uso = sumarUso(uso, turno.uso);
+      if (turno.motivo === 'rechazo') return terminar('rechazo');
+      if (turno.motivo === 'cortada') {
+        if (turno.llamadas.length > 0) return terminar('cortada');
+        conversacion.push(...turno.historial);
         return terminar('cortada', true);
       }
-      conversacion.push({ role: 'assistant', content: turno });
-      if (mensaje.stop_reason !== 'tool_use') return terminar('fin', true);
+      conversacion.push(...turno.historial);
+      if (turno.motivo !== 'herramientas') return terminar('fin', true);
       if (iteracion === MAX_ITERACIONES) return terminar('limite');
-      const sinJson = new Set(
-        mensaje.content.filter((b) => 'entrada_invalida' in b).map((b) => b.id),
-      );
-      const resultados = await ejecutarTurno(turno, sinJson, port, alEvento);
+      const salidas = await ejecutarLlamadas(turno.llamadas, port, alEvento);
       signal?.throwIfAborted();
-      conversacion.push({ role: 'user', content: resultados });
+      conversacion.push(...proveedor.resultados(salidas));
     }
   } catch (error) {
     if (error.name === 'AbortError') return terminar('abortada');
-    const clasificado =
-      error.name === 'ErrorDeClaude' ? error : crearErrorDeClaude(500, error.message);
+    const clasificado = error.codigo ? error : proveedor.errorDesconocido(error.message);
     return terminar('error', false, clasificado);
   }
 }
