@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createPokeApiClient } from '../src/client.js';
+import { installShutdown } from '../src/lifecycle.js';
 import { createLogger } from '../src/log.js';
 import { createServer } from '../src/server.js';
 
@@ -22,3 +23,10 @@ const server = createServer({ port, log, version });
 
 await server.connect(new StdioServerTransport());
 log.info(`servidor iniciado (v${version})`);
+installShutdown({
+  target: process,
+  close: () => server.close(),
+  exit: (code) => process.exit(code),
+  log,
+  graceMs: 1500,
+});
