@@ -12,6 +12,13 @@ const URL_RESPUESTAS = 'https://api.openai.com/v1/responses';
 const URL_MODELOS = 'https://api.openai.com/v1/models';
 const MAX_OUTPUT_TOKENS = 8000;
 
+/** @param {Record<string, any>} propiedad */
+const admiteNull = (propiedad) => ({
+  ...propiedad,
+  type: [propiedad.type, 'null'],
+  ...(propiedad.enum && { enum: [...propiedad.enum, null] }),
+});
+
 /**
  * Strict mode needs every property in `required`; the optional ones accept `null` instead.
  * https://developers.openai.com/api/docs/guides/structured-outputs#supported-schemas
@@ -21,7 +28,7 @@ function parametrosEstrictos({ properties, required }) {
   const propiedades = Object.fromEntries(
     Object.entries(properties).map(([nombre, propiedad]) => [
       nombre,
-      required.includes(nombre) ? propiedad : { ...propiedad, type: [propiedad.type, 'null'] },
+      required.includes(nombre) ? propiedad : admiteNull(propiedad),
     ]),
   );
   return {
