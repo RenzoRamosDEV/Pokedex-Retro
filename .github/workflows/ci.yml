@@ -16,7 +16,7 @@ jobs:
   calidad:
     name: calidad (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -27,15 +27,22 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mcp/package-lock.json
       - run: npm ci
+      - run: npm ci --prefix mcp
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm run check:html
       - run: npm test
+      - run: npm run mcp:test
       - run: npm run test:mutation
         if: matrix.node == 24
       - run: npm run test:mutation:ui
+        if: matrix.node == 24
+      - run: npm run mcp:test:mutation
         if: matrix.node == 24
       - run: npx playwright install --with-deps chromium
         if: matrix.node == 24
