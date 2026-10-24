@@ -10,7 +10,8 @@
     "!site/js/**/*.test.js",
     "!site/js/core/mensajes.js",
     "!site/js/core/type-chart.js",
-    "!site/js/core/consultas.js"
+    "!site/js/core/consultas.js",
+    "!site/js/core/guias.js"
   ],
   "ignorePatterns": ["tsconfig.json"],
   "thresholds": {

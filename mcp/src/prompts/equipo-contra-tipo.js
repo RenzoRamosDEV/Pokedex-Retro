@@ -1,5 +1,6 @@
 // @ts-check
 import { z } from 'zod';
+import { GUIA_EQUIPO } from '../../../site/js/core/guias.js';
 
 /** @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server */
 export function registrarEquipoContraTipo(server) {
@@ -18,7 +19,7 @@ export function registrarEquipoContraTipo(server) {
           role: 'user',
           content: {
             type: 'text',
-            text: `Propón un equipo de 6 Pokémon para enfrentarse a rivales de tipo "${tipo}". Usa efectividad_tipos para saber qué tipos le hacen daño ×2 y cuáles resisten sus ataques, y buscar_pokemon y obtener_pokemon para elegir Pokémon de esos tipos y comprobar sus estadísticas. Explica en español por qué eliges cada uno. Los tipos van en inglés, como en PokéAPI (p. ej. fire).`,
+            text: `Propón un equipo de 6 Pokémon para enfrentarse a rivales de tipo "${tipo}". ${GUIA_EQUIPO}`,
           },
         },
       ],
