@@ -1,5 +1,6 @@
 // @ts-check
 import { z } from 'zod';
+import { DESCRIPCIONES_CAMPO, ESTADISTICAS } from '../../site/js/core/consultas.js';
 import { MENSAJES_ENTRADA } from '../../site/js/core/mensajes.js';
 
 /** @param {string} error */
@@ -21,20 +22,20 @@ export const ENTRADA_BUSQUEDA = {
     .trim()
     .min(1, rules(MSG_CONSULTA))
     .max(50, rules(MSG_CONSULTA))
-    .describe('Texto que debe contener el nombre, en inglés como en PokéAPI (p. ej. "char")'),
+    .describe(DESCRIPCIONES_CAMPO.consulta),
   pagina: z
     .number(rules(MSG_PAGINA))
     .int(rules(MSG_PAGINA))
     .min(1, rules(MSG_PAGINA))
     .default(1)
-    .describe('Página de resultados, desde 1'),
+    .describe(DESCRIPCIONES_CAMPO.pagina),
   tamano_pagina: z
     .number(rules(MSG_TAMANO))
     .int(rules(MSG_TAMANO))
     .min(1, rules(MSG_TAMANO))
     .max(50, rules(MSG_TAMANO))
     .default(10)
-    .describe('Resultados por página, de 1 a 50'),
+    .describe(DESCRIPCIONES_CAMPO.tamano_pagina),
 };
 
 /** Restricted to PokéAPI name characters so the value cannot escape the request path. */
@@ -52,7 +53,7 @@ export const ENTRADA_DETALLE = {
       ],
       rules(MSG_NOMBRE_O_ID),
     )
-    .describe('Nombre en inglés de PokéAPI (p. ej. "pikachu") o número'),
+    .describe(DESCRIPCIONES_CAMPO.nombre_o_id),
 };
 
 const entero = z.number().int();
@@ -122,14 +123,14 @@ const tipo = (/** @type {string} */ message) =>
   z.string(rules(message)).trim().toLowerCase().min(1, rules(message)).max(20, rules(message));
 
 export const ENTRADA_EFECTIVIDAD = {
-  atacante: tipo(MSG_ATACANTE).describe('Tipo atacante en inglés, p. ej. "electric"'),
+  atacante: tipo(MSG_ATACANTE).describe(DESCRIPCIONES_CAMPO.atacante),
   defensor: z
     .array(tipo(MSG_DEFENSOR), rules(MSG_DEFENSOR))
     .min(1, rules(MSG_DEFENSOR))
     .max(2, rules(MSG_DEFENSOR))
     .refine((tipos) => new Set(tipos).size === tipos.length, rules(MSG_DEFENSOR))
     .optional()
-    .describe('1 o 2 tipos defensores distintos, p. ej. ["water", "flying"]'),
+    .describe(DESCRIPCIONES_CAMPO.defensor),
 };
 
 /** One schema for both answers: with defender (`multiplicador`) or without (`multiplicadores`). */
@@ -142,12 +143,9 @@ export const EFECTIVIDAD = {
 
 export const ENTRADA_NATURALEZAS = {
   estadistica: z
-    .enum(
-      ['attack', 'defense', 'special-attack', 'special-defense', 'speed'],
-      rules(MSG_ESTADISTICA),
-    )
+    .enum(ESTADISTICAS, rules(MSG_ESTADISTICA))
     .optional()
-    .describe('Estadística que la naturaleza sube o baja'),
+    .describe(DESCRIPCIONES_CAMPO.estadistica),
 };
 
 export const NATURALEZA = {

@@ -37,6 +37,7 @@ export default [
     files: [
       '**/*.test.js',
       'scripts/**/*.{js,mjs}',
+      'tests/support/**/*.js',
       'mcp/**/*.js',
       'eslint.config.js',
       'playwright.config.js',

@@ -1,9 +1,6 @@
 // @ts-check
-import { fetchDetail, loadSection } from '../../../site/js/core/load-section.js';
-import { normalizeQuery } from '../../../site/js/core/search.js';
-import { SECTIONS } from '../../../site/js/core/sections.js';
-import { MENSAJES } from '../../../site/js/core/mensajes.js';
-import { errorResult, okResult } from '../results.js';
+import { CATALOGO, DESCRIPCIONES, buscar, obtener } from '../../../site/js/core/consultas.js';
+import { ejecutarConsulta } from '../results.js';
 import {
   BAYA,
   ENTRADA_BUSQUEDA,
@@ -17,141 +14,50 @@ import {
 
 /**
  * @typedef {{ port: import('../client.js').PokeApiPort, log: import('../log.js').Logger }} Deps
+ * @typedef {import('../../../site/js/core/consultas.js').FilaCatalogo} FilaCatalogo
  */
 
-const CATALOGO = [
-  {
-    clave: 'pokedex',
-    buscar: 'buscar_pokemon',
-    obtener: 'obtener_pokemon',
-    recurso: 'el Pokémon',
-    plural: 'Pokémon',
-    etiqueta: 'Pokémon',
-    salida: POKEMON,
-  },
-  {
-    clave: 'movimientos',
-    buscar: 'buscar_movimientos',
-    obtener: 'obtener_movimiento',
-    recurso: 'el movimiento',
-    plural: 'movimientos',
-    etiqueta: 'Movimiento',
-    salida: MOVIMIENTO,
-  },
-  {
-    clave: 'habilidades',
-    buscar: 'buscar_habilidades',
-    obtener: 'obtener_habilidad',
-    recurso: 'la habilidad',
-    plural: 'habilidades',
-    etiqueta: 'Habilidad',
-    salida: HABILIDAD,
-  },
-  {
-    clave: 'objetos',
-    buscar: 'buscar_objetos',
-    obtener: 'obtener_objeto',
-    recurso: 'el objeto',
-    plural: 'objetos',
-    etiqueta: 'Objeto',
-    salida: OBJETO,
-  },
-  {
-    clave: 'bayas',
-    buscar: 'buscar_bayas',
-    obtener: 'obtener_baya',
-    recurso: 'la baya',
-    plural: 'bayas',
-    etiqueta: 'Baya',
-    salida: BAYA,
-  },
-];
-
-/**
- * @param {string} query
- * @param {{ total?: number, page?: number, totalPages?: number, failedCount?: number }} result
- */
-function resumenBusqueda(query, { total, page, totalPages, failedCount }) {
-  const base =
-    total === 0
-      ? `Sin resultados para "${query}".`
-      : `${total} ${total === 1 ? 'resultado' : 'resultados'} para "${query}" · página ${page} de ${totalPages}.`;
-  if (failedCount === 0) return base;
-  const fallos = failedCount === 1 ? 'no se pudo cargar' : 'no se pudieron cargar';
-  return `${base} ${failedCount} ${fallos}.`;
-}
+const SALIDAS = {
+  pokedex: POKEMON,
+  movimientos: MOVIMIENTO,
+  habilidades: HABILIDAD,
+  objetos: OBJETO,
+  bayas: BAYA,
+};
 
 /**
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {typeof CATALOGO[number]} fila
+ * @param {FilaCatalogo} fila
  * @param {Deps} deps
  */
 function registrarBuscar(server, fila, { port, log }) {
-  const nombre = fila.buscar;
   server.registerTool(
-    nombre,
+    fila.buscar,
     {
       title: `Buscar ${fila.plural}`,
-      description: `Busca ${fila.plural} de PokéAPI cuyo nombre contiene el texto dado (en inglés, minúsculas y guiones; los espacios se convierten en guiones) y devuelve una página de resultados completos ordenados por número. Usa ${fila.obtener} para un único resultado por nombre exacto.`,
+      description: DESCRIPCIONES[fila.buscar],
       inputSchema: ENTRADA_BUSQUEDA,
-      outputSchema: busqueda(fila.salida),
+      outputSchema: busqueda(SALIDAS[fila.clave]),
     },
-    async ({ consulta, pagina, tamano_pagina }) => {
-      log.info(`tool ${nombre}`);
-      const query = normalizeQuery(consulta);
-      const config = { ...SECTIONS[fila.clave], pageSize: tamano_pagina };
-      const result = await loadSection(port, config, { page: pagina, query, rawQuery: consulta });
-      if (result.status === 'error') {
-        log.error(`tool ${nombre}: lista no disponible`);
-        return errorResult(MENSAJES.caida);
-      }
-      if (pagina > 1 && pagina > result.totalPages) {
-        return errorResult(MENSAJES.paginaInexistente(pagina, result.totalPages));
-      }
-      if (result.items.length === 0 && result.failedCount > 0) {
-        log.error(`tool ${nombre}: ${result.failedCount} detalles no disponibles`);
-        return errorResult(MENSAJES.caida);
-      }
-      return okResult(resumenBusqueda(query, result), {
-        resultados: result.items,
-        pagina: result.page,
-        total_paginas: result.totalPages,
-        total: result.total,
-      });
-    },
+    (entrada) => ejecutarConsulta(fila.buscar, log, () => buscar(port, fila, entrada)),
   );
 }
 
 /**
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {typeof CATALOGO[number]} fila
+ * @param {FilaCatalogo} fila
  * @param {Deps} deps
  */
 function registrarObtener(server, fila, { port, log }) {
-  const nombre = fila.obtener;
   server.registerTool(
-    nombre,
+    fila.obtener,
     {
       title: `Obtener ${fila.recurso}`,
-      description: `Devuelve ${fila.recurso} de PokéAPI por su nombre exacto en inglés (p. ej. "pikachu"; los espacios se convierten en guiones) o por su número. Si no conoces el nombre exacto, usa antes ${fila.buscar}.`,
+      description: DESCRIPCIONES[fila.obtener],
       inputSchema: ENTRADA_DETALLE,
-      outputSchema: fila.salida,
+      outputSchema: SALIDAS[fila.clave],
     },
-    async ({ nombre_o_id }) => {
-      log.info(`tool ${nombre}`);
-      const slug =
-        typeof nombre_o_id === 'number' ? String(nombre_o_id) : normalizeQuery(nombre_o_id);
-      try {
-        const item = await fetchDetail(port, SECTIONS[fila.clave], slug);
-        return okResult(`${fila.etiqueta} ${item.name} (#${item.id}).`, item);
-      } catch (error) {
-        if (error.status === 404) {
-          return errorResult(MENSAJES.recursoInexistente(fila.recurso, slug, fila.buscar));
-        }
-        log.error(`tool ${nombre}: ${error.name}${error.status ? ` ${error.status}` : ''}`);
-        return errorResult(MENSAJES.caida);
-      }
-    },
+    (entrada) => ejecutarConsulta(fila.obtener, log, () => obtener(port, fila, entrada)),
   );
 }
 
