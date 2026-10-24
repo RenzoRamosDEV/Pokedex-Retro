@@ -1,155 +1,78 @@
 # Pokédex Retro
 
-Pokédex retro estática sobre [PokéAPI v2](https://pokeapi.co/), sin backend. Está hecha con HTML, CSS y JavaScript puro (módulos ES), sin frameworks ni paso de compilación, y tiene la estética de las consolas clásicas: Game Boy DMG-01 y los juegos de primera generación.
+Pokédex estática con estética Game Boy sobre [PokéAPI v2](https://pokeapi.co/), sin frameworks ni build, con un servidor MCP para consultarla desde Claude.
 
-Los datos se piden directamente desde el navegador a `https://pokeapi.co/api/v2`, así que el sitio puede publicarse tal cual en GitHub Pages.
+![Demo de la Pokédex Retro](docs/media/demo.gif)
 
-## Secciones
+**Demo:** https://renzoramosdev.github.io/Pokedex-Retro/
 
-| Página             | Contenido                                                       |
-| ------------------ | --------------------------------------------------------------- |
-| `index.html`       | Pokédex: rejilla de Pokémon con sprite, tipos y ficha detallada |
-| `movimientos.html` | Movimientos con potencia, precisión, PP y efecto                |
-| `tipos.html`       | Tabla de efectividad de tipos                                   |
-| `habilidades.html` | Habilidades y su efecto                                         |
-| `naturalezas.html` | Naturalezas agrupadas por estadística afectada                  |
-| `objetos.html`     | Objetos con categoría, precio y efecto                          |
-| `bayas.html`       | Bayas con crecimiento, firmeza y sabores                        |
+## Características
 
-Todas las secciones tienen buscador por nombre y, salvo Tipos y Naturalezas, paginación. La búsqueda y la página van en la URL (`?q=char&page=2`).
+- Siete secciones: Pokédex, movimientos, tipos, habilidades, naturalezas, objetos y bayas, con buscador por nombre y, salvo Tipos y Naturalezas, paginación; la búsqueda y la página van en la URL (`?q=char&page=2`).
+- Ficha de cada Pokémon en un `<dialog>` nativo con enlace profundo `#pokemon-<id>`.
+- Tres temas: NORMAL, DMG (verde LCD de la Game Boy) y MONO.
+- Caché de listas y detalles en el navegador y como máximo 6 peticiones de detalle a la vez.
+- Content Security Policy sin `'unsafe-inline'` y fuentes autoalojadas, sin Google Fonts.
+- Accesibilidad WCAG 2.1 AA: navegación por teclado, región de estado y contraste en los tres temas, auditado con axe en cada página.
+- Servidor MCP con 12 tools, 2 resources y 2 prompts que reutiliza la lógica de la web.
 
-## Rendimiento
+## Arquitectura
 
-- **Caché de listas**: las listas completas que usa la búsqueda (`limit=100000`) se guardan en `localStorage` 24 horas (`pokedex:lista:<url>`), así que buscar de nuevo no vuelve a descargarlas.
-- **Caché de detalles**: el resto de respuestas se guarda en memoria y en `sessionStorage` (`pokedex:detalle:<url>`) durante la sesión del navegador, también tras recargar.
-- Si el almacenamiento no está disponible o está lleno, la web sigue funcionando sin caché.
-- Como máximo se piden **6 detalles a la vez**. Si alguno falla, la sección se pinta con los que sí cargaron y un aviso del tipo `2 ELEMENTOS NO SE PUDIERON CARGAR`.
-- Las imágenes generadas llevan `width`, `height`, `loading="lazy"` y `decoding="async"`.
-
-## Seguridad
-
-Cada página declara una `Content-Security-Policy` en una etiqueta `<meta>` (GitHub Pages no permite cabeceras HTTP) sin `'unsafe-inline'` ni `'unsafe-eval'`: scripts, estilos y fuentes solo del propio sitio, imágenes del propio sitio y de `raw.githubusercontent.com` y datos solo de `pokeapi.co`.
-
-Por eso no se admiten estilos, scripts ni manejadores de eventos en línea (`style=`, `<script>` sin `src`, `on*=`), ni en los HTML ni en el HTML que genera la interfaz; un test lo comprueba. La anchura de las barras de estadísticas va en `data-valor` y se aplica con la propiedad CSS `--ancho` desde JavaScript, y los colores del acordeón de naturalezas son clases `acc-stat-*`.
-
-Las fuentes Press Start 2P y VT323 se sirven desde `site/fonts/` en `woff2` (copiadas de `@fontsource` 5.3.0), con su licencia SIL Open Font License 1.1 en `site/fonts/OFL.txt`; no se usa Google Fonts.
-
-## Accesibilidad
-
-- Cada página de sección empieza con un enlace **Saltar al contenido**, visible al recibir el foco con Tab, que lleva el foco al contenido principal (`<main id="contenido">`).
-- Los mensajes de carga, sin resultados, error y elementos no cargados se anuncian en una única región de estado (`role="status"`, `aria-live="polite"`) que no se recrea entre pintados.
-- Sin JavaScript se muestra el aviso `ESTA POKÉDEX NECESITA JAVASCRIPT`.
-- Con `prefers-reduced-motion: reduce` se desactivan todas las transiciones y animaciones.
-- Los botones de tema e información anuncian si su panel está abierto (`aria-expanded`) y qué panel controlan (`aria-controls`). Se abren con Enter o Espacio; abrir uno cierra el otro, Escape cierra el abierto devolviendo el foco a su botón y un clic fuera los cierra todos.
-- El menú de navegación se abre con un botón (`aria-expanded`, `aria-controls="nav-menu"`) operable con Enter o Espacio; Escape lo cierra y devuelve el foco al botón.
-- El detalle de cada Pokémon es un `<dialog>` modal nativo: se abre con Enter o clic en la tarjeta, lleva el foco al botón cerrar y se cierra con Escape, con el botón o con un clic fuera del panel, devolviendo el foco a la tarjeta. Abrirlo pone `#pokemon-<id>` en la URL sin añadir entradas al historial, así que un enlace como `index.html?page=2#pokemon-25` abre directamente ese detalle si el Pokémon está en la página.
-- El texto cumple el contraste WCAG 2.1 AA (4,5:1, o 3:1 en texto grande) en los tres temas; el smoke e2e audita con axe cada página en cada tema, y la Pokédex con el detalle abierto, y falla ante cualquier violación grave o crítica. En DMG el texto normal solo usa el verde más oscuro sobre los claros o al revés.
-
-## Temas
-
-Desde el botón de tema se elige entre **NORMAL** (rojo clásico), **DMG** (verde LCD de la Game Boy) y **MONO** (escala de grises). La elección se guarda en `localStorage` solo cuando se elige una opción. Sin tema guardado, el inicial sigue al sistema: **MONO** si prefiere esquema oscuro (`prefers-color-scheme: dark`) y **NORMAL** en otro caso; mientras no se elija ninguno, un cambio de preferencia del sistema se aplica en la siguiente carga.
-
-## Uso en local
-
-```bash
-python3 -m http.server -d site
+```mermaid
+flowchart LR
+  navegador["Navegador"] --> html["HTML<br/>site/*.html"]
+  html --> ui["ui"]
+  ui --> core["core / mappers"]
+  claude["Claude Desktop / Claude Code"] -->|stdio| mcp["mcp"]
+  mcp --> core
+  core --> api["api<br/>cliente HTTP y caché"]
+  api --> pokeapi[("PokéAPI v2")]
 ```
 
-Abre `http://localhost:8000/`. La página 404 usa rutas absolutas `/Pokedex-Retro/…`, así que solo se ve bien servida bajo esa ruta, como en Pages. Cualquier servidor estático sirve; abrir los HTML con `file://` no funciona porque los módulos ES necesitan HTTP.
+La web y el servidor MCP comparten `site/js/core`, `site/js/mappers` y `site/js/api`. Detalle de carpetas, flujo de una búsqueda, caché, seguridad y publicación: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-## Tests
+## Ejecutar en local
 
-Requiere Node ≥ 22. Los tests usan el runner nativo de Node y respuestas de PokéAPI simuladas, así que no necesitan red ni dependencias:
-
-```bash
-npm test
-```
-
-`npm test` incluye también los tests de `scripts/`. Para comprobar que la cabecera y la navegación de las siete páginas coinciden (la propia página se marca con `aria-current="page"`):
+Requiere Node ≥ 22.
 
 ```bash
-npm run check:html
+node scripts/serve-site.mjs
 ```
 
-Tests de mutación con Stryker sobre `site/js/core` y `site/js/mappers`:
-
-```bash
-npm install
-npm run test:mutation
-```
-
-Y sobre la capa de interfaz `site/js/ui` (sin el arranque `main.js` ni `theme.js`), con umbral del 85 %, en dos ejecuciones de hasta 180 s: primero las vistas `render-*.js` (`stryker.ui-render.config.json`) y después el resto (`stryker.ui.config.json`):
-
-```bash
-npm run test:mutation:ui
-```
-
-Tests del servidor MCP (`mcp/`), sin red, con un transporte en memoria, una PokéAPI simulada y procesos reales del binario; necesitan antes `npm ci --prefix mcp`:
-
-```bash
-npm ci --prefix mcp
-npm run mcp:test
-```
-
-Mutación con Stryker sobre `mcp/src`, umbral del 85 %, en dos ejecuciones de hasta 180 s: los módulos base (`stryker.mcp-base.config.json`) y después tools, resources y prompts (`stryker.mcp.config.json`):
-
-```bash
-npm run mcp:test:mutation
-```
-
-Smoke e2e en Chromium con Playwright: sirve `site/` con `scripts/serve-site.mjs` y simula todas las peticiones a PokéAPI y a los sprites con los fixtures, así que no usa la red; falla si la página pide algo externo sin simular o si hay violaciones de la CSP:
-
-```bash
-npx playwright install chromium
-npm run e2e
-```
-
-Presupuestos de Lighthouse (móvil, throttling simulado) sobre `index.html` y `tipos.html`, tres ejecuciones por página y mínimo 0,95 en rendimiento, accesibilidad, buenas prácticas y SEO. A diferencia del e2e, usa la PokéAPI real, así que necesita red; los informes quedan en `reports/lhci/`. La auditoría `robots-txt` se omite: la CSP de las páginas (`connect-src https://pokeapi.co`) impide a Lighthouse descargar `/robots.txt`, y en Pages ese fichero tendría que estar en la raíz del dominio, fuera de este repositorio:
-
-```bash
-npm run lhci
-```
-
-Para servir la web en local sin Python: `node scripts/serve-site.mjs` (puerto `4173`, o el de `PORT`).
+Abre `http://127.0.0.1:4173/` (otro puerto con `PORT=4181 node scripts/serve-site.mjs`). Abrir los HTML con `file://` no funciona porque los módulos ES necesitan HTTP, y la página 404 usa rutas absolutas `/Pokedex-Retro/…`, así que solo se ve bien servida bajo esa ruta, como en GitHub Pages.
 
 ## Servidor MCP
 
-`mcp/` contiene un servidor [Model Context Protocol](https://modelcontextprotocol.io) local por stdio que permite consultar la Pokédex desde Claude Desktop, Claude Code u otro cliente MCP. Llama directamente a PokéAPI y reutiliza `site/js/core`, `site/js/mappers` y `site/js/api`. Tools, resources, prompts, instalación y variables de entorno: [`mcp/README.md`](mcp/README.md).
-
-## Estructura
-
-```
-site/
-├── *.html              siete páginas y 404.html (rutas absolutas /Pokedex-Retro/)
-├── css/pokedex.css     estilos y temas
-├── fonts/              fuentes woff2 autoalojadas y su licencia OFL
-├── images/             logotipo e iconos del manifiesto (192 y 512 px)
-├── manifest.webmanifest
-├── robots.txt
-├── sitemap.xml         las siete páginas, sin la 404
-└── js/
-    ├── api/client.js   cliente HTTP: reintentos, timeout, cancelación y caché inyectable
-    ├── api/cache.js    cachés de listas (localStorage, 24 h) y de detalles (sesión)
-    ├── core/           lógica pura: URL, búsqueda, paginación, carga de secciones y límite de peticiones
-    ├── mappers/        PokéAPI → datos de vista (con fixtures de respuestas reales)
-    ├── ui/             renderizado en el DOM, selector de tema y cancelación al salir
-    │   └── strings.js  textos de la interfaz, centralizados
-    └── version.js      versión mostrada en el panel INFO (generado)
-scripts/
-├── check-html.mjs      comprueba que las cabeceras de las páginas coinciden
-└── sync-version.mjs    genera site/js/version.js desde package.json
+```bash
+npm ci --prefix mcp
+claude mcp add pokedex-retro -- node /ruta/a/Pokedex-Retro/mcp/bin/pokedex-mcp.js
 ```
 
-## Versión
+Sustituye la ruta por la de tu clon. Tools, configuración en Claude Desktop, variables de entorno e inspector: [`mcp/README.md`](mcp/README.md).
 
-La versión vive en `package.json` y se copia a `site/js/version.js`, que muestra el panel INFO. Para cambiarla se usa `npm version` (por ejemplo `npm version patch`), que regenera y añade `version.js` antes de su commit; un test falla si ambos valores no coinciden.
+## Tests
 
-## Despliegue en GitHub Pages
+Instala antes las dependencias con `npm ci` y `npm ci --prefix mcp`. Los tests no usan la red salvo Lighthouse.
 
-El workflow `.github/workflows/pages.yml` ejecuta `npm test` y, si pasa, publica la carpeta `site/` en cada push a `main` (también se puede lanzar a mano).
+| Comando                     | Qué cubre                                                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                  | Tests unitarios con `node --test` de `site/js` y `scripts`, con respuestas de PokéAPI simuladas                                                 |
+| `npm run mcp:test`          | Tests del servidor MCP con PokéAPI simulada y procesos reales del binario                                                                       |
+| `npm run test:mutation`     | Mutación con Stryker sobre `site/js/core` y `site/js/mappers` (umbral 95 %)                                                                     |
+| `npm run test:mutation:ui`  | Mutación sobre `site/js/ui` en dos ejecuciones, `stryker.ui-render.config.json` y `stryker.ui.config.json` (umbral 85 %)                        |
+| `npm run mcp:test:mutation` | Mutación sobre `mcp/src` en dos ejecuciones, `stryker.mcp-base.config.json` y `stryker.mcp.config.json` (umbral 85 %)                           |
+| `npm run e2e`               | Smoke en Chromium con Playwright, PokéAPI simulada y auditoría axe; necesita antes `npx playwright install chromium`                            |
+| `npm run lhci`              | Lighthouse sobre `index.html` y `tipos.html` contra PokéAPI real: accesibilidad, buenas prácticas y SEO exigen 0,95; el rendimiento es un aviso |
 
-Para activarlo una sola vez: **Settings → Pages → Build and deployment → Source: GitHub Actions**. El sitio queda en:
+Lint, formato, typecheck, `check:html` y el flujo de ramas y commits: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-https://renzoramosdev.github.io/Pokedex-Retro/
+## Decisiones
 
-Pages sirve `404.html` en cualquier ruta inexistente. `robots.txt` y `sitemap.xml` se publican con el sitio, aunque los rastreadores solo leen `robots.txt` en la raíz del dominio: en un sitio de proyecto el sitemap puede enviarse a mano.
+- [0001: cabecera y navegación estáticas](docs/adr/0001-cabecera-navegacion-estaticas.md): HTML escrito a mano en cada página y comprobado en CI con `npm run check:html`.
+- [0002: estrategia de caché](docs/adr/0002-estrategia-cache.md): listas en `localStorage` 24 h, detalles en memoria y `sessionStorage`, y caché del MCP en memoria con disco opcional.
+- [0003: servidor MCP por stdio](docs/adr/0003-mcp-stdio.md): proceso local sin puertos ni servidor que desplegar.
+- [0004: JavaScript con JSDoc y `// @ts-check`](docs/adr/0004-javascript-jsdoc-ts-check.md): tipos comprobados con `tsc` sin compilar la web.
+
+## Licencia
+
+[MIT](LICENSE). Las fuentes Press Start 2P y VT323 se distribuyen bajo la SIL Open Font License 1.1 ([`site/fonts/OFL.txt`](site/fonts/OFL.txt)).
