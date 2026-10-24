@@ -1,6 +1,6 @@
 // @ts-check
 import { DEFINICIONES, ENTRADA_NO_JSON } from '../herramientas.js';
-import { SISTEMA } from '../peticion.js';
+import { PROFESOR } from '../agentes/profesor.js';
 
 /**
  * Provider port for the OpenAI Responses API, called with plain `fetch` and `store: false`.
@@ -39,13 +39,16 @@ function parametrosEstrictos({ properties, required }) {
   };
 }
 
-export const FUNCIONES = DEFINICIONES.map(({ name, description, input_schema }) => ({
+/** @param {{ name: string, description: string, input_schema: { properties: Record<string, any>, required: string[] } }} definicion */
+export const comoFuncion = ({ name, description, input_schema }) => ({
   type: 'function',
   name,
   description,
   parameters: parametrosEstrictos(input_schema),
   strict: true,
-}));
+});
+
+export const FUNCIONES = DEFINICIONES.map(comoFuncion);
 
 /**
  * Quota and spend-limit 429s: retrying them does not restore access.
@@ -145,17 +148,17 @@ function motivoDe(final, historial) {
 }
 
 export const openai = {
-  /** @param {{ modelo: string, clave: string, historial: object[] }} datos */
-  construirPeticion: ({ modelo, clave, historial }) => ({
+  /** @param {{ modelo: string, clave: string, historial: object[], agente?: import('../agentes/subagentes.js').Agente }} datos */
+  construirPeticion: ({ modelo, clave, historial, agente = PROFESOR }) => ({
     url: URL_RESPUESTAS,
     opciones: {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${clave}` },
       body: JSON.stringify({
         model: modelo,
-        instructions: SISTEMA,
+        instructions: agente.sistema,
         input: historial,
-        tools: FUNCIONES,
+        tools: agente.herramientas.map(comoFuncion),
         max_output_tokens: MAX_OUTPUT_TOKENS,
         reasoning: { effort: 'low' },
         store: false,

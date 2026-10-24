@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { anthropic } from './anthropic.js';
 import { construirPeticion } from '../peticion.js';
 import { bloquesParaHistorial } from '../historial.js';
-import { ENTRADA_NO_JSON } from '../herramientas.js';
+import { DEFINICIONES, ENTRADA_NO_JSON } from '../herramientas.js';
+import { PROFESOR } from '../agentes/profesor.js';
+import { SUBAGENTES } from '../agentes/subagentes.js';
 import {
   errorEvent,
   fallbackBlock,
@@ -36,9 +38,43 @@ describe('anthropic.construirPeticion', () => {
     const datos = { modelo: 'claude-haiku-5-5', clave: 'sk-ant-x', historial: [{ role: 'user' }] };
     assert.deepEqual(
       anthropic.construirPeticion(datos),
-      construirPeticion({ modelo: datos.modelo, clave: datos.clave, mensajes: datos.historial }),
+      construirPeticion({
+        modelo: datos.modelo,
+        clave: datos.clave,
+        mensajes: datos.historial,
+        sistema: PROFESOR.sistema,
+        herramientas: PROFESOR.herramientas,
+      }),
     );
   });
+
+  test('defaults to the main agent: its prompt and its 14 tools', () => {
+    const datos = JSON.parse(
+      anthropic.construirPeticion({ modelo: 'claude-haiku-5-5', clave: 'sk-ant-x', historial: [] })
+        .opciones.body,
+    );
+    assert.equal(datos.system, PROFESOR.sistema);
+    assert.deepEqual(
+      datos.tools.map((t) => t.name),
+      [...DEFINICIONES.map((d) => d.name), 'delegar_subagente', 'usar_skill'],
+    );
+  });
+
+  for (const agente of [PROFESOR, ...SUBAGENTES]) {
+    test(`${agente.nombre} sends its own prompt and tools with the scope rule`, () => {
+      const datos = JSON.parse(
+        anthropic.construirPeticion({
+          modelo: 'claude-haiku-5-5',
+          clave: 'sk-ant-x',
+          historial: [],
+          agente,
+        }).opciones.body,
+      );
+      assert.equal(datos.system, agente.sistema);
+      assert.deepEqual(datos.tools, JSON.parse(JSON.stringify(agente.herramientas)));
+      assert.ok(datos.system.includes('Solo puedo responder preguntas sobre Pokémon.'));
+    });
+  }
 
   test('keeps the fallback header of the models that accept it', () => {
     const { opciones } = anthropic.construirPeticion({

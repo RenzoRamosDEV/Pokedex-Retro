@@ -1,11 +1,21 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SISTEMA, construirPeticion } from './peticion.js';
+import { construirPeticion } from './peticion.js';
 import { DEFINICIONES } from './herramientas.js';
+import { PROFESOR } from './agentes/profesor.js';
 
 const CLAVE = 'sk-ant-prueba';
 const MENSAJES = [{ role: 'user', content: 'hola' }];
-const peticion = (modelo) => construirPeticion({ modelo, clave: CLAVE, mensajes: MENSAJES });
+const SISTEMA = 'Sistema de prueba del agente.';
+const HERRAMIENTAS = DEFINICIONES.slice(10);
+const peticion = (modelo) =>
+  construirPeticion({
+    modelo,
+    clave: CLAVE,
+    mensajes: MENSAJES,
+    sistema: SISTEMA,
+    herramientas: HERRAMIENTAS,
+  });
 const cuerpo = (modelo) => JSON.parse(peticion(modelo).opciones.body);
 
 const CABECERAS = {
@@ -48,7 +58,7 @@ describe('construirPeticion', () => {
         max_tokens: 8000,
         stream: true,
         system: SISTEMA,
-        tools: DEFINICIONES,
+        tools: HERRAMIENTAS,
         messages: MENSAJES,
         output_config: { effort: 'low' },
         cache_control: { type: 'ephemeral' },
@@ -88,11 +98,13 @@ describe('construirPeticion', () => {
   });
 });
 
-describe('SISTEMA', () => {
-  test('asks in Spanish to use the tools for any data and to answer in plain Spanish text', () => {
-    assert.match(SISTEMA, /Pokédex/);
-    assert.match(SISTEMA, /herramientas/);
-    assert.match(SISTEMA, /en español/);
-    assert.match(SISTEMA, /texto plano/);
+describe('construirPeticion defaults', () => {
+  test('without an agent sends the main agent prompt and tools', () => {
+    const datos = JSON.parse(
+      construirPeticion({ modelo: 'claude-haiku-5-5', clave: CLAVE, mensajes: MENSAJES }).opciones
+        .body,
+    );
+    assert.equal(datos.system, PROFESOR.sistema);
+    assert.deepEqual(datos.tools, JSON.parse(JSON.stringify(PROFESOR.herramientas)));
   });
 });
