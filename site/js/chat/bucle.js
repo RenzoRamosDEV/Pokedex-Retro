@@ -19,16 +19,16 @@ const MAX_REINTENTOS = 2;
 
 /**
  * Sends the request, retrying what the provider marks as retryable before any event arrives.
- * @param {{ proveedor: Proveedor, fetch: FetchLike, url: string, opciones: object, esperar: (ms: number) => Promise<void>, signal?: AbortSignal, ahora: () => number }} envio
+ * @param {{ proveedor: Proveedor, fetch: FetchLike, clave: string, url: string, opciones: object, esperar: (ms: number) => Promise<void>, signal?: AbortSignal, ahora: () => number }} envio
  */
-async function enviar({ proveedor, fetch, url, opciones, esperar, signal, ahora }) {
+async function enviar({ proveedor, fetch, clave, url, opciones, esperar, signal, ahora }) {
   for (let intento = 0; ; intento += 1) {
     let respuesta;
     try {
       respuesta = await fetch(url, { ...opciones, signal });
     } catch (error) {
       if (error.name === 'AbortError') throw error;
-      throw proveedor.errorDeRed(error.message);
+      throw await proveedor.errorDeConexion({ fetch, clave, detalle: error.message, signal });
     }
     if (respuesta.ok) return respuesta;
     const error = await proveedor.errorDeRespuesta(respuesta);
@@ -129,7 +129,16 @@ export async function responder({
         clave,
         historial: conversacion,
       });
-      const respuesta = await enviar({ proveedor, fetch, url, opciones, esperar, signal, ahora });
+      const respuesta = await enviar({
+        proveedor,
+        fetch,
+        clave,
+        url,
+        opciones,
+        esperar,
+        signal,
+        ahora,
+      });
       const turno = await leerTurno(
         proveedor,
         respuesta,

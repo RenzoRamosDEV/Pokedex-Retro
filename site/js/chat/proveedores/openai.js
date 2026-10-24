@@ -9,6 +9,7 @@ import { SISTEMA } from '../peticion.js';
  */
 
 const URL_RESPUESTAS = 'https://api.openai.com/v1/responses';
+const URL_MODELOS = 'https://api.openai.com/v1/models';
 const MAX_OUTPUT_TOKENS = 8000;
 
 /**
@@ -224,6 +225,28 @@ export const openai = {
   },
 
   errorDeRed,
+
+  /**
+   * Error responses of /v1/responses carry no CORS headers, so the browser only sees a network
+   * failure; /v1/models does send them, and its answer to the same key tells what went wrong.
+   * @param {{ fetch: (url: string, init: object) => Promise<Response>, clave: string, detalle: string, signal?: AbortSignal }} datos
+   */
+  async errorDeConexion({ fetch, clave, detalle, signal }) {
+    let respuesta;
+    try {
+      respuesta = await fetch(URL_MODELOS, {
+        method: 'GET',
+        headers: { authorization: `Bearer ${clave}` },
+        signal,
+      });
+    } catch (error) {
+      if (error.name === 'AbortError') throw error;
+      return errorDeRed(detalle);
+    }
+    if (respuesta.status === 401) return crearError('clave_invalida', 401, detalle);
+    if (respuesta.status === 200) return crearError('rechazada', 0, detalle);
+    return errorDeRed(detalle);
+  },
 
   /** @param {string} detalle */
   errorDesconocido: (detalle) => crearError('servidor', 500, detalle),

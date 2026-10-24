@@ -14,6 +14,7 @@ const ERROR_KEYS = {
   demasiado_larga: 'errorLongitud',
   limite_uso: 'errorLimiteUso',
   sin_saldo: 'errorSinSaldo',
+  rechazada: 'errorRechazada',
   saturado: 'errorSaturado',
   red: 'errorRed',
   servidor: 'errorServidor',
