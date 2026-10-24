@@ -2891,6 +2891,15 @@ body[data-theme='gray'] .logo-dot.green {
   flex: 1 1 18rem;
 }
 
+.chat-panel.chat-toolbar {
+  flex-direction: row;
+}
+
+.chat-panel.chat-toolbar .chat-input {
+  flex: 0 1 18rem;
+  cursor: pointer;
+}
+
 .chat button.page-btn,
 .chat-key button.page-btn {
   cursor: pointer;
