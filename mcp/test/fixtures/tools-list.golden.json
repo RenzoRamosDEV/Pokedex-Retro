@@ -1,0 +1,1097 @@
+[
+  {
+    "name": "buscar_pokemon",
+    "title": "Buscar Pokémon",
+    "description": "Busca Pokémon de PokéAPI cuyo nombre contiene el texto dado (en inglés, minúsculas y guiones; los espacios se convierten en guiones) y devuelve una página de resultados completos ordenados por número. Usa obtener_pokemon para un único resultado por nombre exacto.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "consulta": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Texto que debe contener el nombre, en inglés como en PokéAPI (p. ej. \"char\")"
+        },
+        "pagina": {
+          "default": 1,
+          "description": "Página de resultados, desde 1",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tamano_pagina": {
+          "default": 10,
+          "description": "Resultados por página, de 1 a 50",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["consulta"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "resultados": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": "string"
+              },
+              "baseExperience": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "height": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "weight": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "abilities": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "isHidden": {
+                      "type": "boolean"
+                    },
+                    "slot": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": ["name", "isHidden", "slot"],
+                  "additionalProperties": false
+                }
+              },
+              "stats": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "baseStat": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "effort": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": ["name", "baseStat", "effort"],
+                  "additionalProperties": false
+                }
+              },
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "slot": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "typeName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["slot", "typeName"],
+                  "additionalProperties": false
+                }
+              },
+              "sprite": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "baseExperience",
+              "height",
+              "weight",
+              "abilities",
+              "stats",
+              "types",
+              "sprite"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "pagina": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total_paginas": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["resultados", "pagina", "total_paginas", "total"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "obtener_pokemon",
+    "title": "Obtener el Pokémon",
+    "description": "Devuelve el Pokémon de PokéAPI por su nombre exacto en inglés (p. ej. \"pikachu\"; los espacios se convierten en guiones) o por su número. Si no conoces el nombre exacto, usa antes buscar_pokemon.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nombre_o_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[A-Za-z0-9 -]+$"
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          ],
+          "description": "Nombre en inglés de PokéAPI (p. ej. \"pikachu\") o número"
+        }
+      },
+      "required": ["nombre_o_id"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "name": {
+          "type": "string"
+        },
+        "baseExperience": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "height": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "abilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "isHidden": {
+                "type": "boolean"
+              },
+              "slot": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["name", "isHidden", "slot"],
+            "additionalProperties": false
+          }
+        },
+        "stats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "baseStat": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "effort": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["name", "baseStat", "effort"],
+            "additionalProperties": false
+          }
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "slot": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "typeName": {
+                "type": "string"
+              }
+            },
+            "required": ["slot", "typeName"],
+            "additionalProperties": false
+          }
+        },
+        "sprite": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "baseExperience",
+        "height",
+        "weight",
+        "abilities",
+        "stats",
+        "types",
+        "sprite"
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "buscar_movimientos",
+    "title": "Buscar movimientos",
+    "description": "Busca movimientos de PokéAPI cuyo nombre contiene el texto dado (en inglés, minúsculas y guiones; los espacios se convierten en guiones) y devuelve una página de resultados completos ordenados por número. Usa obtener_movimiento para un único resultado por nombre exacto.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "consulta": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Texto que debe contener el nombre, en inglés como en PokéAPI (p. ej. \"char\")"
+        },
+        "pagina": {
+          "default": 1,
+          "description": "Página de resultados, desde 1",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tamano_pagina": {
+          "default": 10,
+          "description": "Resultados por página, de 1 a 50",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["consulta"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "resultados": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": "string"
+              },
+              "accuracy": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "pp": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "power": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "damageClass": {
+                "type": "string"
+              },
+              "moveType": {
+                "type": "string"
+              },
+              "shortEffect": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "accuracy",
+              "pp",
+              "priority",
+              "power",
+              "damageClass",
+              "moveType",
+              "shortEffect"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "pagina": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total_paginas": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["resultados", "pagina", "total_paginas", "total"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "obtener_movimiento",
+    "title": "Obtener el movimiento",
+    "description": "Devuelve el movimiento de PokéAPI por su nombre exacto en inglés (p. ej. \"pikachu\"; los espacios se convierten en guiones) o por su número. Si no conoces el nombre exacto, usa antes buscar_movimientos.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nombre_o_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[A-Za-z0-9 -]+$"
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          ],
+          "description": "Nombre en inglés de PokéAPI (p. ej. \"pikachu\") o número"
+        }
+      },
+      "required": ["nombre_o_id"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "name": {
+          "type": "string"
+        },
+        "accuracy": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pp": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "power": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "damageClass": {
+          "type": "string"
+        },
+        "moveType": {
+          "type": "string"
+        },
+        "shortEffect": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "accuracy",
+        "pp",
+        "priority",
+        "power",
+        "damageClass",
+        "moveType",
+        "shortEffect"
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "buscar_habilidades",
+    "title": "Buscar habilidades",
+    "description": "Busca habilidades de PokéAPI cuyo nombre contiene el texto dado (en inglés, minúsculas y guiones; los espacios se convierten en guiones) y devuelve una página de resultados completos ordenados por número. Usa obtener_habilidad para un único resultado por nombre exacto.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "consulta": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Texto que debe contener el nombre, en inglés como en PokéAPI (p. ej. \"char\")"
+        },
+        "pagina": {
+          "default": 1,
+          "description": "Página de resultados, desde 1",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tamano_pagina": {
+          "default": 10,
+          "description": "Resultados por página, de 1 a 50",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["consulta"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "resultados": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": "string"
+              },
+              "shortEffect": {
+                "type": "string"
+              },
+              "pokemonCount": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["id", "name", "shortEffect", "pokemonCount"],
+            "additionalProperties": false
+          }
+        },
+        "pagina": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total_paginas": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["resultados", "pagina", "total_paginas", "total"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "obtener_habilidad",
+    "title": "Obtener la habilidad",
+    "description": "Devuelve la habilidad de PokéAPI por su nombre exacto en inglés (p. ej. \"pikachu\"; los espacios se convierten en guiones) o por su número. Si no conoces el nombre exacto, usa antes buscar_habilidades.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nombre_o_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[A-Za-z0-9 -]+$"
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          ],
+          "description": "Nombre en inglés de PokéAPI (p. ej. \"pikachu\") o número"
+        }
+      },
+      "required": ["nombre_o_id"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "name": {
+          "type": "string"
+        },
+        "shortEffect": {
+          "type": "string"
+        },
+        "pokemonCount": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["id", "name", "shortEffect", "pokemonCount"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "buscar_objetos",
+    "title": "Buscar objetos",
+    "description": "Busca objetos de PokéAPI cuyo nombre contiene el texto dado (en inglés, minúsculas y guiones; los espacios se convierten en guiones) y devuelve una página de resultados completos ordenados por número. Usa obtener_objeto para un único resultado por nombre exacto.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "consulta": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Texto que debe contener el nombre, en inglés como en PokéAPI (p. ej. \"char\")"
+        },
+        "pagina": {
+          "default": 1,
+          "description": "Página de resultados, desde 1",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tamano_pagina": {
+          "default": 10,
+          "description": "Resultados por página, de 1 a 50",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["consulta"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "resultados": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": "string"
+              },
+              "cost": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "category": {
+                "type": "string"
+              },
+              "sprite": {
+                "type": ["string", "null"]
+              },
+              "shortEffect": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "cost", "category", "sprite", "shortEffect"],
+            "additionalProperties": false
+          }
+        },
+        "pagina": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total_paginas": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["resultados", "pagina", "total_paginas", "total"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "obtener_objeto",
+    "title": "Obtener el objeto",
+    "description": "Devuelve el objeto de PokéAPI por su nombre exacto en inglés (p. ej. \"pikachu\"; los espacios se convierten en guiones) o por su número. Si no conoces el nombre exacto, usa antes buscar_objetos.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nombre_o_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[A-Za-z0-9 -]+$"
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          ],
+          "description": "Nombre en inglés de PokéAPI (p. ej. \"pikachu\") o número"
+        }
+      },
+      "required": ["nombre_o_id"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "name": {
+          "type": "string"
+        },
+        "cost": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category": {
+          "type": "string"
+        },
+        "sprite": {
+          "type": ["string", "null"]
+        },
+        "shortEffect": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "name", "cost", "category", "sprite", "shortEffect"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "buscar_bayas",
+    "title": "Buscar bayas",
+    "description": "Busca bayas de PokéAPI cuyo nombre contiene el texto dado (en inglés, minúsculas y guiones; los espacios se convierten en guiones) y devuelve una página de resultados completos ordenados por número. Usa obtener_baya para un único resultado por nombre exacto.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "consulta": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Texto que debe contener el nombre, en inglés como en PokéAPI (p. ej. \"char\")"
+        },
+        "pagina": {
+          "default": 1,
+          "description": "Página de resultados, desde 1",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tamano_pagina": {
+          "default": 10,
+          "description": "Resultados por página, de 1 a 50",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["consulta"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "resultados": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": "string"
+              },
+              "growthTime": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "maxHarvest": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "naturalGiftPower": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "naturalGiftType": {
+                "type": "string"
+              },
+              "smoothness": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "firmness": {
+                "type": "string"
+              },
+              "flavors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "potency": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "flavor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["potency", "flavor"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "growthTime",
+              "maxHarvest",
+              "naturalGiftPower",
+              "naturalGiftType",
+              "smoothness",
+              "firmness",
+              "flavors"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "pagina": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total_paginas": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["resultados", "pagina", "total_paginas", "total"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "obtener_baya",
+    "title": "Obtener la baya",
+    "description": "Devuelve la baya de PokéAPI por su nombre exacto en inglés (p. ej. \"pikachu\"; los espacios se convierten en guiones) o por su número. Si no conoces el nombre exacto, usa antes buscar_bayas.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "nombre_o_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[A-Za-z0-9 -]+$"
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          ],
+          "description": "Nombre en inglés de PokéAPI (p. ej. \"pikachu\") o número"
+        }
+      },
+      "required": ["nombre_o_id"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "name": {
+          "type": "string"
+        },
+        "growthTime": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "maxHarvest": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "naturalGiftPower": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "naturalGiftType": {
+          "type": "string"
+        },
+        "smoothness": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "firmness": {
+          "type": "string"
+        },
+        "flavors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "potency": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "flavor": {
+                "type": "string"
+              }
+            },
+            "required": ["potency", "flavor"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "growthTime",
+        "maxHarvest",
+        "naturalGiftPower",
+        "naturalGiftType",
+        "smoothness",
+        "firmness",
+        "flavors"
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  }
+]

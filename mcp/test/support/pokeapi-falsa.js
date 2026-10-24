@@ -36,6 +36,7 @@ export const CATALOGO = {
   pokemon: { entries: pokemonCatalog(), fixture: webFixture('pokemon') },
   move: {
     entries: [
+      [9, 'thunder-punch'],
       [33, 'tackle'],
       [85, 'thunderbolt'],
       [87, 'thunder'],
@@ -97,8 +98,8 @@ function serveCatalog(url) {
 
 /**
  * Fake PokéAPI over the web fixtures. `respuestas` scripts responses per URL: each step is
- * `{ status, headers?, body? }` or `'hang'`; the last step repeats.
- * @param {{ respuestas?: Record<string, Array<object | 'hang'>> }} [options]
+ * `{ status, headers?, body? }`, `'hang'` or `'red'` (network error); the last step repeats.
+ * @param {{ respuestas?: Record<string, Array<object | 'hang' | 'red'>> }} [options]
  */
 export function createFakePokeApi({ respuestas = {} } = {}) {
   const calls = [];
@@ -111,6 +112,7 @@ export function createFakePokeApi({ respuestas = {} } = {}) {
     if (steps) {
       const step = steps.length > 1 ? steps.shift() : steps[0];
       if (step === 'hang') return hang(init.signal);
+      if (step === 'red') throw new TypeError('fetch failed');
       return json(step.status, step.body ?? {}, step.headers);
     }
     return serveCatalog(new URL(href));

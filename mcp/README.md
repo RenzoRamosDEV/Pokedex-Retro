@@ -16,6 +16,36 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io) local por std
 
 El servidor solo escribe mensajes del protocolo en stdout; los registros van a stderr.
 
+## Tools de búsqueda y detalle
+
+Los nombres de PokéAPI van en inglés, en minúsculas y con guiones; los espacios de la entrada se convierten en guiones. Cada respuesta correcta trae un resumen de una línea seguido del JSON de `structuredContent`.
+
+| Tool                 | Entrada                                                                                             | Salida                                                                          | Ejemplo                                    |
+| -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------ |
+| `buscar_pokemon`     | `consulta` (1–50 caracteres), `pagina` (≥ 1, por defecto 1), `tamano_pagina` (1–50, por defecto 10) | `{ resultados, pagina, total_paginas, total }`, resultados ordenados por número | `{ "consulta": "char" }`                   |
+| `buscar_movimientos` | Igual que `buscar_pokemon`                                                                          | Igual, con movimientos                                                          | `{ "consulta": "thunder" }`                |
+| `buscar_habilidades` | Igual que `buscar_pokemon`                                                                          | Igual, con habilidades                                                          | `{ "consulta": "levitate" }`               |
+| `buscar_objetos`     | Igual que `buscar_pokemon`                                                                          | Igual, con objetos                                                              | `{ "consulta": "ball", "pagina": 2 }`      |
+| `buscar_bayas`       | Igual que `buscar_pokemon`                                                                          | Igual, con bayas                                                                | `{ "consulta": "ch", "tamano_pagina": 5 }` |
+| `obtener_pokemon`    | `nombre_o_id`: nombre (letras, números, espacios o guiones) o entero ≥ 1                            | El Pokémon con los mismos campos que la web                                     | `{ "nombre_o_id": "pikachu" }`             |
+| `obtener_movimiento` | Igual que `obtener_pokemon`                                                                         | El movimiento                                                                   | `{ "nombre_o_id": 85 }`                    |
+| `obtener_habilidad`  | Igual que `obtener_pokemon`                                                                         | La habilidad                                                                    | `{ "nombre_o_id": "levitate" }`            |
+| `obtener_objeto`     | Igual que `obtener_pokemon`                                                                         | El objeto                                                                       | `{ "nombre_o_id": "master ball" }`         |
+| `obtener_baya`       | Igual que `obtener_pokemon`                                                                         | La baya                                                                         | `{ "nombre_o_id": "cheri" }`               |
+
+### Errores
+
+Los errores llegan como resultado con `isError: true` y no cierran la sesión:
+
+| Situación                                     | Texto                                                                             |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
+| Entrada inválida                              | Contiene el mensaje del campo, p. ej. `tamano_pagina debe estar entre 1 y 50.`    |
+| Página fuera de rango                         | `La página 9 no existe; hay 3 páginas.`                                           |
+| Recurso inexistente                           | `No existe el Pokémon "xyz". Usa buscar_pokemon para encontrar el nombre exacto.` |
+| PokéAPI caída tras los reintentos o sin datos | `PokéAPI no responde; inténtalo en unos minutos.`                                 |
+
+Si una búsqueda carga solo parte de los resultados, la respuesta es correcta y el resumen indica cuántos no se pudieron cargar.
+
 ## Variables de entorno
 
 | Variable                 | Valores                                | Efecto                                                                                                                                                                                      |
