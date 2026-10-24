@@ -202,12 +202,19 @@ describe('obtener', () => {
     );
   });
 
-  test('uses the label of each catalog row', async () => {
-    const { port } = crearPuertoPokeApi();
-    const bayas = CATALOGO.find((fila) => fila.clave === 'bayas');
-    const salida = await obtener(port, bayas, { nombre_o_id: 'cheri' });
-    assert.equal(salida.resumen, 'Baya cheri (#1).');
-  });
+  for (const [clave, nombre, resumen] of [
+    ['movimientos', 'thunderbolt', 'Movimiento thunderbolt (#85).'],
+    ['habilidades', 'stench', 'Habilidad stench (#1).'],
+    ['objetos', 'master-ball', 'Objeto master-ball (#1).'],
+    ['bayas', 'cheri', 'Baya cheri (#1).'],
+  ]) {
+    test(`labels a result of ${clave}`, async () => {
+      const { port } = crearPuertoPokeApi();
+      const fila = CATALOGO.find((f) => f.clave === clave);
+      const salida = await obtener(port, fila, { nombre_o_id: nombre });
+      assert.equal(salida.resumen, resumen);
+    });
+  }
 
   test('answers a missing resource without logging', async () => {
     const { port } = crearPuertoPokeApi();
@@ -305,6 +312,14 @@ describe('naturalezas', () => {
       salida.datos.naturalezas.map((n) => n.name),
       ['bold', 'modest', 'calm', 'timid', 'lonely', 'adamant', 'naughty', 'brave'],
     );
+  });
+
+  test('reports the outage when the list is down', async () => {
+    const { port } = crearPuertoPokeApi({
+      respuestas: { [`${API}/nature?limit=100`]: fallo(500) },
+    });
+    const salida = await naturalezas(port, {});
+    assert.deepEqual(salida, { error: MENSAJES.caida, registro: 'lista incompleta' });
   });
 
   test('reports the outage when the list is incomplete', async () => {

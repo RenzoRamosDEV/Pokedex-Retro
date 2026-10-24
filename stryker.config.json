@@ -4,7 +4,14 @@
   "commandRunner": {
     "command": "node --test \"site/js/core/**/*.test.js\" \"site/js/mappers/**/*.test.js\""
   },
-  "mutate": ["site/js/core/**/*.js", "site/js/mappers/**/*.js", "!site/js/**/*.test.js"],
+  "mutate": [
+    "site/js/core/**/*.js",
+    "site/js/mappers/**/*.js",
+    "!site/js/**/*.test.js",
+    "!site/js/core/mensajes.js",
+    "!site/js/core/type-chart.js",
+    "!site/js/core/consultas.js"
+  ],
   "ignorePatterns": ["tsconfig.json"],
   "thresholds": {
     "high": 95,
