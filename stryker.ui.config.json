@@ -9,6 +9,7 @@
     "!site/js/ui/**/*.test.js",
     "!site/js/ui/render-*.js",
     "!site/js/ui/main.js",
+    "!site/js/ui/arranque.js",
     "!site/js/ui/theme.js"
   ],
   "ignorePatterns": ["tsconfig.json"],

@@ -9,14 +9,10 @@ import { itemsView } from './render-items.js';
 import { berriesView } from './render-berries.js';
 import { typesView } from './render-types.js';
 import { abilitiesView } from './render-abilities.js';
-import { createFetchJson } from '../api/client.js';
-import { createApiCache } from '../api/cache.js';
 import { loadUntilPageHide } from './cancelable-load.js';
-import { initTheme } from './theme.js';
 import { connectPokemonDialogs } from './dialog.js';
-import { connectDisclosures } from './disclosure.js';
-import { VERSION } from '../version.js';
 import { STRINGS } from './strings.js';
+import { createPokeApiPort, startPage } from './arranque.js';
 
 const VIEWS = {
   pokedex: pokedexView,
@@ -28,20 +24,7 @@ const VIEWS = {
   habilidades: abilitiesView,
 };
 
-function storageOrNull(name) {
-  try {
-    return window[name];
-  } catch {
-    return null;
-  }
-}
-
-const fetchJson = createFetchJson({
-  cache: createApiCache({
-    local: storageOrNull('localStorage'),
-    session: storageOrNull('sessionStorage'),
-  }),
-});
+const pokeApiPort = createPokeApiPort();
 let lastLoadAborted = false;
 const dialogs = connectPokemonDialogs({
   root: document.querySelector('main'),
@@ -65,11 +48,7 @@ async function start() {
   status.textContent = STRINGS.comun.cargando;
   content.innerHTML = '';
   const result = await loadUntilPageHide(window, (signal) =>
-    loadSection(
-      (url) => fetchJson(url, { signal }).then((json) => ({ ok: true, status: 200, json })),
-      SECTIONS[sectionName],
-      parsedQuery,
-    ),
+    loadSection(pokeApiPort(signal), SECTIONS[sectionName], parsedQuery),
   );
   lastLoadAborted = result === null;
   if (lastLoadAborted) return;
@@ -83,15 +62,5 @@ window.addEventListener('pageshow', (event) => {
   if (event.persisted && lastLoadAborted) start();
 });
 
-document.querySelector('[data-version]').textContent = VERSION;
-initTheme(
-  document,
-  storageOrNull('localStorage'),
-  window.matchMedia('(prefers-color-scheme: dark)').matches,
-);
-connectDisclosures(document, [
-  { button: 'theme-btn', panel: 'theme-dropdown' },
-  { button: 'info-btn', panel: 'info-dropdown' },
-  { button: 'nav-btn', panel: 'nav-menu' },
-]);
+startPage();
 start();
