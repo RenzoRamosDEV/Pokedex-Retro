@@ -50,7 +50,7 @@ Conventional Commits con el tipo en inglés y la descripción en español:
 | `npm run e2e`              | Smoke e2e en Chromium con Playwright y PokéAPI simulada, sin red                                                            |
 | `npm run lhci`             | Lighthouse CI sobre `index.html` y `tipos.html` (3 ejecuciones, 0,95 por categoría); usa PokéAPI real, así que necesita red |
 
-Antes de abrir un PR deben pasar `npm test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation`, `npm run test:mutation:ui`, `npm run e2e` y `npm run lhci` (este último contra PokéAPI real).
+Antes de abrir un PR deben pasar `npm test`, `npm run mcp:test`, `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run check:html`, `npm run test:mutation`, `npm run test:mutation:ui`, `npm run mcp:test:mutation`, `npm run e2e` y `npm run lhci` (este último contra PokéAPI real).
 
 ## TDD
 
