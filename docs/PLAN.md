@@ -2,6 +2,8 @@
 
 Punto de partida: rama `main`, commit `73b20e6` (tag `v1.0.0-RC.0`).
 
+Estado: fases 1–6 completadas; publicado como `v1.1.0`.
+
 ## 1. Resumen
 
 - La web (HTML + CSS + módulos ES, sin build, en GitHub Pages) ya tiene una base sana: lógica pura separada, 135 tests y mutación alta.
@@ -252,6 +254,6 @@ Punto de partida: rama `main`, commit `73b20e6` (tag `v1.0.0-RC.0`).
 | Contraste AA cambia la paleta del tema `gb`                                          | Ajuste dentro de la gama verde; verificación con axe en e2e                                     |
 | Prettier reformatea todo el código existente                                         | Commit aislado `style: aplica el formato de Prettier`, sin cambios de lógica                    |
 
-## 9. Próximo paso
+## 9. Plan completado
 
-Aprobar este plan para empezar la fase 1.
+Cada fase está archivada en `openspec/changes/archive/`.
