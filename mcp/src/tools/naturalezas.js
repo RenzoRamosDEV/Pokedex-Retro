@@ -1,11 +1,7 @@
 // @ts-check
-import { loadSection } from '../../../site/js/core/load-section.js';
-import { SECTIONS } from '../../../site/js/core/sections.js';
-import { MENSAJES } from '../../../site/js/core/mensajes.js';
-import { errorResult, okResult } from '../results.js';
-import { ENTRADA_NATURALEZAS, NATURALEZAS } from '../schemas.js';
-
-const NOMBRE = 'naturalezas';
+import { DESCRIPCIONES, NATURALEZAS, naturalezas } from '../../../site/js/core/consultas.js';
+import { ejecutarConsulta } from '../results.js';
+import { ENTRADA_NATURALEZAS, NATURALEZAS as SALIDA } from '../schemas.js';
 
 /**
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
@@ -13,34 +9,13 @@ const NOMBRE = 'naturalezas';
  */
 export function registrarNaturalezas(server, { port, log }) {
   server.registerTool(
-    NOMBRE,
+    NATURALEZAS,
     {
       title: 'Naturalezas',
-      description:
-        'Devuelve las naturalezas de PokéAPI ordenadas por número, con la estadística que suben y la que bajan y los sabores que prefieren y odian. Con estadistica, solo las que suben o bajan esa estadística.',
+      description: DESCRIPCIONES[NATURALEZAS],
       inputSchema: ENTRADA_NATURALEZAS,
-      outputSchema: NATURALEZAS,
+      outputSchema: SALIDA,
     },
-    async ({ estadistica }) => {
-      log.info(`tool ${NOMBRE}`);
-      const result = await loadSection(port, SECTIONS.naturalezas, {
-        page: 1,
-        query: null,
-        rawQuery: null,
-      });
-      if (result.status === 'error' || result.failedCount > 0) {
-        log.error(`tool ${NOMBRE}: lista incompleta`);
-        return errorResult(MENSAJES.caida);
-      }
-      const naturalezas = estadistica
-        ? result.items.filter(
-            (n) => n.increasedStat === estadistica || n.decreasedStat === estadistica,
-          )
-        : result.items;
-      const resumen = estadistica
-        ? `${naturalezas.length} naturalezas que suben o bajan ${estadistica}.`
-        : `${naturalezas.length} naturalezas.`;
-      return okResult(resumen, { naturalezas });
-    },
+    (entrada) => ejecutarConsulta(NATURALEZAS, log, () => naturalezas(port, entrada)),
   );
 }
