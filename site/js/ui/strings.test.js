@@ -121,6 +121,7 @@ test('STRINGS is grouped by view and every value is a non-empty string', () => {
   assert.deepEqual(Object.keys(STRINGS).sort(), [
     'bayas',
     'chat',
+    'chatOpenai',
     'comun',
     'habilidades',
     'movimientos',
@@ -208,4 +209,21 @@ test('a Pokémon without hidden ability has no OCULTA tag', () => {
 test('the search field and button have their accessible names in STRINGS', () => {
   assert.equal(STRINGS.comun.etiquetaBusqueda, 'Buscar por nombre');
   assert.equal(STRINGS.comun.enviarBusqueda, 'Buscar');
+});
+
+test('chatOpenai only overrides texts that exist in chat or are OpenAI only', () => {
+  assert.deepEqual(STRINGS.chatOpenai, {
+    asistente: 'OPENAI',
+    rechazo: 'OpenAI no puede responder a esta petición.',
+    claveFormato: 'La clave de OpenAI debe empezar por sk-.',
+    otroProveedor: 'Esa clave es de Anthropic. Elige Claude (Anthropic) en PROVEEDOR.',
+    errorClave: 'Clave de OpenAI no válida. Revísala en platform.openai.com.',
+    errorSinSaldo: 'Tu cuenta de OpenAI no tiene saldo.',
+    errorSaturado: 'OpenAI está saturado. Inténtalo en unos minutos.',
+    errorRed: 'Sin conexión con OpenAI.',
+    errorServidor: 'Error de OpenAI ({estado}). Inténtalo de nuevo.',
+  });
+  assert.equal(STRINGS.chat.asistente, 'CLAUDE');
+  assert.equal(STRINGS.chat.claveAnthropic, 'CLAVE DE ANTHROPIC');
+  assert.equal(STRINGS.chat.claveOpenai, 'CLAVE DE OPENAI');
 });

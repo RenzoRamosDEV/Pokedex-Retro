@@ -35,9 +35,13 @@ function setup() {
     stop: fakeElement('button'),
     reset: fakeElement('button'),
     model: fakeElement('select'),
+    modelOpenai: fakeElement('select'),
+    provider: fakeElement('select'),
   };
   elements.stop.disabled = true;
-  return { elements, view: createChatView({ document, ...elements }) };
+  const { model, modelOpenai, provider, ...rest } = elements;
+  const selectors = [provider, model, modelOpenai];
+  return { elements, view: createChatView({ document, ...rest, selectors }) };
 }
 
 const message = (element) => ({
@@ -144,7 +148,7 @@ describe('createChatView', () => {
     );
     view.showRefusal();
     assert.equal(elements.status.textContent, 'Claude no puede responder a esta petición.');
-    view.showKeyFormatError();
+    view.showKeyError('formato');
     assert.equal(elements.status.textContent, 'La clave debe empezar por sk-ant-.');
   });
 
@@ -179,5 +183,105 @@ describe('createChatView', () => {
     view.clear();
     assert.deepEqual(elements.log.children, []);
     assert.equal(elements.status.textContent, '');
+  });
+
+  test('busy mode also disables the provider and both model selectors', () => {
+    const { elements, view } = setup();
+    view.setBusy(true);
+    assert.deepEqual(
+      ['provider', 'model', 'modelOpenai'].map((name) => elements[name].disabled),
+      [true, true, true],
+    );
+    view.setBusy(false);
+    assert.deepEqual(
+      ['provider', 'model', 'modelOpenai'].map((name) => elements[name].disabled),
+      [false, false, false],
+    );
+  });
+
+  for (const [proveedor, motivo, expected] of [
+    ['anthropic', 'formato', 'La clave debe empezar por sk-ant-.'],
+    ['anthropic', 'otro_proveedor', 'Esa clave parece de OpenAI. Elige OpenAI en PROVEEDOR.'],
+    ['openai', 'formato', 'La clave de OpenAI debe empezar por sk-.'],
+    [
+      'openai',
+      'otro_proveedor',
+      'Esa clave es de Anthropic. Elige Claude (Anthropic) en PROVEEDOR.',
+    ],
+  ]) {
+    test(`shows the ${motivo} key error for ${proveedor}`, () => {
+      const { elements, view } = setup();
+      view.setProvider(proveedor);
+      view.showKeyError(motivo);
+      assert.equal(elements.status.textContent, expected);
+    });
+  }
+
+  test('labels the OpenAI replies OPENAI and shows its refusal', () => {
+    const { elements, view } = setup();
+    view.setProvider('openai');
+    view.startReply();
+    view.appendText('<b>hola</b>');
+    assert.deepEqual(message(elements.log.children[0]), {
+      tagName: 'div',
+      className: 'chat-message chat-message--openai',
+      author: 'OPENAI',
+      text: '<b>hola</b>',
+    });
+    view.showRefusal();
+    assert.equal(elements.status.textContent, 'OpenAI no puede responder a esta petición.');
+  });
+
+  for (const [error, expected] of [
+    [{ codigo: 'clave_invalida' }, 'Clave de OpenAI no válida. Revísala en platform.openai.com.'],
+    [{ codigo: 'sin_saldo' }, 'Tu cuenta de OpenAI no tiene saldo.'],
+    [{ codigo: 'saturado' }, 'OpenAI está saturado. Inténtalo en unos minutos.'],
+    [{ codigo: 'red' }, 'Sin conexión con OpenAI.'],
+    [{ codigo: 'servidor', estado: 500 }, 'Error de OpenAI (500). Inténtalo de nuevo.'],
+    [{ codigo: 'permiso' }, 'Tu clave no tiene permiso para este modelo.'],
+    [{ codigo: 'peticion', detalle: 'Bad schema' }, 'Petición no válida: Bad schema'],
+    [{ codigo: 'limite_uso' }, 'Límite de uso alcanzado. Espera un momento.'],
+  ]) {
+    test(`shows the OpenAI ${error.codigo} error`, () => {
+      const { elements, view } = setup();
+      view.setProvider('openai');
+      view.showError(error);
+      assert.equal(elements.status.textContent, expected);
+    });
+  }
+
+  test('OpenAI keeps the shared limit, cut and token texts', () => {
+    const { elements, view } = setup();
+    view.setProvider('openai');
+    view.startReply();
+    view.showCut();
+    assert.equal(message(elements.log.children[0]).text, ' (respuesta cortada por longitud)');
+    view.showUsage({ entrada: 300, salida: 50 });
+    assert.equal(elements.log.children[1].textContent, 'Tokens: 300 entrada · 50 salida');
+    view.showLimit();
+    assert.equal(
+      elements.status.textContent,
+      'He alcanzado el límite de consultas para esta pregunta.',
+    );
+  });
+
+  test('going back to anthropic restores the Claude texts', () => {
+    const { elements, view } = setup();
+    view.setProvider('openai');
+    view.setProvider('anthropic');
+    view.startReply();
+    assert.deepEqual(
+      [message(elements.log.children[0]).author, elements.log.children[0].className],
+      ['CLAUDE', 'chat-message chat-message--claude'],
+    );
+    view.showError({ codigo: 'clave_invalida' });
+    assert.equal(
+      elements.status.textContent,
+      'Clave no válida. Revísala en console.anthropic.com.',
+    );
+    view.showError({ codigo: 'servidor', estado: 502 });
+    assert.equal(elements.status.textContent, 'Error de Claude (502). Inténtalo de nuevo.');
+    view.showRefusal();
+    assert.equal(elements.status.textContent, 'Claude no puede responder a esta petición.');
   });
 });
