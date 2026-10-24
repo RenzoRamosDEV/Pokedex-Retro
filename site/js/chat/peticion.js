@@ -1,5 +1,5 @@
 // @ts-check
-import { DEFINICIONES } from './herramientas.js';
+import { PROFESOR } from './agentes/profesor.js';
 import { MODELOS } from './modelos.js';
 
 const URL_MENSAJES = 'https://api.anthropic.com/v1/messages';
@@ -7,15 +7,17 @@ const VERSION_API = '2026-10-21';
 const BETA_FALLBACK = 'server-side-fallback-2026-07-01';
 const MAX_TOKENS = 8000;
 
-/** Fixed text, with no date or other variable data, so the cached prefix stays stable. */
-export const SISTEMA =
-  'Eres el asistente de la Pokédex Retro, una web con datos de PokéAPI sobre Pokémon, movimientos, habilidades, objetos, bayas, tipos y naturalezas. Usa siempre las herramientas para obtener cualquier dato de la Pokédex y no respondas de memoria; los nombres van en inglés, como en PokéAPI. Responde en español y en texto plano, sin Markdown ni HTML.';
-
 /**
  * Streaming Messages API request; the key goes only in the `x-api-key` header.
- * @param {{ modelo: string, clave: string, mensajes: object[] }} datos
+ * @param {{ modelo: string, clave: string, mensajes: object[], sistema?: string, herramientas?: object[] }} datos
  */
-export function construirPeticion({ modelo, clave, mensajes }) {
+export function construirPeticion({
+  modelo,
+  clave,
+  mensajes,
+  sistema = PROFESOR.sistema,
+  herramientas = PROFESOR.herramientas,
+}) {
   const conFallback = MODELOS.some((m) => m.id === modelo && m.fallback);
   /** @type {Record<string, string>} */
   const headers = {
@@ -29,8 +31,8 @@ export function construirPeticion({ modelo, clave, mensajes }) {
     model: modelo,
     max_tokens: MAX_TOKENS,
     stream: true,
-    system: SISTEMA,
-    tools: DEFINICIONES,
+    system: sistema,
+    tools: herramientas,
     messages: mensajes,
     output_config: { effort: 'low' },
     cache_control: { type: 'ephemeral' },

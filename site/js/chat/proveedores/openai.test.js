@@ -1,8 +1,10 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FUNCIONES, openai } from './openai.js';
+import { FUNCIONES, comoFuncion, openai } from './openai.js';
 import { DEFINICIONES } from '../herramientas.js';
-import { SISTEMA } from '../peticion.js';
+import { PROFESOR } from '../agentes/profesor.js';
+import { SUBAGENTES } from '../agentes/subagentes.js';
+import { DELEGAR_SUBAGENTE, USAR_SKILL } from '../agentes/meta.js';
 import { MODELOS_OPENAI } from '../modelos.js';
 import { DESCRIPCIONES } from '../../core/consultas.js';
 import { ENTRADA_NO_JSON } from '../herramientas.js';
@@ -62,9 +64,9 @@ describe('openai.construirPeticion', () => {
     ]);
     assert.deepEqual(datos, {
       model: 'gpt-6.1-sol',
-      instructions: SISTEMA,
+      instructions: PROFESOR.sistema,
       input: HISTORIAL,
-      tools: FUNCIONES,
+      tools: PROFESOR.herramientas.map(comoFuncion),
       max_output_tokens: 8000,
       reasoning: { effort: 'low' },
       store: false,
@@ -88,6 +90,63 @@ describe('openai.construirPeticion', () => {
         assert.equal(prohibido in datos, false, prohibido);
       }
       assert.equal(datos.store, false);
+    });
+  }
+});
+
+describe('openai agent requests', () => {
+  test('the main agent declares 14 strict functions in the order and names of Claude', () => {
+    const { tools } = cuerpo('gpt-6.1-sol');
+    assert.equal(tools.length, 14);
+    assert.deepEqual(
+      tools.map((f) => [f.type, f.name, f.description, f.strict]),
+      PROFESOR.herramientas.map((d) => ['function', d.name, d.description, true]),
+    );
+  });
+
+  test('golden: delegar_subagente is a strict function with every field required', () => {
+    assert.deepEqual(comoFuncion(DELEGAR_SUBAGENTE), {
+      type: 'function',
+      name: 'delegar_subagente',
+      description: DELEGAR_SUBAGENTE.description,
+      parameters: {
+        type: 'object',
+        properties: DELEGAR_SUBAGENTE.input_schema.properties,
+        required: ['subagente', 'tarea'],
+        additionalProperties: false,
+      },
+      strict: true,
+    });
+  });
+
+  test('golden: usar_skill is a strict function with its name required', () => {
+    assert.deepEqual(comoFuncion(USAR_SKILL), {
+      type: 'function',
+      name: 'usar_skill',
+      description: USAR_SKILL.description,
+      parameters: {
+        type: 'object',
+        properties: USAR_SKILL.input_schema.properties,
+        required: ['nombre'],
+        additionalProperties: false,
+      },
+      strict: true,
+    });
+  });
+
+  test('comoFuncion gives FUNCIONES for every query tool', () => {
+    assert.deepEqual(DEFINICIONES.map(comoFuncion), FUNCIONES);
+  });
+
+  for (const agente of [PROFESOR, ...SUBAGENTES]) {
+    test(`${agente.nombre} sends its own instructions and functions with the scope rule`, () => {
+      const datos = JSON.parse(
+        openai.construirPeticion({ modelo: 'gpt-6.1-sol', clave: CLAVE, historial: [], agente })
+          .opciones.body,
+      );
+      assert.equal(datos.instructions, agente.sistema);
+      assert.deepEqual(datos.tools, agente.herramientas.map(comoFuncion));
+      assert.ok(datos.instructions.includes('Solo puedo responder preguntas sobre Pokémon.'));
     });
   }
 });

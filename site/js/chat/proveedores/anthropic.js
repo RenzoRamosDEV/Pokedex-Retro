@@ -6,6 +6,7 @@ import {
   errorDeRespuesta,
   esReintentable,
 } from '../errores.js';
+import { PROFESOR } from '../agentes/profesor.js';
 import { ENTRADA_NO_JSON } from '../herramientas.js';
 import { bloquesParaHistorial } from '../historial.js';
 import { construirPeticion } from '../peticion.js';
@@ -57,9 +58,15 @@ function turnoDe(mensaje) {
 }
 
 export const anthropic = {
-  /** @param {{ modelo: string, clave: string, historial: object[] }} datos */
-  construirPeticion: ({ modelo, clave, historial }) =>
-    construirPeticion({ modelo, clave, mensajes: historial }),
+  /** @param {{ modelo: string, clave: string, historial: object[], agente?: import('../agentes/subagentes.js').Agente }} datos */
+  construirPeticion: ({ modelo, clave, historial, agente = PROFESOR }) =>
+    construirPeticion({
+      modelo,
+      clave,
+      mensajes: historial,
+      sistema: agente.sistema,
+      herramientas: agente.herramientas,
+    }),
 
   /** @param {string} pregunta */
   mensajeUsuario: (pregunta) => ({ role: 'user', content: pregunta }),
