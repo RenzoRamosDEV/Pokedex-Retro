@@ -6,6 +6,9 @@ import { ENTRADA_NO_JSON } from './herramientas.js';
 import { PROVEEDORES } from './proveedores/index.js';
 import { construirPeticion } from './peticion.js';
 import { MENSAJES } from '../core/mensajes.js';
+import { PROFESOR } from './agentes/profesor.js';
+import { SKILLS } from './agentes/skills.js';
+import { SUBAGENTES } from './agentes/subagentes.js';
 import { API, crearPuertoPokeApi } from '../../../tests/support/puerto-pokeapi.js';
 import {
   errorEvent,
@@ -974,5 +977,560 @@ describe('responder with OpenAI', () => {
     );
     assert.deepEqual(entrada.at(-1), { role: 'user', content: 'y otra' });
     assert.deepEqual(entrada[1], oaEfectividad);
+  });
+});
+
+const RESPUESTA_FIJA = 'Solo puedo responder preguntas sobre Pokémon.';
+
+/** The same scenarios written once for both providers. */
+const DELEGACION = {
+  anthropic: {
+    preparar: (respuestas, opciones = {}) => preparar(respuestas, opciones),
+    modelo: MODELO,
+    clave: CLAVE,
+    texto: (t, { entrada = 0, salida = 0 } = {}) =>
+      texto(t, { usage: { input_tokens: entrada }, salida: { output_tokens: salida } }),
+    llamadas: (llamadas, { entrada = 0, salida = 0 } = {}) =>
+      herramienta(
+        llamadas.map(({ id, name, args }, i) => toolUseBlock(i, { id, name, input: args })),
+        { usage: { input_tokens: entrada }, salida: { output_tokens: salida } },
+      ),
+    rechazo: () => respuestaSse(mensaje({ bloques: [textBlock(0, 'No.')], stopReason: 'refusal' })),
+    cortada: (t) => respuestaSse(mensaje({ bloques: [textBlock(0, t)], stopReason: 'max_tokens' })),
+    cortadaConLlamada: ({ id, name, args }) =>
+      respuestaSse(
+        mensaje({
+          bloques: [textBlock(0, 'Consulto'), toolUseBlock(1, { id, name, input: args })],
+          stopReason: 'max_tokens',
+        }),
+      ),
+    noAutorizada: () => respuestaError(401, 'authentication_error', 'invalid x-api-key'),
+    sistema: (cuerpo) => cuerpo.system,
+    entrada: (cuerpo) => cuerpo.messages,
+    claveEnviada: (peticion) => peticion.opciones.headers['x-api-key'],
+    salidas: (cuerpo) =>
+      cuerpo.messages.at(-1).content.map((b) => ({ id: b.tool_use_id, contenido: b.content })),
+  },
+  openai: {
+    preparar: (respuestas, opciones = {}) =>
+      preparar(respuestas, {
+        proveedor: PROVEEDORES.openai,
+        modelo: 'gpt-6.1-sol',
+        clave: 'sk-proj-prueba',
+        ...opciones,
+      }),
+    modelo: 'gpt-6.1-sol',
+    clave: 'sk-proj-prueba',
+    texto: (t, { entrada = 0, salida = 0 } = {}) => oaTexto(t, oa.usage({ entrada, salida })),
+    llamadas: (llamadas, { entrada = 0, salida = 0 } = {}) =>
+      oaLlamadas(
+        llamadas.map(({ id, name, args, json }, i) =>
+          oa.functionCallItem({ id: `fc_${i}`, callId: id, name, args, json }),
+        ),
+        oa.responseCompleted(oa.usage({ entrada, salida })),
+      ),
+    rechazo: () => oaLlamadas([oa.messageItem({ rechazo: 'No.' })]),
+    cortada: (t) =>
+      oaLlamadas([oa.messageItem({ texto: t })], oa.responseIncomplete('max_output_tokens')),
+    cortadaConLlamada: ({ id, name, args }) =>
+      oaLlamadas(
+        [oa.functionCallItem({ id: 'fc_0', callId: id, name, args })],
+        oa.responseIncomplete('max_output_tokens'),
+      ),
+    noAutorizada: () =>
+      oa.respuestaError(401, { type: 'invalid_request_error', code: 'invalid_api_key' }),
+    sistema: (cuerpo) => cuerpo.instructions,
+    entrada: (cuerpo) => cuerpo.input,
+    claveEnviada: (peticion) => peticion.opciones.headers.authorization.replace('Bearer ', ''),
+    salidas: (cuerpo) =>
+      cuerpo.input
+        .filter((item) => item.type === 'function_call_output')
+        .map((item) => ({ id: item.call_id, contenido: item.output })),
+  },
+};
+
+const delegar = (subagente, tarea, id = 'call_d') => ({
+  id,
+  name: 'delegar_subagente',
+  args: { subagente, tarea },
+});
+const efectividad = (id = 'call_e') => ({
+  id,
+  name: 'efectividad_tipos',
+  args: { atacante: 'electric', defensor: ['water', 'flying'] },
+});
+const subagenteLlamado = (nombre) => SUBAGENTES.find((s) => s.nombre === nombre);
+const deAgente = (P, agente, peticiones) =>
+  peticiones.filter((p) => P.sistema(p.cuerpo) === agente.sistema);
+
+for (const [nombreProveedor, P] of Object.entries(DELEGACION)) {
+  describe(`responder delegating with ${nombreProveedor}`, () => {
+    test('delegates a task, returns the subagent text as the tool result and shows only the main text', async () => {
+      const estratega = subagenteLlamado('estratega-tipos');
+      const { llamada, peticiones, eventos } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', 'debilidades de gyarados')]),
+        P.llamadas([efectividad()]),
+        P.texto('Gyarados es débil a electric (x4) y rock.'),
+        P.texto('Evita electric.'),
+      ]);
+      const resultado = await responder(llamada);
+      assert.equal(resultado.estado, 'fin');
+      assert.equal(peticiones.length, 4);
+      const [primera, sub1, sub2, segunda] = peticiones;
+      for (const p of [primera, segunda]) assert.equal(P.sistema(p.cuerpo), PROFESOR.sistema);
+      for (const p of [sub1, sub2]) {
+        assert.equal(P.sistema(p.cuerpo), estratega.sistema);
+        assert.equal(p.cuerpo.model, P.modelo);
+        assert.equal(P.claveEnviada(p), P.clave);
+        assert.equal(p.url, primera.url);
+        assert.deepEqual(
+          p.cuerpo.tools.map((t) => t.name),
+          estratega.herramientas.map((t) => t.name),
+        );
+      }
+      assert.deepEqual(P.entrada(sub1.cuerpo)[0], {
+        role: 'user',
+        content: 'debilidades de gyarados',
+      });
+      assert.deepEqual(P.salidas(sub2.cuerpo).length, 1);
+      assert.match(P.salidas(sub2.cuerpo)[0].contenido, /"multiplicador": 4/);
+      assert.deepEqual(P.salidas(segunda.cuerpo), [
+        { id: 'call_d', contenido: 'Gyarados es débil a electric (x4) y rock.' },
+      ]);
+      assert.deepEqual(textos(eventos), ['Evita electric.']);
+      assert.deepEqual(
+        eventos.filter((e) => e.tipo !== 'texto' && e.tipo !== 'uso'),
+        [{ tipo: 'subagente', nombre: 'estratega-tipos' }],
+      );
+    });
+
+    test('accepts a 2000-character task', async () => {
+      const tarea = 't'.repeat(2000);
+      const { llamada, peticiones } = P.preparar([
+        P.llamadas([delegar('investigador-pokedex', tarea)]),
+        P.texto('hecho'),
+        P.texto('fin'),
+      ]);
+      await responder(llamada);
+      assert.equal(peticiones.length, 3);
+      assert.deepEqual(P.entrada(peticiones[1].cuerpo)[0], { role: 'user', content: tarea });
+    });
+
+    test('loads a skill without PokéAPI and returns its instructions', async () => {
+      const skill = SKILLS.find((s) => s.nombre === 'analizar-debilidades');
+      const { llamada, peticiones, eventos, pokeApi } = P.preparar([
+        P.llamadas([
+          { id: 'call_s', name: 'usar_skill', args: { nombre: 'analizar-debilidades' } },
+        ]),
+        P.texto('listo'),
+      ]);
+      const resultado = await responder(llamada);
+      assert.equal(resultado.estado, 'fin');
+      assert.deepEqual(pokeApi.calls, []);
+      assert.deepEqual(P.salidas(peticiones[1].cuerpo), [
+        { id: 'call_s', contenido: skill.instrucciones },
+      ]);
+      assert.deepEqual(
+        eventos.filter((e) => e.tipo === 'skill' || e.tipo === 'herramienta'),
+        [{ tipo: 'skill', nombre: 'analizar-debilidades' }],
+      );
+    });
+
+    test('an unknown skill is an error and emits no skill event', async () => {
+      const { llamada, peticiones, eventos } = P.preparar([
+        P.llamadas([{ id: 'call_s', name: 'usar_skill', args: { nombre: 'cocinar' } }]),
+        P.texto('listo'),
+      ]);
+      await responder(llamada);
+      assert.deepEqual(P.salidas(peticiones[1].cuerpo), [
+        {
+          id: 'call_s',
+          contenido:
+            'nombre debe ser uno de: comparar-pokemon, equipo-contra-tipo, analizar-debilidades, recomendar-naturaleza.',
+        },
+      ]);
+      assert.deepEqual(
+        eventos.filter((e) => e.tipo === 'skill'),
+        [],
+      );
+    });
+
+    test('runs a delegation and obtener_pokemon in parallel and answers them in call order', async () => {
+      const { llamada, peticiones, eventos } = P.preparar([
+        P.llamadas([
+          delegar('investigador-pokedex', 'ficha de gyarados'),
+          { id: 'call_p', name: 'obtener_pokemon', args: { nombre_o_id: 'gyarados' } },
+        ]),
+        P.texto('Gyarados es water/flying.'),
+        P.texto('fin'),
+      ]);
+      await responder(llamada);
+      assert.equal(peticiones.length, 3);
+      const salidas = P.salidas(peticiones[2].cuerpo);
+      assert.deepEqual(
+        salidas.map((s) => s.id),
+        ['call_d', 'call_p'],
+      );
+      assert.equal(salidas[0].contenido, 'Gyarados es water/flying.');
+      assert.match(salidas[1].contenido, /Pokémon gyarados \(#130\)\./);
+      assert.deepEqual(
+        eventos.filter((e) => e.tipo === 'subagente' || e.tipo === 'herramienta'),
+        [
+          { tipo: 'subagente', nombre: 'investigador-pokedex' },
+          { tipo: 'herramienta', nombre: 'obtener_pokemon' },
+        ],
+      );
+    });
+
+    test('a subagent cannot delegate: the call is an unknown tool', async () => {
+      const investigador = subagenteLlamado('investigador-pokedex');
+      const { llamada, peticiones } = P.preparar([
+        P.llamadas([delegar('investigador-pokedex', 'busca')]),
+        P.llamadas([delegar('estratega-tipos', 'otra', 'call_x')]),
+        P.texto('nada'),
+        P.texto('fin'),
+      ]);
+      await responder(llamada);
+      assert.equal(peticiones.length, 4);
+      assert.equal(deAgente(P, investigador, peticiones).length, 2);
+      assert.deepEqual(P.salidas(peticiones[2].cuerpo), [
+        { id: 'call_x', contenido: 'Herramienta desconocida: delegar_subagente.' },
+      ]);
+    });
+
+    test('a subagent cannot run a tool outside its list', async () => {
+      const { llamada, peticiones, pokeApi } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', 'naturalezas')]),
+        P.llamadas([{ id: 'call_n', name: 'naturalezas', args: {} }]),
+        P.texto('sin datos'),
+        P.texto('fin'),
+      ]);
+      await responder(llamada);
+      assert.deepEqual(pokeApi.calls, []);
+      assert.deepEqual(P.salidas(peticiones[2].cuerpo), [
+        { id: 'call_n', contenido: 'Herramienta desconocida: naturalezas.' },
+      ]);
+    });
+
+    test('a subagent that never ends stops after 7 requests and the main agent goes on', async () => {
+      const entrenador = subagenteLlamado('entrenador-equipos');
+      const { llamada, peticiones } = P.preparar([
+        P.llamadas([delegar('entrenador-equipos', 'equipo')]),
+        ...Array.from({ length: 7 }, (_, i) => P.llamadas([efectividad(`call_${i}`)])),
+        P.texto('Sin equipo.'),
+        P.texto('nunca'),
+      ]);
+      const resultado = await responder(llamada);
+      assert.equal(resultado.estado, 'fin');
+      assert.equal(deAgente(P, entrenador, peticiones).length, 7);
+      assert.equal(peticiones.length, 9);
+      assert.deepEqual(P.salidas(peticiones[8].cuerpo), [
+        {
+          id: 'call_d',
+          contenido: 'El subagente entrenador-equipos alcanzó el límite de consultas.',
+        },
+      ]);
+    });
+
+    test('subagent requests do not count for the main limit of 9 requests', async () => {
+      const { llamada, peticiones } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', 'algo')]),
+        P.texto('hecho'),
+        ...Array.from({ length: 8 }, (_, i) => P.llamadas([efectividad(`call_${i}`)])),
+        P.texto('nunca'),
+      ]);
+      const resultado = await responder(llamada);
+      assert.equal(resultado.estado, 'limite');
+      assert.equal(deAgente(P, PROFESOR, peticiones).length, 9);
+      assert.equal(peticiones.length, 10);
+    });
+
+    for (const [caso, final, mensaje] of [
+      [
+        'a refusal',
+        () => P.rechazo(),
+        'El subagente estratega-tipos no puede responder a esta tarea.',
+      ],
+      ['an empty text', () => P.texto(''), 'El subagente estratega-tipos no terminó su respuesta.'],
+      [
+        'a cut answer with calls',
+        () => P.cortadaConLlamada(efectividad()),
+        'El subagente estratega-tipos no terminó su respuesta.',
+      ],
+    ]) {
+      test(`a subagent ending in ${caso} returns an error to the main agent`, async () => {
+        const { llamada, peticiones, pokeApi } = P.preparar([
+          P.llamadas([delegar('estratega-tipos', 'algo')]),
+          final(),
+          P.texto('fin'),
+        ]);
+        const resultado = await responder(llamada);
+        assert.equal(resultado.estado, 'fin');
+        assert.equal(peticiones.length, 3);
+        assert.deepEqual(pokeApi.calls, []);
+        assert.deepEqual(P.salidas(peticiones[2].cuerpo), [{ id: 'call_d', contenido: mensaje }]);
+      });
+    }
+
+    test('a cut subagent answer without calls returns its text', async () => {
+      const { llamada, peticiones } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', 'algo')]),
+        P.cortada('Texto a medias'),
+        P.texto('fin'),
+      ]);
+      await responder(llamada);
+      assert.deepEqual(P.salidas(peticiones[2].cuerpo), [
+        { id: 'call_d', contenido: 'Texto a medias' },
+      ]);
+    });
+
+    test('an invalid delegation makes no extra request', async () => {
+      const { llamada, peticiones, eventos } = P.preparar([
+        P.llamadas([delegar('chef', 'ataques de pikachu')]),
+        P.texto('fin'),
+      ]);
+      await responder(llamada);
+      assert.equal(peticiones.length, 2);
+      assert.deepEqual(P.salidas(peticiones[1].cuerpo), [
+        {
+          id: 'call_d',
+          contenido:
+            'subagente debe ser uno de: estratega-tipos, entrenador-equipos, investigador-pokedex.',
+        },
+      ]);
+      assert.deepEqual(
+        eventos.filter((e) => e.tipo === 'subagente'),
+        [],
+      );
+    });
+
+    test('a blank task makes no extra request', async () => {
+      const { llamada, peticiones } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', '   ')]),
+        P.texto('fin'),
+      ]);
+      await responder(llamada);
+      assert.equal(peticiones.length, 2);
+      assert.deepEqual(P.salidas(peticiones[1].cuerpo), [
+        { id: 'call_d', contenido: 'tarea debe tener entre 1 y 2000 caracteres.' },
+      ]);
+    });
+
+    test('a 401 in the subagent ends the whole question without incorporating it', async () => {
+      const { llamada, peticiones, eventos } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', 'algo')]),
+        P.noAutorizada(),
+        P.texto('nunca'),
+      ]);
+      const resultado = await responder(llamada);
+      assert.equal(peticiones.length, 2);
+      assert.equal(P.sistema(peticiones[1].cuerpo), subagenteLlamado('estratega-tipos').sistema);
+      assert.equal(resultado.estado, 'error');
+      assert.equal(resultado.error.codigo, 'clave_invalida');
+      assert.deepEqual(resultado.mensajes, []);
+      assert.deepEqual(
+        eventos.filter((e) => e.tipo === 'uso'),
+        [],
+      );
+    });
+
+    test('stopping while a subagent request is held aborts it and makes no other request', async () => {
+      const controller = new AbortController();
+      const retenida = (opciones) =>
+        new Promise((_, reject) => {
+          opciones.signal.addEventListener('abort', () =>
+            reject(new DOMException('abortado', 'AbortError')),
+          );
+          queueMicrotask(() => controller.abort());
+        });
+      const { llamada, peticiones } = P.preparar(
+        [P.llamadas([delegar('estratega-tipos', 'algo')]), retenida, P.texto('nunca')],
+        { signal: controller.signal },
+      );
+      const resultado = await responder(llamada);
+      assert.equal(resultado.estado, 'abortada');
+      assert.equal(peticiones.length, 2);
+      assert.equal(P.sistema(peticiones[1].cuerpo), subagenteLlamado('estratega-tipos').sistema);
+      assert.equal(peticiones[1].opciones.signal, controller.signal);
+      assert.deepEqual(resultado.mensajes, []);
+    });
+
+    test('adds the usage of the subagent requests to the question', async () => {
+      const { llamada, eventos } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', 'algo')], { entrada: 100, salida: 20 }),
+        P.llamadas([efectividad()], { entrada: 50, salida: 10 }),
+        P.texto('sub', { entrada: 60, salida: 15 }),
+        P.texto('fin', { entrada: 200, salida: 30 }),
+      ]);
+      const resultado = await responder(llamada);
+      assert.deepEqual(resultado.uso, { entrada: 410, salida: 75 });
+      assert.deepEqual(eventos.at(-1), { tipo: 'uso', uso: { entrada: 410, salida: 75 } });
+    });
+
+    test('adds the usage of a subagent that ends in a refusal', async () => {
+      const { llamada } = P.preparar([
+        P.llamadas([delegar('estratega-tipos', 'algo')], { entrada: 1, salida: 1 }),
+        P.llamadas([efectividad()], { entrada: 5, salida: 2 }),
+        P.rechazo(),
+        P.texto('fin', { entrada: 3, salida: 4 }),
+      ]);
+      const resultado = await responder(llamada);
+      assert.deepEqual(resultado.uso, { entrada: 9, salida: 7 });
+    });
+
+    test('an off-topic question gets the fixed answer with one request and no PokéAPI call', async () => {
+      const { llamada, peticiones, pokeApi } = P.preparar(
+        [P.texto(RESPUESTA_FIJA, { entrada: 5, salida: 2 })],
+        { pregunta: '¿Cuál es la capital de Francia?' },
+      );
+      const resultado = await responder(llamada);
+      assert.equal(resultado.estado, 'fin');
+      assert.equal(peticiones.length, 1);
+      assert.deepEqual(pokeApi.calls, []);
+      assert.ok(P.sistema(peticiones[0].cuerpo).includes(RESPUESTA_FIJA));
+      assert.deepEqual(resultado.uso, { entrada: 5, salida: 2 });
+    });
+  });
+}
+
+describe('responder delegating, provider details', () => {
+  test('Claude: usage with cache from a subagent adds up', async () => {
+    const { llamada } = preparar([
+      herramienta(
+        [
+          toolUseBlock(0, {
+            id: 'call_d',
+            name: 'delegar_subagente',
+            input: { subagente: 'estratega-tipos', tarea: 'x' },
+          }),
+        ],
+        { usage: { input_tokens: 100 }, salida: { output_tokens: 20 } },
+      ),
+      texto('sub', {
+        usage: { input_tokens: 40, cache_creation_input_tokens: 10 },
+        salida: { output_tokens: 5 },
+      }),
+      texto('fin', {
+        usage: { input_tokens: 10, cache_read_input_tokens: 150 },
+        salida: { output_tokens: 30 },
+      }),
+    ]);
+    const resultado = await responder(llamada);
+    assert.deepEqual(resultado.uso, { entrada: 310, salida: 55 });
+  });
+
+  test('Claude: a failed delegation is flagged as an error result', async () => {
+    const { llamada, peticiones } = preparar([
+      herramienta([
+        toolUseBlock(0, {
+          id: 'call_d',
+          name: 'delegar_subagente',
+          input: { subagente: 'chef', tarea: 'x' },
+        }),
+      ]),
+      texto('fin'),
+    ]);
+    await responder(llamada);
+    assert.equal(peticiones[1].cuerpo.messages.at(-1).content[0].is_error, true);
+  });
+
+  test('Claude: a successful delegation is not flagged as an error', async () => {
+    const { llamada, peticiones } = preparar([
+      herramienta([
+        toolUseBlock(0, {
+          id: 'call_d',
+          name: 'delegar_subagente',
+          input: { subagente: 'estratega-tipos', tarea: 'x' },
+        }),
+      ]),
+      texto('dato'),
+      texto('fin'),
+    ]);
+    await responder(llamada);
+    assert.equal('is_error' in peticiones[2].cuerpo.messages.at(-1).content[0], false);
+  });
+
+  test('OpenAI: usage of a subagent adds up', async () => {
+    const P = DELEGACION.openai;
+    const { llamada } = P.preparar([
+      P.llamadas([delegar('estratega-tipos', 'x')], { entrada: 100, salida: 20 }),
+      P.texto('sub', { entrada: 70, salida: 9 }),
+      P.texto('fin', { entrada: 200, salida: 30 }),
+    ]);
+    const resultado = await responder(llamada);
+    assert.deepEqual(resultado.uso, { entrada: 370, salida: 59 });
+  });
+
+  test('OpenAI: a null skill name is an error with the same message', async () => {
+    const P = DELEGACION.openai;
+    const { llamada, peticiones } = P.preparar([
+      P.llamadas([{ id: 'call_s', name: 'usar_skill', json: '{"nombre":null}' }]),
+      P.texto('fin'),
+    ]);
+    await responder(llamada);
+    assert.deepEqual(P.salidas(peticiones[1].cuerpo), [
+      {
+        id: 'call_s',
+        contenido:
+          'nombre debe ser uno de: comparar-pokemon, equipo-contra-tipo, analizar-debilidades, recomendar-naturaleza.',
+      },
+    ]);
+  });
+
+  test('OpenAI: delegation arguments that are not JSON are an error without a subagent', async () => {
+    const P = DELEGACION.openai;
+    const { llamada, peticiones } = P.preparar([
+      P.llamadas([{ id: 'call_d', name: 'delegar_subagente', json: '{"subagente":' }]),
+      P.texto('fin'),
+    ]);
+    await responder(llamada);
+    assert.equal(peticiones.length, 2);
+    assert.deepEqual(P.salidas(peticiones[1].cuerpo), [
+      { id: 'call_d', contenido: 'La entrada de la herramienta no es JSON válido.' },
+    ]);
+  });
+
+  test('Claude: a call outside the agent list is flagged as an error result', async () => {
+    const { llamada, peticiones } = preparar([
+      herramienta([
+        toolUseBlock(0, {
+          id: 'call_d',
+          name: 'delegar_subagente',
+          input: { subagente: 'estratega-tipos', tarea: 'x' },
+        }),
+      ]),
+      herramienta([toolUseBlock(0, { id: 'call_n', name: 'naturalezas', input: {} })]),
+      texto('dato'),
+      texto('fin'),
+    ]);
+    await responder(llamada);
+    assert.deepEqual(peticiones[2].cuerpo.messages.at(-1).content, [
+      {
+        type: 'tool_result',
+        tool_use_id: 'call_n',
+        content: 'Herramienta desconocida: naturalezas.',
+        is_error: true,
+      },
+    ]);
+  });
+
+  test('Claude: a skill input that is not JSON is flagged as an error result', async () => {
+    const { llamada, peticiones, eventos } = preparar([
+      herramienta([toolUseBlock(0, { id: 'call_s', name: 'usar_skill', json: '{"nombre":' })]),
+      texto('fin'),
+    ]);
+    await responder(llamada);
+    assert.deepEqual(peticiones[1].cuerpo.messages.at(-1).content, [
+      {
+        type: 'tool_result',
+        tool_use_id: 'call_s',
+        content: 'La entrada de la herramienta no es JSON válido.',
+        is_error: true,
+      },
+    ]);
+    assert.deepEqual(
+      eventos.filter((e) => e.tipo === 'skill'),
+      [],
+    );
   });
 });

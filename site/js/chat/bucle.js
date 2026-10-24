@@ -1,6 +1,15 @@
 // @ts-check
+import {
+  DELEGAR_SUBAGENTE,
+  USAR_SKILL,
+  cargarSkill,
+  resultadoSubagente,
+  validarDelegacion,
+} from './agentes/meta.js';
+import { PROFESOR } from './agentes/profesor.js';
+import { SUBAGENTES } from './agentes/subagentes.js';
 import { esperaReintento } from './errores.js';
-import { ejecutarHerramienta } from './herramientas.js';
+import { ENTRADA_NO_JSON, TEXTO_NO_JSON, ejecutarHerramienta } from './herramientas.js';
 import { PROVEEDORES } from './proveedores/index.js';
 import { crearLectorSse } from './sse.js';
 
@@ -8,13 +17,20 @@ import { crearLectorSse } from './sse.js';
  * One user question: streams the provider's answer and runs its tool loop until a final text.
  * @typedef {'fin' | 'cortada' | 'rechazo' | 'limite' | 'error' | 'abortada'} Estado
  * @typedef {{ entrada: number, salida: number }} Uso
- * @typedef {{ tipo: 'texto', texto: string } | { tipo: 'herramienta', nombre: string } | { tipo: 'uso', uso: Uso }} EventoChat
+ * @typedef {{ tipo: 'texto', texto: string } | { tipo: 'herramienta' | 'subagente' | 'skill', nombre: string } | { tipo: 'uso', uso: Uso }} EventoChat
  * @typedef {(url: string, init: object) => Promise<Response>} FetchLike
  * @typedef {typeof PROVEEDORES.anthropic} Proveedor
  * @typedef {import('./proveedores/anthropic.js').Turno} Turno
+ * @typedef {import('./agentes/subagentes.js').Agente} Agente
+ * @typedef {import('./agentes/meta.js').Final} Final
+ * @typedef {{
+ *   proveedor: Proveedor, modelo: string, clave: string, fetch: FetchLike,
+ *   port: import('./herramientas.js').PokeApiPort, signal?: AbortSignal,
+ *   esperar: (ms: number) => Promise<void>, ahora: () => number,
+ *   alEvento: (evento: EventoChat) => void, sumarUso: (uso: Uso) => void,
+ * }} Contexto
  */
 
-const MAX_ITERACIONES = 8;
 const MAX_REINTENTOS = 2;
 
 /**
@@ -64,18 +80,102 @@ async function leerTurno(proveedor, respuesta, alTexto, signal) {
 }
 
 /**
+ * Runs a subagent on its own history, with the same provider, key and signal as the question.
+ * Its text and events stay out of the conversation; only its usage counts.
+ * @param {string} nombre
+ * @param {string} tarea
+ * @param {Contexto} ctx
+ */
+async function delegar(nombre, tarea, ctx) {
+  ctx.alEvento({ tipo: 'subagente', nombre });
+  const final = await ejecutarAgente({
+    agente: SUBAGENTES.find((s) => s.nombre === nombre),
+    historial: [ctx.proveedor.mensajeUsuario(tarea)],
+    ctx: { ...ctx, alEvento: () => {} },
+    alTexto: () => {},
+  });
+  return resultadoSubagente(nombre, final);
+}
+
+/**
+ * Tools outside the agent's list are never run, which keeps subagents at depth 1.
+ * @param {string} nombre
+ * @param {unknown} entrada
+ * @param {Agente} agente
+ * @param {Contexto} ctx
+ * @returns {Promise<{ contenido: string, esError: boolean }>}
+ */
+async function ejecutarLlamada(nombre, entrada, agente, ctx) {
+  if (!agente.herramientas.some((h) => h.name === nombre)) {
+    return { contenido: `Herramienta desconocida: ${nombre}.`, esError: true };
+  }
+  if (nombre !== USAR_SKILL.name && nombre !== DELEGAR_SUBAGENTE.name) {
+    ctx.alEvento({ tipo: 'herramienta', nombre });
+    return ejecutarHerramienta(ctx.port, nombre, entrada);
+  }
+  if (entrada === ENTRADA_NO_JSON) return { contenido: TEXTO_NO_JSON, esError: true };
+  if (nombre === USAR_SKILL.name) {
+    const { contenido, esError, nombre: skill } = cargarSkill(entrada);
+    if (!esError) ctx.alEvento({ tipo: 'skill', nombre: skill });
+    return { contenido, esError };
+  }
+  const validacion = validarDelegacion(entrada);
+  if ('mensaje' in validacion) return { contenido: validacion.mensaje, esError: true };
+  const { subagente, tarea } = /** @type {{ subagente: string, tarea: string }} */ (
+    validacion.valor
+  );
+  return delegar(subagente, tarea, ctx);
+}
+
+/**
  * Runs every call of the turn in parallel; a failure comes back as an error result.
  * @param {Turno['llamadas']} llamadas
- * @param {import('./herramientas.js').PokeApiPort} port
- * @param {(evento: EventoChat) => void} alEvento
+ * @param {Agente} agente
+ * @param {Contexto} ctx
  */
-function ejecutarLlamadas(llamadas, port, alEvento) {
+function ejecutarLlamadas(llamadas, agente, ctx) {
   return Promise.all(
-    llamadas.map(async ({ id, nombre, entrada }) => {
-      alEvento({ tipo: 'herramienta', nombre });
-      return { id, ...(await ejecutarHerramienta(port, nombre, entrada)) };
-    }),
+    llamadas.map(async ({ id, nombre, entrada }) => ({
+      id,
+      ...(await ejecutarLlamada(nombre, entrada, agente, ctx)),
+    })),
   );
+}
+
+/**
+ * Tool loop of one agent until a final text; errors and aborts are thrown to the caller.
+ * `texto` is the visible text of the last request. The history also receives turns that are
+ * never committed (a cut turn with calls), since the caller then keeps its previous messages.
+ * @param {{ agente: Agente, historial: object[], ctx: Contexto, alTexto: (texto: string) => void }} datos
+ * @returns {Promise<Final>}
+ */
+async function ejecutarAgente({ agente, historial, ctx, alTexto }) {
+  const { proveedor, modelo, clave, signal } = ctx;
+  for (let iteracion = 0; ; iteracion += 1) {
+    const { url, opciones } = proveedor.construirPeticion({ modelo, clave, historial, agente });
+    const respuesta = await enviar({ ...ctx, url, opciones });
+    let texto = '';
+    const turno = await leerTurno(
+      proveedor,
+      respuesta,
+      (delta) => {
+        texto += delta;
+        alTexto(delta);
+      },
+      signal,
+    );
+    ctx.sumarUso(turno.uso);
+    if (turno.motivo === 'rechazo') return { estado: 'rechazo', texto };
+    historial.push(...turno.historial);
+    if (turno.motivo === 'cortada') {
+      return { estado: 'cortada', texto, pendientes: turno.llamadas.length > 0 };
+    }
+    if (turno.motivo !== 'herramientas') return { estado: 'fin', texto };
+    if (iteracion === agente.maxIteraciones) return { estado: 'limite', texto };
+    const salidas = await ejecutarLlamadas(turno.llamadas, agente, ctx);
+    signal?.throwIfAborted();
+    historial.push(...proveedor.resultados(salidas));
+  }
 }
 
 /**
@@ -122,43 +222,28 @@ export async function responder({
       ...(error ? { error } : {}),
     };
   };
+  const ctx = {
+    proveedor,
+    modelo,
+    clave,
+    fetch,
+    port,
+    signal,
+    esperar,
+    ahora,
+    alEvento,
+    sumarUso: (/** @type {Uso} */ otro) => {
+      uso = sumarUso(uso, otro);
+    },
+  };
   try {
-    for (let iteracion = 0; ; iteracion += 1) {
-      const { url, opciones } = proveedor.construirPeticion({
-        modelo,
-        clave,
-        historial: conversacion,
-      });
-      const respuesta = await enviar({
-        proveedor,
-        fetch,
-        clave,
-        url,
-        opciones,
-        esperar,
-        signal,
-        ahora,
-      });
-      const turno = await leerTurno(
-        proveedor,
-        respuesta,
-        (texto) => alEvento({ tipo: 'texto', texto }),
-        signal,
-      );
-      uso = sumarUso(uso, turno.uso);
-      if (turno.motivo === 'rechazo') return terminar('rechazo');
-      if (turno.motivo === 'cortada') {
-        if (turno.llamadas.length > 0) return terminar('cortada');
-        conversacion.push(...turno.historial);
-        return terminar('cortada', true);
-      }
-      conversacion.push(...turno.historial);
-      if (turno.motivo !== 'herramientas') return terminar('fin', true);
-      if (iteracion === MAX_ITERACIONES) return terminar('limite');
-      const salidas = await ejecutarLlamadas(turno.llamadas, port, alEvento);
-      signal?.throwIfAborted();
-      conversacion.push(...proveedor.resultados(salidas));
-    }
+    const { estado, pendientes } = await ejecutarAgente({
+      agente: PROFESOR,
+      historial: conversacion,
+      ctx,
+      alTexto: (texto) => alEvento({ tipo: 'texto', texto }),
+    });
+    return terminar(estado, (estado === 'fin' || estado === 'cortada') && !pendientes);
   } catch (error) {
     if (error.name === 'AbortError') return terminar('abortada');
     const clasificado = error.codigo ? error : proveedor.errorDesconocido(error.message);
