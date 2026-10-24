@@ -2,6 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { responder } from './bucle.js';
+import { ENTRADA_NO_JSON } from './herramientas.js';
 import { construirPeticion } from './peticion.js';
 import { MENSAJES } from '../core/mensajes.js';
 import { API, crearPuertoPokeApi } from '../../../tests/support/puerto-pokeapi.js';
@@ -471,5 +472,165 @@ describe('responder', () => {
       eventos.filter((e) => e.tipo === 'herramienta').map((e) => e.nombre),
       ['efectividad_tipos'],
     );
+  });
+});
+
+/**
+ * Fake provider whose turns come from a queue: the SSE events carry the visible text in `texto`
+ * and a `falla` event throws a plain error, so the loop sees nothing of any real API format.
+ */
+function proveedorFalso(turnos, { reintentable = () => false } = {}) {
+  return {
+    construirPeticion: ({ modelo, clave, historial }) => ({
+      url: 'https://falso.test/turno',
+      opciones: { method: 'POST', body: JSON.stringify({ modelo, clave, historial }) },
+    }),
+    mensajeUsuario: (pregunta) => ({ pregunta }),
+    crearLectura: () => ({
+      aplicar({ evento, datos }) {
+        if (evento === 'falla') throw new Error(datos.mensaje);
+        return datos.texto ?? '';
+      },
+      terminar: () => turnos.shift(),
+    }),
+    resultados: (salidas) => salidas.map((salida) => ({ salida })),
+    errorDeRespuesta: async (respuesta) =>
+      Object.assign(new Error('respuesta'), {
+        codigo: 'falso',
+        estado: respuesta.status,
+        reintentable: reintentable(respuesta.status),
+      }),
+    errorDeRed: (detalle) => Object.assign(new Error(detalle), { codigo: 'red_falsa', detalle }),
+    errorDesconocido: (detalle) =>
+      Object.assign(new Error(detalle), { codigo: 'desconocido', detalle }),
+  };
+}
+
+const sse = (texto = '') => respuestaSse([{ event: 'parte', data: { type: 'parte', texto } }]);
+const turnoFalso = (motivo, llamadas = [], uso = { entrada: 1, salida: 2 }) => ({
+  motivo,
+  historial: [{ salida: motivo }],
+  llamadas,
+  uso,
+});
+const llamadaNaturalezas = { id: 'c1', nombre: 'naturalezas', entrada: { estadistica: 'speed' } };
+
+describe('responder with an injected provider', () => {
+  test('builds the request from the provider and incorporates its turn', async () => {
+    const proveedor = proveedorFalso([turnoFalso('fin')]);
+    const { llamada, peticiones, eventos } = preparar([sse('Hola')], { proveedor });
+    const resultado = await responder(llamada);
+    assert.equal(peticiones[0].url, 'https://falso.test/turno');
+    assert.deepEqual(peticiones[0].cuerpo, {
+      modelo: MODELO,
+      clave: CLAVE,
+      historial: [{ pregunta: 'hola' }],
+    });
+    assert.deepEqual(resultado, {
+      estado: 'fin',
+      mensajes: [{ pregunta: 'hola' }, { salida: 'fin' }],
+      uso: { entrada: 1, salida: 2 },
+    });
+    assert.deepEqual(textos(eventos), ['Hola']);
+  });
+
+  test('retries when the provider says the error is retryable', async () => {
+    const proveedor = proveedorFalso([turnoFalso('fin')], { reintentable: (s) => s === 418 });
+    const { llamada, peticiones, esperas } = preparar([new Response('', { status: 418 }), sse()], {
+      proveedor,
+    });
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'fin');
+    assert.equal(peticiones.length, 2);
+    assert.deepEqual(esperas, [1000]);
+  });
+
+  test('does not retry when the provider says the error is not retryable', async () => {
+    const proveedor = proveedorFalso([], { reintentable: () => false });
+    const { llamada, peticiones, esperas } = preparar([new Response('', { status: 503 })], {
+      proveedor,
+    });
+    const resultado = await responder(llamada);
+    assert.equal(peticiones.length, 1);
+    assert.deepEqual(esperas, []);
+    assert.equal(resultado.estado, 'error');
+    assert.deepEqual([resultado.error.codigo, resultado.error.estado], ['falso', 503]);
+  });
+
+  test('a network failure comes from the provider', async () => {
+    const proveedor = proveedorFalso([]);
+    const { llamada } = preparar([new TypeError('Failed to fetch')], { proveedor });
+    const resultado = await responder(llamada);
+    assert.deepEqual(
+      [resultado.error.codigo, resultado.error.detalle],
+      ['red_falsa', 'Failed to fetch'],
+    );
+  });
+
+  test('an unclassified error ends in errorDesconocido', async () => {
+    const proveedor = proveedorFalso([]);
+    const roto = respuestaSse([{ event: 'falla', data: { type: 'falla', mensaje: 'roto' } }]);
+    const { llamada } = preparar([roto], { proveedor });
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'error');
+    assert.deepEqual([resultado.error.codigo, resultado.error.detalle], ['desconocido', 'roto']);
+    assert.deepEqual(resultado.mensajes, []);
+  });
+
+  test('herramientas runs the calls and appends the provider results', async () => {
+    const proveedor = proveedorFalso([
+      turnoFalso('herramientas', [
+        llamadaNaturalezas,
+        { id: 'c2', nombre: 'naturalezas', entrada: ENTRADA_NO_JSON },
+      ]),
+      turnoFalso('fin', [], { entrada: 10, salida: 20 }),
+    ]);
+    const { llamada, peticiones, eventos } = preparar([sse(), sse('fin')], { proveedor });
+    const resultado = await responder(llamada);
+    assert.equal(peticiones.length, 2);
+    const [, turno, primera, segunda] = peticiones[1].cuerpo.historial;
+    assert.deepEqual(turno, { salida: 'herramientas' });
+    assert.equal(primera.salida.id, 'c1');
+    assert.equal(primera.salida.esError, false);
+    assert.match(primera.salida.contenido, /^8 naturalezas que suben o bajan speed\./);
+    assert.deepEqual(segunda, {
+      salida: {
+        id: 'c2',
+        contenido: 'La entrada de la herramienta no es JSON válido.',
+        esError: true,
+      },
+    });
+    assert.deepEqual(
+      eventos.filter((e) => e.tipo === 'herramienta').map((e) => e.nombre),
+      ['naturalezas', 'naturalezas'],
+    );
+    assert.equal(resultado.mensajes.length, 5);
+    assert.deepEqual(resultado.uso, { entrada: 11, salida: 22 });
+  });
+
+  test('cortada with calls runs nothing and is not incorporated', async () => {
+    const proveedor = proveedorFalso([turnoFalso('cortada', [llamadaNaturalezas])]);
+    const { llamada, pokeApi, eventos } = preparar([sse()], { proveedor });
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'cortada');
+    assert.deepEqual(resultado.mensajes, []);
+    assert.deepEqual(pokeApi.calls, []);
+    assert.deepEqual(eventos.at(-1), { tipo: 'uso', uso: { entrada: 1, salida: 2 } });
+  });
+
+  test('cortada without calls is incorporated', async () => {
+    const proveedor = proveedorFalso([turnoFalso('cortada')]);
+    const { llamada } = preparar([sse()], { proveedor });
+    const resultado = await responder(llamada);
+    assert.deepEqual(resultado.mensajes, [{ pregunta: 'hola' }, { salida: 'cortada' }]);
+  });
+
+  test('rechazo runs nothing and is not incorporated', async () => {
+    const proveedor = proveedorFalso([turnoFalso('rechazo', [llamadaNaturalezas])]);
+    const { llamada, pokeApi } = preparar([sse()], { proveedor });
+    const resultado = await responder(llamada);
+    assert.equal(resultado.estado, 'rechazo');
+    assert.deepEqual(resultado.mensajes, []);
+    assert.deepEqual(pokeApi.calls, []);
   });
 });
