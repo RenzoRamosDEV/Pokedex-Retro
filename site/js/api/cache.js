@@ -43,13 +43,13 @@ function writeJson(storage, key, value) {
 const isListEntry = (entry) => isObject(entry) && Number.isFinite(entry.t) && isObject(entry.data);
 
 /**
- * @param {{ storage: StorageLike | null, now?: () => number, ttlMs?: number }} options
+ * @param {{ storage: StorageLike | null, now?: () => number, ttlMs?: number, prefix?: string }} options
  */
-export function createListCache({ storage, now = Date.now, ttlMs = DAY_MS }) {
+export function createListCache({ storage, now = Date.now, ttlMs = DAY_MS, prefix = LIST_PREFIX }) {
   return {
     /** @param {string} url */
     get(url) {
-      const entry = /** @type {any} */ (readJson(storage, LIST_PREFIX + url));
+      const entry = /** @type {any} */ (readJson(storage, prefix + url));
       if (!isListEntry(entry) || now() - entry.t >= ttlMs) return undefined;
       return entry.data;
     },
@@ -58,7 +58,7 @@ export function createListCache({ storage, now = Date.now, ttlMs = DAY_MS }) {
      * @param {unknown} data
      */
     set(url, data) {
-      writeJson(storage, LIST_PREFIX + url, { t: now(), data });
+      writeJson(storage, prefix + url, { t: now(), data });
     },
   };
 }

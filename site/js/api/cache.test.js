@@ -114,6 +114,27 @@ for (const [label, raw] of [
   });
 }
 
+test('list cache: prefix "" writes the URL as the exact key', () => {
+  const storage = createFakeStorage();
+  createListCache({ storage, now: () => NOW, prefix: '' }).set(LIST_URL, LIST);
+  assert.deepEqual(storage.writes, [[LIST_URL, storedList(NOW)]]);
+});
+
+test('list cache: prefix "" reads the URL as the exact key', () => {
+  const storage = createFakeStorage({ [LIST_URL]: storedList(NOW) });
+  const reads = [];
+  const getItem = storage.getItem;
+  storage.getItem = (key) => (reads.push(key), getItem(key));
+  const cache = createListCache({ storage, now: () => NOW, prefix: '' });
+  assert.deepEqual(cache.get(LIST_URL), LIST);
+  assert.deepEqual(reads, [LIST_URL]);
+});
+
+test('list cache: prefix "" ignores entries stored under the default prefix', () => {
+  const storage = createFakeStorage({ [LIST_KEY]: storedList(NOW) });
+  assert.equal(createListCache({ storage, now: () => NOW, prefix: '' }).get(LIST_URL), undefined);
+});
+
 test('list cache: a storage that throws on read is a miss', () => {
   const cache = createListCache({ storage: createThrowingStorage(), now: () => NOW });
   assert.equal(cache.get(LIST_URL), undefined);
