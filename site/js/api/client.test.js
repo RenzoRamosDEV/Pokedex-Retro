@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createFetchJson } from './client.js';
+import { createFetchJson, retryAfterMs } from './client.js';
 
 const URL_A = 'https://pokeapi.co/api/v2/pokemon/1';
 
@@ -373,4 +373,19 @@ test('abort during a Retry-After wait rejects with AbortError', async (t) => {
   await advance(10000);
   assert.equal(fake.calls.length, 1);
   assert.equal(result.error.name, 'AbortError');
+});
+
+test('retryAfterMs reads whole seconds', () => {
+  assert.equal(retryAfterMs(new Headers({ 'Retry-After': '3' }), fixedNow), 3000);
+});
+
+test('retryAfterMs reads an HTTP date relative to now', () => {
+  const now = () => Date.parse('Sat, 24 Oct 2026 10:00:00 GMT');
+  const headers = new Headers({ 'Retry-After': 'Sat, 24 Oct 2026 10:00:04 GMT' });
+  assert.equal(retryAfterMs(headers, now), 4000);
+});
+
+test('retryAfterMs is null without the header', () => {
+  assert.equal(retryAfterMs(new Headers(), fixedNow), null);
+  assert.equal(retryAfterMs(undefined, fixedNow), null);
 });
