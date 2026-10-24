@@ -1,0 +1,317 @@
+{
+  "id": 2,
+  "name": "ultra-ball",
+  "category": {
+    "name": "standard-balls",
+    "url": "https://pokeapi.co/api/v2/item-category/34/"
+  },
+  "sprites": {
+    "default": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png"
+  },
+  "effect_entries": [
+    {
+      "short_effect": "Tente de capturer un Pokémon sauvage. Le taux de succès est 2x.",
+      "language": {
+        "name": "fr",
+        "url": "https://pokeapi.co/api/v2/language/5/"
+      }
+    },
+    {
+      "short_effect": "Tries to catch a wild Pokémon.  Success rate is 2×.",
+      "language": {
+        "name": "en",
+        "url": "https://pokeapi.co/api/v2/language/9/"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "red-blue",
+        "url": "https://pokeapi.co/api/v2/version-group/1/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "yellow",
+        "url": "https://pokeapi.co/api/v2/version-group/2/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "gold-silver",
+        "url": "https://pokeapi.co/api/v2/version-group/3/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "crystal",
+        "url": "https://pokeapi.co/api/v2/version-group/4/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "ruby-sapphire",
+        "url": "https://pokeapi.co/api/v2/version-group/5/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "emerald",
+        "url": "https://pokeapi.co/api/v2/version-group/6/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "firered-leafgreen",
+        "url": "https://pokeapi.co/api/v2/version-group/7/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "diamond-pearl",
+        "url": "https://pokeapi.co/api/v2/version-group/8/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "platinum",
+        "url": "https://pokeapi.co/api/v2/version-group/9/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "heartgold-soulsilver",
+        "url": "https://pokeapi.co/api/v2/version-group/10/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "black-white",
+        "url": "https://pokeapi.co/api/v2/version-group/11/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "black-2-white-2",
+        "url": "https://pokeapi.co/api/v2/version-group/14/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "x-y",
+        "url": "https://pokeapi.co/api/v2/version-group/15/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "omega-ruby-alpha-sapphire",
+        "url": "https://pokeapi.co/api/v2/version-group/16/"
+      }
+    },
+    {
+      "purchase_price": 800,
+      "sell_price": 400,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "sun-moon",
+        "url": "https://pokeapi.co/api/v2/version-group/17/"
+      }
+    },
+    {
+      "purchase_price": 800,
+      "sell_price": 400,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "ultra-sun-ultra-moon",
+        "url": "https://pokeapi.co/api/v2/version-group/18/"
+      }
+    },
+    {
+      "purchase_price": 500,
+      "sell_price": 250,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "lets-go-pikachu-lets-go-eevee",
+        "url": "https://pokeapi.co/api/v2/version-group/19/"
+      }
+    },
+    {
+      "purchase_price": 800,
+      "sell_price": 400,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "sword-shield",
+        "url": "https://pokeapi.co/api/v2/version-group/20/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "brilliant-diamond-shining-pearl",
+        "url": "https://pokeapi.co/api/v2/version-group/23/"
+      }
+    },
+    {
+      "purchase_price": 600,
+      "sell_price": 150,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "legends-arceus",
+        "url": "https://pokeapi.co/api/v2/version-group/24/"
+      }
+    },
+    {
+      "purchase_price": 800,
+      "sell_price": 200,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "scarlet-violet",
+        "url": "https://pokeapi.co/api/v2/version-group/25/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "red-green-japan",
+        "url": "https://pokeapi.co/api/v2/version-group/28/"
+      }
+    },
+    {
+      "purchase_price": 1200,
+      "sell_price": 600,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "blue-japan",
+        "url": "https://pokeapi.co/api/v2/version-group/29/"
+      }
+    },
+    {
+      "purchase_price": 600,
+      "sell_price": 150,
+      "currency": {
+        "name": "poke-dollar",
+        "url": "https://pokeapi.co/api/v2/currency/1/"
+      },
+      "version_group": {
+        "name": "legends-za",
+        "url": "https://pokeapi.co/api/v2/version-group/30/"
+      }
+    }
+  ]
+}
