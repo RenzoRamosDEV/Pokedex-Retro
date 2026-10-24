@@ -1,0 +1,31 @@
+[
+  {
+    "name": "comparar_pokemon",
+    "title": "Comparar dos Pokémon",
+    "description": "Compara dos Pokémon por tipos, estadísticas base y habilidades.",
+    "arguments": [
+      {
+        "name": "a",
+        "description": "Primer Pokémon, en inglés (p. ej. pikachu)",
+        "required": true
+      },
+      {
+        "name": "b",
+        "description": "Segundo Pokémon, en inglés (p. ej. raichu)",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "equipo_contra_tipo",
+    "title": "Equipo contra un tipo",
+    "description": "Propone un equipo de 6 Pokémon para enfrentarse a rivales de un tipo.",
+    "arguments": [
+      {
+        "name": "tipo",
+        "description": "Tipo rival, en inglés (p. ej. dragon)",
+        "required": true
+      }
+    ]
+  }
+]
