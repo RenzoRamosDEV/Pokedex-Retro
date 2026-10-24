@@ -45,19 +45,54 @@ test('identifies itself as pokedex-retro with the given version', async (t) => {
   assert.deepEqual(client.getServerVersion(), { name: 'pokedex-retro', version: '1.0.0' });
 });
 
-test('lists the catalog tools with description, inputSchema and outputSchema', async (t) => {
+const DOCE = [
+  'buscar_pokemon',
+  'obtener_pokemon',
+  'buscar_movimientos',
+  'obtener_movimiento',
+  'buscar_habilidades',
+  'obtener_habilidad',
+  'buscar_objetos',
+  'obtener_objeto',
+  'buscar_bayas',
+  'obtener_baya',
+  'efectividad_tipos',
+  'naturalezas',
+];
+
+test('lists exactly the 12 tools, each with description, inputSchema and outputSchema', async (t) => {
   const { client } = await setup(t);
   const { tools } = await client.listTools();
-  const byName = new Map(tools.map((tool) => [tool.name, tool]));
-  for (const [, buscar, obtener] of CATALOGO) {
-    for (const name of [buscar, obtener]) {
-      const tool = byName.get(name);
-      assert.ok(tool, `falta ${name}`);
-      assert.ok(tool.description.length > 0);
-      assert.equal(tool.inputSchema.type, 'object');
-      assert.equal(tool.outputSchema.type, 'object');
-    }
+  assert.deepEqual(tools.map((tool) => tool.name).sort(), [...DOCE].sort());
+  for (const tool of tools) {
+    assert.ok(tool.description.length > 0, tool.name);
+    assert.equal(tool.inputSchema.type, 'object');
+    assert.equal(tool.outputSchema.type, 'object');
   }
+});
+
+test('efectividad_tipos output is strict to its schema', async (t) => {
+  const { client } = await setup(t);
+  const conDefensor = await client.callTool({
+    name: 'efectividad_tipos',
+    arguments: { atacante: 'fire', defensor: ['grass'] },
+  });
+  const sinDefensor = await client.callTool({
+    name: 'efectividad_tipos',
+    arguments: { atacante: 'fire' },
+  });
+  z.object(schemas.EFECTIVIDAD).strict().parse(conDefensor.structuredContent);
+  z.object(schemas.EFECTIVIDAD).strict().parse(sinDefensor.structuredContent);
+});
+
+test('naturalezas output is strict to its schema and equals the web mapper', async (t) => {
+  const { client } = await setup(t);
+  const result = await client.callTool({ name: 'naturalezas', arguments: {} });
+  z.object(schemas.NATURALEZAS).strict().parse(result.structuredContent);
+  const hardy = JSON.parse(
+    readFileSync(new URL('./fixtures/naturalezas.json', import.meta.url), 'utf8'),
+  )[0];
+  assert.deepEqual(result.structuredContent.naturalezas[0], SECTIONS.naturalezas.mapper(hardy));
 });
 
 for (const [clave, buscar, obtener, fixtureName, name, shape] of CATALOGO) {

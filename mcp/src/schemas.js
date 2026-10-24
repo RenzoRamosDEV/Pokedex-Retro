@@ -111,3 +111,52 @@ export const busqueda = (item) => ({
   total_paginas: entero,
   total: entero,
 });
+
+const MSG_ATACANTE = 'atacante debe ser un nombre de tipo de PokéAPI, p. ej. fire.';
+const MSG_DEFENSOR = 'defensor debe tener 1 o 2 tipos distintos.';
+const MSG_ESTADISTICA =
+  'estadistica debe ser attack, defense, special-attack, special-defense o speed.';
+
+/** Free text rather than an enum, so an unknown type can be answered with the valid list. */
+const tipo = (/** @type {string} */ message) =>
+  z.string(rules(message)).trim().toLowerCase().min(1, rules(message)).max(20, rules(message));
+
+export const ENTRADA_EFECTIVIDAD = {
+  atacante: tipo(MSG_ATACANTE).describe('Tipo atacante en inglés, p. ej. "electric"'),
+  defensor: z
+    .array(tipo(MSG_DEFENSOR), rules(MSG_DEFENSOR))
+    .min(1, rules(MSG_DEFENSOR))
+    .max(2, rules(MSG_DEFENSOR))
+    .refine((tipos) => new Set(tipos).size === tipos.length, rules(MSG_DEFENSOR))
+    .optional()
+    .describe('1 o 2 tipos defensores distintos, p. ej. ["water", "flying"]'),
+};
+
+/** One schema for both answers: with defender (`multiplicador`) or without (`multiplicadores`). */
+export const EFECTIVIDAD = {
+  atacante: z.string(),
+  defensor: z.array(z.string()).optional(),
+  multiplicador: z.number().optional(),
+  multiplicadores: z.record(z.string(), z.number()).optional(),
+};
+
+export const ENTRADA_NATURALEZAS = {
+  estadistica: z
+    .enum(
+      ['attack', 'defense', 'special-attack', 'special-defense', 'speed'],
+      rules(MSG_ESTADISTICA),
+    )
+    .optional()
+    .describe('Estadística que la naturaleza sube o baja'),
+};
+
+export const NATURALEZA = {
+  id: entero,
+  name: z.string(),
+  increasedStat: z.string().nullable(),
+  decreasedStat: z.string().nullable(),
+  likesFlavor: z.string().nullable(),
+  hatesFlavor: z.string().nullable(),
+};
+
+export const NATURALEZAS = { naturalezas: z.array(z.strictObject(NATURALEZA)) };

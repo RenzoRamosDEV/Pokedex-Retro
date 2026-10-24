@@ -1093,5 +1093,130 @@
     "execution": {
       "taskSupport": "forbidden"
     }
+  },
+  {
+    "name": "efectividad_tipos",
+    "title": "Efectividad de tipos",
+    "description": "Calcula el multiplicador de daño de un tipo atacante contra 1 o 2 tipos defensores (producto de 2, 0.5, 0 o 1), o, sin defensor, sus multiplicadores contra los 18 tipos. Los tipos van en inglés, como en PokéAPI (p. ej. fire, water).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "atacante": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "Tipo atacante en inglés, p. ej. \"electric\""
+        },
+        "defensor": {
+          "description": "1 o 2 tipos defensores distintos, p. ej. [\"water\", \"flying\"]",
+          "minItems": 1,
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          }
+        }
+      },
+      "required": ["atacante"],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "atacante": {
+          "type": "string"
+        },
+        "defensor": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "multiplicador": {
+          "type": "number"
+        },
+        "multiplicadores": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "required": ["atacante"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "naturalezas",
+    "title": "Naturalezas",
+    "description": "Devuelve las naturalezas de PokéAPI ordenadas por número, con la estadística que suben y la que bajan y los sabores que prefieren y odian. Con estadistica, solo las que suben o bajan esa estadística.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "estadistica": {
+          "description": "Estadística que la naturaleza sube o baja",
+          "type": "string",
+          "enum": ["attack", "defense", "special-attack", "special-defense", "speed"]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "naturalezas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": "string"
+              },
+              "increasedStat": {
+                "type": ["string", "null"]
+              },
+              "decreasedStat": {
+                "type": ["string", "null"]
+              },
+              "likesFlavor": {
+                "type": ["string", "null"]
+              },
+              "hatesFlavor": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "increasedStat",
+              "decreasedStat",
+              "likesFlavor",
+              "hatesFlavor"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["naturalezas"],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
   }
 ]
