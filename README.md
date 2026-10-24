@@ -71,6 +71,7 @@ con TDD y mutation testing.
 - Content Security Policy sin `'unsafe-inline'` y fuentes autoalojadas, sin Google Fonts.
 - Accesibilidad WCAG 2.1 AA: navegación por teclado, región de estado y contraste en los tres temas, auditado con axe en cada página.
 - Chat con Claude u OpenAI (`chat.html`) usando la clave de Anthropic o de OpenAI del propio visitante: las 12 herramientas del MCP se ejecutan en el navegador, sin backend.
+- El chat solo responde sobre Pokémon y se organiza en un agente principal, tres subagentes y cuatro skills definidos en el repositorio.
 - Servidor MCP con 12 tools, 2 resources y 2 prompts que reutiliza la lógica de la web.
 
 ---
@@ -119,6 +120,18 @@ Abre `http://127.0.0.1:4173/` (otro puerto con `PORT=4181 node scripts/serve-sit
   - Claude: Claude Opus 5.5 ($4 / $20, por defecto), Claude Sonnet 5.5 ($2 / $10) y Claude Haiku 5.5 ($0,10 / $0,50).
   - OpenAI: GPT-6.1 Sol ($2 / $10, por defecto, equilibrado), GPT-6 Astra ($10 / $50, más capaz) y GPT-6 Luna ($0,10 / $0,50, más barato).
 
+### Agentes, subagentes y skills
+
+El chat **solo responde sobre Pokémon**: ante cualquier otro tema, o si le piden saltarse sus instrucciones, contesta exactamente `Solo puedo responder preguntas sobre Pokémon.`. Es una restricción por instrucciones al modelo, de mejor esfuerzo: el navegador no filtra preguntas.
+
+Agentes y skills son módulos de datos en [`site/js/chat/agentes/`](site/js/chat/agentes/), iguales para Claude y OpenAI:
+
+- **Agente principal `profesor`**: atiende cada pregunta con las 12 herramientas y puede delegar o cargar una skill.
+- **Subagentes** (`delegar_subagente`), cada uno con su prompt y solo algunas herramientas: `estratega-tipos` (debilidades, resistencias y cobertura de movimientos), `entrenador-equipos` (equipos, habilidades y naturalezas) e `investigador-pokedex` (búsquedas y fichas). No pueden delegar a su vez y hacen como mucho 7 peticiones; mientras trabajan se ve `SUBAGENTE: <nombre>`.
+- **Skills** (`usar_skill`), instrucciones que solo se cargan cuando hacen falta: `comparar-pokemon`, `equipo-contra-tipo`, `analizar-debilidades` y `recomendar-naturaleza`; al cargarse se ve `SKILL: <nombre>`.
+
+Delegar en subagentes consume tokens adicionales en tu cuenta; la línea de tokens de cada respuesta los incluye.
+
 El chat no se conecta al servidor MCP: un navegador no puede lanzar un proceso stdio. Comparte con él el código de las herramientas (`site/js/core`), así que ambos responden igual.
 
 Si algo falla, el mensaje dice por qué:
@@ -131,7 +144,7 @@ Si algo falla, el mensaje dice por qué:
 | `Error de OpenAI (<estado>): <motivo>` / `Error de Claude (<estado>)…` | Error del proveedor; el motivo viene de su API.                                                                                                                 |
 | `Sin conexión con …`                                                   | No hay red o la API no responde.                                                                                                                                |
 
-Detalles y riesgos de tener la clave en el navegador: [ADR 0005](docs/adr/0005-chat-byok-fetch-directo.md) y [ADR 0006](docs/adr/0006-chat-multiproveedor-openai.md).
+Detalles y riesgos de tener la clave en el navegador: [ADR 0005](docs/adr/0005-chat-byok-fetch-directo.md) y [ADR 0006](docs/adr/0006-chat-multiproveedor-openai.md); agentes y alcance: [ADR 0007](docs/adr/0007-chat-agentes-subagentes-skills.md).
 
 ---
 
@@ -150,16 +163,16 @@ Sustituye la ruta por la de tu clon. Tools, configuración en Claude Desktop, va
 
 Instala antes las dependencias con `npm ci` y `npm ci --prefix mcp`. Los tests no usan la red salvo Lighthouse.
 
-| Comando                      | Qué cubre                                                                                                                                                                                                   |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm test`                   | Tests unitarios con `node --test` de `site/js` y `scripts`, con respuestas de PokéAPI simuladas                                                                                                             |
-| `npm run mcp:test`           | Tests del servidor MCP con PokéAPI simulada y procesos reales del binario                                                                                                                                   |
-| `npm run test:mutation`      | Mutación con Stryker sobre `site/js/core` y `site/js/mappers` (umbral 95 %)                                                                                                                                 |
-| `npm run test:mutation:chat` | Mutación sobre `site/js/chat` y la lógica de las tools en `site/js/core` en tres ejecuciones, `stryker.chat-core.config.json`, `stryker.chat-openai.config.json` y `stryker.chat.config.json` (umbral 95 %) |
-| `npm run test:mutation:ui`   | Mutación sobre `site/js/ui` en dos ejecuciones, `stryker.ui-render.config.json` y `stryker.ui.config.json` (umbral 85 %)                                                                                    |
-| `npm run mcp:test:mutation`  | Mutación sobre `mcp/src` en dos ejecuciones, `stryker.mcp-base.config.json` y `stryker.mcp.config.json` (umbral 85 %)                                                                                       |
-| `npm run e2e`                | Smoke en Chromium con Playwright, PokéAPI y APIs de Claude y OpenAI simuladas y auditoría axe; necesita antes `npx playwright install chromium`                                                             |
-| `npm run lhci`               | Lighthouse sobre `index.html` y `tipos.html` contra PokéAPI real: accesibilidad, buenas prácticas y SEO exigen 0,95; el rendimiento es un aviso                                                             |
+| Comando                      | Qué cubre                                                                                                                                                                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                   | Tests unitarios con `node --test` de `site/js` y `scripts`, con respuestas de PokéAPI simuladas                                                                                                                                                   |
+| `npm run mcp:test`           | Tests del servidor MCP con PokéAPI simulada y procesos reales del binario                                                                                                                                                                         |
+| `npm run test:mutation`      | Mutación con Stryker sobre `site/js/core` y `site/js/mappers` (umbral 95 %)                                                                                                                                                                       |
+| `npm run test:mutation:chat` | Mutación sobre `site/js/chat` y la lógica de las tools en `site/js/core` en cuatro ejecuciones, `stryker.chat-core.config.json`, `stryker.chat-openai.config.json`, `stryker.chat-agentes.config.json` y `stryker.chat.config.json` (umbral 95 %) |
+| `npm run test:mutation:ui`   | Mutación sobre `site/js/ui` en dos ejecuciones, `stryker.ui-render.config.json` y `stryker.ui.config.json` (umbral 85 %)                                                                                                                          |
+| `npm run mcp:test:mutation`  | Mutación sobre `mcp/src` en dos ejecuciones, `stryker.mcp-base.config.json` y `stryker.mcp.config.json` (umbral 85 %)                                                                                                                             |
+| `npm run e2e`                | Smoke en Chromium con Playwright, PokéAPI y APIs de Claude y OpenAI simuladas y auditoría axe; necesita antes `npx playwright install chromium`                                                                                                   |
+| `npm run lhci`               | Lighthouse sobre `index.html` y `tipos.html` contra PokéAPI real: accesibilidad, buenas prácticas y SEO exigen 0,95; el rendimiento es un aviso                                                                                                   |
 
 Lint, formato, typecheck, `check:html` y el flujo de ramas y commits: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
@@ -173,6 +186,7 @@ Lint, formato, typecheck, `check:html` y el flujo de ramas y commits: [`CONTRIBU
 - [0004: JavaScript con JSDoc y `// @ts-check`](docs/adr/0004-javascript-jsdoc-ts-check.md): tipos comprobados con `tsc` sin compilar la web.
 - [0005: chat con clave propia y `fetch` directo](docs/adr/0005-chat-byok-fetch-directo.md): la clave del visitante llama a la API de Claude desde el navegador, sin SDK ni backend.
 - [0006: chat multiproveedor con OpenAI](docs/adr/0006-chat-multiproveedor-openai.md): Responses API con `fetch` directo y `store: false` tras un puerto de proveedor con dos adaptadores y una clave por proveedor.
+- [0007: agentes, subagentes y skills del chat](docs/adr/0007-chat-agentes-subagentes-skills.md): definiciones como módulos de datos, delegación con profundidad 1, skills bajo demanda y alcance solo Pokémon por instrucciones.
 
 ---
 
