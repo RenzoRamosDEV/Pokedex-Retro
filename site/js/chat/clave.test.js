@@ -2,10 +2,12 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CLAVE_ALMACENAMIENTO,
+  CLAVES_ALMACENAMIENTO,
   esClaveValida,
   guardarClave,
   leerClave,
   olvidarClave,
+  validarClave,
 } from './clave.js';
 
 function almacen(inicial = {}) {
@@ -125,5 +127,71 @@ describe('key storage', () => {
     const session = almacen();
     guardarClave({ session, local: roto }, 'sk-ant-x', false);
     assert.deepEqual(contenido(session), { [K]: 'sk-ant-x' });
+  });
+});
+
+describe('validarClave', () => {
+  const casos = [
+    ['', 'formato', 'formato'],
+    ['   ', 'formato', 'formato'],
+    ['abc123', 'formato', 'formato'],
+    ['sk-', 'otro_proveedor', 'ok'],
+    ['sk-x', 'otro_proveedor', 'ok'],
+    ['sk-proj-x', 'otro_proveedor', 'ok'],
+    ['sk-ant', 'otro_proveedor', 'ok'],
+    ['sk-ant-', 'ok', 'otro_proveedor'],
+    ['sk-ant-x', 'ok', 'otro_proveedor'],
+    [' sk-ant-x ', 'ok', 'otro_proveedor'],
+    ['SK-x', 'formato', 'formato'],
+  ];
+  for (const [texto, anthropic, openai] of casos) {
+    test(`"${texto}" is ${anthropic} for anthropic and ${openai} for openai`, () => {
+      assert.equal(validarClave('anthropic', texto), anthropic);
+      assert.equal(validarClave('openai', texto), openai);
+    });
+  }
+});
+
+describe('storage key per provider', () => {
+  const KO = 'pokedex:chat:apikey:openai';
+
+  test('names one storage key per provider', () => {
+    assert.deepEqual(CLAVES_ALMACENAMIENTO, { anthropic: K, openai: KO });
+  });
+
+  test('saves, reads and forgets the OpenAI key without touching the Anthropic one', () => {
+    const session = almacen({ [K]: 'sk-ant-a' });
+    const local = almacen({ [K]: 'sk-ant-b' });
+    guardarClave({ session, local }, 'sk-proj-x', false, KO);
+    assert.deepEqual(contenido(session), { [K]: 'sk-ant-a', [KO]: 'sk-proj-x' });
+    assert.equal(leerClave({ session, local }, KO), 'sk-proj-x');
+    guardarClave({ session, local }, 'sk-proj-y', true, KO);
+    assert.deepEqual(contenido(session), { [K]: 'sk-ant-a' });
+    assert.deepEqual(contenido(local), { [K]: 'sk-ant-b', [KO]: 'sk-proj-y' });
+    assert.equal(leerClave({ session, local }, KO), 'sk-proj-y');
+    olvidarClave({ session, local }, KO);
+    assert.deepEqual(contenido(session), { [K]: 'sk-ant-a' });
+    assert.deepEqual(contenido(local), { [K]: 'sk-ant-b' });
+    assert.equal(leerClave({ session, local }, KO), null);
+  });
+
+  test('the Anthropic key calls do not touch the OpenAI key', () => {
+    const session = almacen({ [KO]: 'sk-proj-a' });
+    const local = almacen({ [KO]: 'sk-proj-b' });
+    guardarClave({ session, local }, 'sk-ant-x', true, K);
+    olvidarClave({ session, local }, K);
+    assert.deepEqual(contenido(session), { [KO]: 'sk-proj-a' });
+    assert.deepEqual(contenido(local), { [KO]: 'sk-proj-b' });
+    assert.equal(leerClave({ session, local }), null);
+  });
+
+  test('calls without a storage key keep using the Anthropic one', () => {
+    const session = almacen();
+    const local = almacen();
+    guardarClave({ session, local }, 'sk-ant-x', false);
+    assert.deepEqual(contenido(session), { [K]: 'sk-ant-x' });
+    assert.equal(leerClave({ session, local }), 'sk-ant-x');
+    olvidarClave({ session, local });
+    assert.deepEqual(contenido(session), {});
   });
 });
