@@ -1,0 +1,31 @@
+{
+  "name": "pokedex-retro-mcp",
+  "version": "1.0.0",
+  "description": "Servidor MCP local por stdio para consultar la Pokédex Retro sobre PokéAPI",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "pokedex-retro-mcp": "bin/pokedex-mcp.js"
+  },
+  "exports": {
+    ".": "./src/server.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "mcpName": "io.github.renzoramosdev/pokedex-retro",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RenzoRamosDEV/Pokedex-Retro.git",
+    "directory": "mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  }
+}

@@ -8,6 +8,11 @@
     "moduleResolution": "NodeNext",
     "target": "ES2022"
   },
-  "include": ["site/js/core/**/*.js", "site/js/mappers/**/*.js", "site/js/api/**/*.js"],
+  "include": [
+    "site/js/core/**/*.js",
+    "site/js/mappers/**/*.js",
+    "site/js/api/**/*.js",
+    "mcp/src/**/*.js"
+  ],
   "exclude": ["site/js/**/*.test.js"]
 }

@@ -46,6 +46,12 @@ export default [
     },
   },
   {
+    files: ['mcp/src/**/*.js', 'mcp/bin/**/*.js'],
+    rules: {
+      'no-console': 'error',
+    },
+  },
+  {
     files: ['tests/e2e/**/*.js'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
