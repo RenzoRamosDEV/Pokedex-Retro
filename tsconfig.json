@@ -12,6 +12,7 @@
   "include": [
     "site/js/core/**/*.js",
     "site/js/mappers/**/*.js",
+    "site/js/chat/**/*.js",
     "site/js/api/**/*.js",
     "mcp/src/**/*.js"
   ],
