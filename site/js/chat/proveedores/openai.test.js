@@ -179,7 +179,7 @@ describe('FUNCIONES', () => {
         estadistica: {
           type: ['string', 'null'],
           description: 'Estadística que la naturaleza sube o baja',
-          enum: ['attack', 'defense', 'special-attack', 'special-defense', 'speed'],
+          enum: ['attack', 'defense', 'special-attack', 'special-defense', 'speed', null],
         },
       },
       required: ['estadistica'],
