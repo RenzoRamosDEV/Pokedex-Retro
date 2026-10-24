@@ -17,7 +17,7 @@ Con el proveedor `OpenAI` el selector de modelo SHALL ofrecer `gpt-6.1-sol` (por
 - **THEN** la zona de mensajes se vacía y la siguiente petición solo contiene la nueva pregunta
 
 ### Requirement: Petición a la Responses API
-Cada turno con OpenAI SHALL hacer `POST https://api.openai.com/v1/responses` con solo las cabeceras `content-type: application/json` y `authorization: Bearer <clave>`, y un cuerpo con `model`, `instructions` (el mismo texto de sistema en español que con Claude), `input`, `tools`, `max_output_tokens` 8000, `reasoning: { effort: "low" }`, `store: false` y `stream: true`.
+Cada turno con OpenAI SHALL hacer `POST https://api.openai.com/v1/responses` con solo las cabeceras `content-type: application/json` y `authorization: Bearer <clave>`, y un cuerpo con `model`, `instructions` (el mismo texto de sistema en español que con Claude para el agente que hace la petición), `input`, `tools`, `max_output_tokens` 8000, `reasoning: { effort: "low" }`, `store: false` y `stream: true`.
 
 #### Scenario: Cabeceras y cuerpo exactos
 - **WHEN** se envía una pregunta con `gpt-6.1-sol`
@@ -27,6 +27,10 @@ Cada turno con OpenAI SHALL hacer `POST https://api.openai.com/v1/responses` con
 - **WHEN** se inspecciona cualquier petición a `api.openai.com`
 - **THEN** no lleva `x-api-key`, `anthropic-version`, `anthropic-beta` ni `anthropic-dangerous-direct-browser-access`
 
+#### Scenario: Instrucciones del agente principal
+- **WHEN** se inspecciona `instructions` de una petición del agente principal
+- **THEN** es idéntico al `system` del agente principal con Claude, incluida la respuesta fija `Solo puedo responder preguntas sobre Pokémon.`
+
 ### Requirement: Parámetros prohibidos con OpenAI
 El cuerpo MUST NOT contener `temperature`, `top_p`, `previous_response_id`, `conversation`, `background` ni un `tool_choice` que fuerce herramientas, y `store` MUST valer siempre `false`.
 
@@ -35,11 +39,11 @@ El cuerpo MUST NOT contener `temperature`, `top_p`, `previous_response_id`, `con
 - **THEN** no contiene ninguna de esas claves y `store` es `false`
 
 ### Requirement: Herramientas en formato function
-Las 12 tools SHALL declararse como `{ type: "function", name, description, parameters, strict: true }` derivadas de las mismas definiciones que usa Claude (mismos nombres, descripciones y descripciones de campo). Cada `parameters` MUST tener `additionalProperties: false` y todas sus propiedades en `required`; las opcionales admiten `null`.
+Las tools SHALL declararse como `{ type: "function", name, description, parameters, strict: true }` derivadas de las mismas definiciones que usa Claude (mismos nombres, descripciones y descripciones de campo): las 12 de consulta y, en el agente principal, `delegar_subagente` y `usar_skill`. Cada `parameters` MUST tener `additionalProperties: false` y todas sus propiedades en `required`; las opcionales admiten `null`.
 
 #### Scenario: Catálogo declarado
-- **WHEN** se inspecciona `tools` de una petición a OpenAI
-- **THEN** hay 12 definiciones `function` con `strict: true`, en el mismo orden y con los mismos nombres y descripciones que las de Claude
+- **WHEN** se inspecciona `tools` de una petición del agente principal a OpenAI
+- **THEN** hay 14 definiciones `function` con `strict: true`, en el mismo orden y con los mismos nombres y descripciones que las de Claude
 
 #### Scenario: Campo opcional
 - **WHEN** se inspecciona `buscar_pokemon`
@@ -87,7 +91,7 @@ Cada turno de OpenAI SHALL reenviarse en el `input` de las peticiones siguientes
 - **THEN** el `input` contiene la pregunta anterior, todos los elementos de salida y de resultado de esa pregunta y la nueva pregunta, en ese orden
 
 ### Requirement: Bucle de herramientas con OpenAI
-Si una respuesta completada contiene `function_call`, el chat SHALL ejecutarlas en paralelo, indicar cada una con `CONSULTANDO: <nombre_tool>` y enviar todos los `function_call_output` en la siguiente petición. Cada pregunta admite como máximo 8 iteraciones; al superarlo MUST detenerse y mostrar `He alcanzado el límite de consultas para esta pregunta.`
+Si una respuesta completada contiene `function_call`, el chat SHALL ejecutarlas en paralelo, indicar cada consulta con `CONSULTANDO: <nombre_tool>` (y `delegar_subagente` y `usar_skill` con `SUBAGENTE: <nombre>` y `SKILL: <nombre>`) y enviar todos los `function_call_output` en la siguiente petición. Cada pregunta admite como máximo 8 iteraciones; al superarlo MUST detenerse y mostrar `He alcanzado el límite de consultas para esta pregunta.`
 
 #### Scenario: Bucle con herramienta
 - **WHEN** OpenAI simulada responde un `function_call` de `efectividad_tipos` con `{"atacante":"electric","defensor":["water","flying"]}` y después un texto final
@@ -100,6 +104,10 @@ Si una respuesta completada contiene `function_call`, el chat SHALL ejecutarlas 
 #### Scenario: Límite de iteraciones
 - **WHEN** OpenAI simulada responde siempre con un `function_call`
 - **THEN** se hacen exactamente 9 peticiones y se muestra `He alcanzado el límite de consultas para esta pregunta.`
+
+#### Scenario: Delegación con OpenAI
+- **WHEN** OpenAI simulada responde un `function_call` de `delegar_subagente` con `{"subagente":"estratega-tipos","tarea":"debilidades de gyarados"}`, el subagente responde un texto y después el agente principal responde un texto final
+- **THEN** la petición del subagente va a `api.openai.com` con el mismo modelo y su `input` empieza por la tarea, y la siguiente petición del agente principal contiene un `function_call_output` con el texto del subagente
 
 ### Requirement: Motivos de parada de OpenAI
 Con `response.incomplete` por `max_output_tokens` SHALL mostrarse lo recibido más `(respuesta cortada por longitud)` sin ejecutar tools; con un contenido `refusal` o `response.incomplete` por `content_filter` SHALL mostrarse `OpenAI no puede responder a esta petición.` sin ejecutar tools. Los turnos de la pregunta MUST incorporarse a la conversación con las mismas reglas que con Claude.
@@ -165,11 +173,15 @@ Un evento `error` o `response.failed` SHALL mapearse por su código (`invalid_ap
 - **THEN** se conserva `Hola`, no se reintenta y se muestra `Error de OpenAI (500). Inténtalo de nuevo.`
 
 ### Requirement: Etiqueta y uso de tokens con OpenAI
-Las respuestas de OpenAI SHALL etiquetarse `OPENAI`. Tras cada respuesta final SHALL mostrarse `Tokens: <entrada> entrada · <salida> salida` sumando las peticiones de la pregunta, con entrada `usage.input_tokens` (ya incluye los de caché) y salida `usage.output_tokens` (ya incluye los de razonamiento).
+Las respuestas de OpenAI SHALL etiquetarse `OPENAI`. Tras cada respuesta final SHALL mostrarse `Tokens: <entrada> entrada · <salida> salida` sumando las peticiones de la pregunta, incluidas las de sus subagentes, con entrada `usage.input_tokens` (ya incluye los de caché) y salida `usage.output_tokens` (ya incluye los de razonamiento).
 
 #### Scenario: Pregunta con una herramienta
 - **WHEN** una pregunta hace dos peticiones con usos `{input_tokens 100, cached_tokens 40, output_tokens 20}` y `{input_tokens 200, cached_tokens 150, output_tokens 30}`
 - **THEN** se muestra `Tokens: 300 entrada · 50 salida`
+
+#### Scenario: Pregunta con un subagente
+- **WHEN** una pregunta hace dos peticiones del agente principal con usos `{input_tokens 100, output_tokens 20}` y `{input_tokens 200, output_tokens 30}` y una del subagente con uso `{input_tokens 70, output_tokens 9}`
+- **THEN** se muestra `Tokens: 370 entrada · 59 salida`
 
 ### Requirement: Verificación real de OpenAI sin clave válida
 Antes de publicar, el chat SHALL comprobarse en Chromium contra la API real de OpenAI sin ninguna clave válida: el preflight CORS de `api.openai.com` se completa y una petición con una clave falsa muestra, gracias al diagnóstico con `/v1/models`, el mensaje de clave inválida sin coste ni violaciones de CSP.

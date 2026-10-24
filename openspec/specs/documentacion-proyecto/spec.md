@@ -16,6 +16,10 @@ Presenta el repositorio a quien lo visita por primera vez: qué es, cómo se ve,
 - **WHEN** se lee la sección del chat
 - **THEN** explica que hace falta una clave propia de Anthropic o de OpenAI, que se queda en el navegador y solo se envía a la API de su proveedor (`api.anthropic.com` o `api.openai.com`), que el coste va a la cuenta del visitante y qué modelos de cada proveedor se pueden elegir
 
+#### Scenario: Agentes del chat
+- **WHEN** se lee la sección del chat
+- **THEN** explica que solo responde sobre Pokémon (con la respuesta fija `Solo puedo responder preguntas sobre Pokémon.` y que es una restricción por instrucciones), nombra el agente principal, los tres subagentes y las cuatro skills con la carpeta donde se definen, y advierte de que delegar en subagentes consume tokens adicionales
+
 #### Scenario: Uso del MCP
 - **WHEN** se lee la sección del MCP
 - **THEN** enlaza a `mcp/README.md` e incluye el comando `claude mcp add pokedex-retro -- node /ruta/a/Pokedex-Retro/mcp/bin/pokedex-mcp.js`
@@ -26,7 +30,7 @@ Presenta el repositorio a quien lo visita por primera vez: qué es, cómo se ve,
 
 #### Scenario: Decisiones enlazadas
 - **WHEN** se siguen los enlaces de la sección de decisiones
-- **THEN** cada una de las ADR `0001` a `0006` de `docs/adr/` tiene un enlace que resuelve a su fichero
+- **THEN** cada una de las ADR `0001` a `0007` de `docs/adr/` tiene un enlace que resuelve a su fichero
 
 ### Requirement: Documentación fiel al repositorio
 Toda afirmación factual de `README.md`, `docs/ARCHITECTURE.md` y `CONTRIBUTING.md` SHALL coincidir con el código y la configuración versionados: cada `npm run <script>` citado MUST existir en `package.json` y cada ruta citada MUST existir.
@@ -67,11 +71,11 @@ Toda afirmación factual de `README.md`, `docs/ARCHITECTURE.md` y `CONTRIBUTING.
 - **THEN** muestra el tipo `ELECTRIC` y no el tipo del fixture genérico
 
 ### Requirement: Arquitectura documentada
-`docs/ARCHITECTURE.md` SHALL contener un diagrama Mermaid del flujo `HTML → ui → core → api → PokéAPI`, otro del flujo `Claude → mcp → core/mappers → PokéAPI`, otro del flujo `chat.html → chat → core/mappers/api → PokéAPI` y `→ api.anthropic.com | api.openai.com` a través del puerto de proveedor, las responsabilidades de cada carpeta, el flujo de una búsqueda, la estrategia de caché y enlaces a las ADR.
+`docs/ARCHITECTURE.md` SHALL contener un diagrama Mermaid del flujo `HTML → ui → core → api → PokéAPI`, otro del flujo `Claude → mcp → core/mappers → PokéAPI`, otro del flujo `chat.html → chat → core/mappers/api → PokéAPI` y `→ api.anthropic.com | api.openai.com` a través del puerto de proveedor, con los agentes de `chat/agentes`, las responsabilidades de cada carpeta, el flujo de una búsqueda, la estrategia de caché y enlaces a las ADR.
 
 #### Scenario: Diagramas
 - **WHEN** GitHub renderiza `docs/ARCHITECTURE.md`
-- **THEN** muestra tres diagramas Mermaid: uno con HTML, `ui`, `core`, `api` y PokéAPI; otro con Claude, `mcp`, `core`/`mappers` y PokéAPI; y otro con `chat.html`, `chat`, los proveedores, `core`/`mappers`/`api`, PokéAPI, `api.anthropic.com` y `api.openai.com`
+- **THEN** muestra tres diagramas Mermaid: uno con HTML, `ui`, `core`, `api` y PokéAPI; otro con Claude, `mcp`, `core`/`mappers` y PokéAPI; y otro con `chat.html`, `chat`, `chat/agentes`, los proveedores, `core`/`mappers`/`api`, PokéAPI, `api.anthropic.com` y `api.openai.com`
 
 #### Scenario: Caché documentada
 - **WHEN** se lee la estrategia de caché

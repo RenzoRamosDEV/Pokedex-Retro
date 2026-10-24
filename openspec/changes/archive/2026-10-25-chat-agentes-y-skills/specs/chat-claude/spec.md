@@ -19,7 +19,7 @@ Cada turno SHALL hacer `POST https://api.anthropic.com/v1/messages` con `content
 - **THEN** es un texto en español que describe la Pokédex, limita las respuestas a temas de Pokémon con la respuesta fija `Solo puedo responder preguntas sobre Pokémon.`, pide usar las herramientas para cualquier dato y responder en español y en texto plano, y lista los subagentes y las skills disponibles
 
 ### Requirement: Herramientas del chat
-El chat SHALL declarar las 12 tools del servidor MCP con los mismos nombres, parámetros, límites, descripciones y textos de error: `buscar_pokemon`, `obtener_pokemon`, `buscar_movimientos`, `obtener_movimiento`, `buscar_habilidades`, `obtener_habilidad`, `buscar_objetos`, `obtener_objeto`, `buscar_bayas`, `obtener_baya`, `efectividad_tipos` y `naturalezas`, seguidas en el agente principal de `delegar_subagente` y `usar_skill`, cada una con `strict: true`, `additionalProperties: false` y `eager_input_streaming: true`.
+El chat SHALL declarar las 12 tools del MCP con iguales nombres, parámetros, límites, descripciones y errores: `buscar_pokemon`, `obtener_pokemon`, `buscar_movimientos`, `obtener_movimiento`, `buscar_habilidades`, `obtener_habilidad`, `buscar_objetos`, `obtener_objeto`, `buscar_bayas`, `obtener_baya`, `efectividad_tipos` y `naturalezas`, y luego, en el agente principal, `delegar_subagente` y `usar_skill`, cada una con `strict: true`, `additionalProperties: false` y `eager_input_streaming: true`.
 
 #### Scenario: Catálogo declarado
 - **WHEN** se inspecciona `tools` de una petición del agente principal
