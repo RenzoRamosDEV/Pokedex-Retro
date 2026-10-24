@@ -23,7 +23,7 @@ import { MENSAJES_ENTRADA, textoResultado } from '../core/mensajes.js';
 /** Marks a tool input whose streamed JSON did not parse. */
 export const ENTRADA_NO_JSON = Symbol('entrada no JSON');
 
-const TEXTO_NO_JSON = 'La entrada de la herramienta no es JSON válido.';
+export const TEXTO_NO_JSON = 'La entrada de la herramienta no es JSON válido.';
 const NOMBRE_VALIDO = /^[A-Za-z0-9 -]+$/;
 
 /** @param {string} type @param {string} campo */

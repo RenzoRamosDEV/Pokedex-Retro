@@ -6,7 +6,7 @@ import { SUBAGENTES } from './subagentes.js';
  * Tools of the main agent that act on agents and skills instead of PokéAPI.
  * @typedef {import('../herramientas.js').Validacion} Validacion
  * @typedef {{ contenido: string, esError: boolean }} Salida
- * @typedef {{ estado: 'fin' | 'cortada' | 'rechazo' | 'limite', texto: string, pendientes: boolean }} Final
+ * @typedef {{ estado: 'fin' | 'cortada' | 'rechazo' | 'limite', texto: string, pendientes?: boolean }} Final
  */
 
 const MAX_TAREA = 2000;
