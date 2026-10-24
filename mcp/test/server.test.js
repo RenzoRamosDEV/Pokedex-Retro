@@ -1,9 +1,85 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { z } from 'zod';
+import { SECTIONS } from '../../site/js/core/sections.js';
+import * as schemas from '../src/schemas.js';
 import { conectar } from './support/conectar.js';
+import { assertGolden } from './support/golden.js';
+
+const fixture = (name) =>
+  JSON.parse(
+    readFileSync(new URL(`../../site/js/mappers/fixtures/${name}.json`, import.meta.url), 'utf8'),
+  );
+
+const CATALOGO = [
+  ['pokedex', 'buscar_pokemon', 'obtener_pokemon', 'pokemon', 'gengar', schemas.POKEMON],
+  [
+    'movimientos',
+    'buscar_movimientos',
+    'obtener_movimiento',
+    'move',
+    'thunderbolt',
+    schemas.MOVIMIENTO,
+  ],
+  [
+    'habilidades',
+    'buscar_habilidades',
+    'obtener_habilidad',
+    'ability',
+    'stench',
+    schemas.HABILIDAD,
+  ],
+  ['objetos', 'buscar_objetos', 'obtener_objeto', 'item', 'master-ball', schemas.OBJETO],
+  ['bayas', 'buscar_bayas', 'obtener_baya', 'berry', 'cheri', schemas.BAYA],
+];
+
+async function setup(t) {
+  const session = await conectar();
+  t.after(session.close);
+  return session;
+}
 
 test('identifies itself as pokedex-retro with the given version', async (t) => {
-  const { client, close } = await conectar({ version: '1.0.0' });
-  t.after(close);
+  const { client } = await setup(t);
   assert.deepEqual(client.getServerVersion(), { name: 'pokedex-retro', version: '1.0.0' });
+});
+
+test('lists the catalog tools with description, inputSchema and outputSchema', async (t) => {
+  const { client } = await setup(t);
+  const { tools } = await client.listTools();
+  const byName = new Map(tools.map((tool) => [tool.name, tool]));
+  for (const [, buscar, obtener] of CATALOGO) {
+    for (const name of [buscar, obtener]) {
+      const tool = byName.get(name);
+      assert.ok(tool, `falta ${name}`);
+      assert.ok(tool.description.length > 0);
+      assert.equal(tool.inputSchema.type, 'object');
+      assert.equal(tool.outputSchema.type, 'object');
+    }
+  }
+});
+
+for (const [clave, buscar, obtener, fixtureName, name, shape] of CATALOGO) {
+  test(`${obtener} output is strict to its schema and equals the web mapper`, async (t) => {
+    const { client } = await setup(t);
+    const result = await client.callTool({ name: obtener, arguments: { nombre_o_id: name } });
+    z.object(shape).strict().parse(result.structuredContent);
+    assert.deepEqual(result.structuredContent, SECTIONS[clave].mapper(fixture(fixtureName)));
+  });
+
+  test(`${buscar} output is strict to the search schema`, async (t) => {
+    const { client } = await setup(t);
+    const result = await client.callTool({ name: buscar, arguments: { consulta: name } });
+    z.object(schemas.busqueda(shape)).strict().parse(result.structuredContent);
+    assert.deepEqual(result.structuredContent.resultados, [
+      SECTIONS[clave].mapper(fixture(fixtureName)),
+    ]);
+  });
+}
+
+test('tools/list matches the golden file', async (t) => {
+  const { client } = await setup(t);
+  const { tools } = await client.listTools();
+  assertGolden('tools-list.golden.json', tools);
 });
