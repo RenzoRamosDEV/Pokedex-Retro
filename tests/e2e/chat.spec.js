@@ -5,6 +5,7 @@ import { mockAnthropic } from './anthropic-mock.js';
 import { mockOpenai } from './openai-mock.js';
 import { mensaje, textBlock, toolUseBlock } from '../support/claude-sse.js';
 import * as oa from '../support/openai-sse.js';
+import { SUBAGENTES } from '../../site/js/chat/agentes/subagentes.js';
 
 const CLAVE = 'sk-ant-e2e-falsa';
 const STORAGE_KEY = 'pokedex:chat:apikey';
@@ -546,4 +547,170 @@ async function expectNoSeriousViolations(page, label) {
     .filter((violation) => ['serious', 'critical'].includes(violation.impact))
     .map((v) => `${label}: ${v.id} → ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
   expect(blocking, blocking.join('\n')).toEqual([]);
+}
+
+const RESPUESTA_FIJA = 'Solo puedo responder preguntas sobre Pokémon.';
+const ESTRATEGA = SUBAGENTES.find((s) => s.nombre === 'estratega-tipos');
+
+const llamadaClaude = (name, input, uso) => ({
+  eventos: mensaje({
+    bloques: [toolUseBlock(0, { id: 'toolu_1', name, input })],
+    stopReason: 'tool_use',
+    usage: { input_tokens: uso.entrada },
+    salida: { output_tokens: uso.salida },
+  }),
+});
+const textoClaude = (texto, uso) => ({
+  eventos: mensaje({
+    bloques: [textBlock(0, texto)],
+    usage: { input_tokens: uso.entrada },
+    salida: { output_tokens: uso.salida },
+  }),
+});
+const delegacion = () =>
+  llamadaClaude(
+    'delegar_subagente',
+    { subagente: 'estratega-tipos', tarea: 'debilidades de gyarados' },
+    { entrada: 100, salida: 20 },
+  );
+
+/** The status line changes before the held request reaches the mock, so wait for it first. */
+async function soltarRetenida(mock, peticiones) {
+  await expect.poll(() => mock.posts.length).toBe(peticiones);
+  mock.soltar();
+}
+
+function contarPokeApi(page) {
+  const urls = [];
+  page.on('request', (request) => {
+    if (request.url().startsWith('https://pokeapi.co/')) urls.push(request.url());
+  });
+  return urls;
+}
+
+test('the notice warns that delegating to subagents costs extra tokens', async ({ page }) => {
+  await abrirChat(page);
+  await expect(page.getByText('Delegar en subagentes consume tokens adicionales.')).toBeVisible();
+});
+
+test('a delegation shows SUBAGENTE, then only the main text and the summed tokens', async ({
+  page,
+}) => {
+  const anthropic = await abrirChat(page, [
+    delegacion(),
+    {
+      retener: true,
+      ...textoClaude('Gyarados es débil a electric (x4) y rock.', { entrada: 50, salida: 10 }),
+    },
+    textoClaude('Evita los ataques electric.', { entrada: 200, salida: 30 }),
+  ]);
+  await guardarClave(page);
+  await preguntar(page, '¿Qué debilidades tiene Gyarados?');
+  await expect(estado(page)).toHaveText('SUBAGENTE: estratega-tipos');
+  await soltarRetenida(anthropic, 2);
+  await expect(registro(page)).toContainText('Evita los ataques electric.');
+  await expect(registro(page)).toContainText('Tokens: 350 entrada · 60 salida');
+  await expect(registro(page)).not.toContainText('Gyarados es débil a electric');
+  expect(anthropic.posts).toHaveLength(3);
+  const [, subagente, segunda] = anthropic.posts;
+  expect(subagente.body.system).toBe(ESTRATEGA.sistema);
+  expect(subagente.body.model).toBe(anthropic.posts[0].body.model);
+  expect(subagente.headers['x-api-key']).toBe(CLAVE);
+  expect(subagente.body.messages).toEqual([{ role: 'user', content: 'debilidades de gyarados' }]);
+  expect(segunda.body.messages.at(-1).content[0].content).toBe(
+    'Gyarados es débil a electric (x4) y rock.',
+  );
+});
+
+test('DETENER aborts a held subagent request and no other request follows', async ({ page }) => {
+  const anthropic = await abrirChat(page, [
+    delegacion(),
+    { retener: true },
+    respuestaTexto('De nuevo.'),
+  ]);
+  await guardarClave(page);
+  await preguntar(page, '¿Qué debilidades tiene Gyarados?');
+  await expect(estado(page)).toHaveText('SUBAGENTE: estratega-tipos');
+  await expect.poll(() => anthropic.posts.length).toBe(2);
+  await page.getByRole('button', { name: 'DETENER' }).click();
+  await expect(page.getByRole('button', { name: 'ENVIAR' })).toBeEnabled();
+  anthropic.soltar();
+  await preguntar(page, 'otra vez');
+  await expect(registro(page)).toContainText('De nuevo.');
+  expect(anthropic.posts).toHaveLength(3);
+  expect(anthropic.posts[2].body.messages).toEqual([{ role: 'user', content: 'otra vez' }]);
+});
+
+test('loading a skill shows SKILL with its name', async ({ page }) => {
+  const anthropic = await abrirChat(page, [
+    llamadaClaude('usar_skill', { nombre: 'comparar-pokemon' }, { entrada: 10, salida: 5 }),
+    { retener: true, ...textoClaude('Raichu gana en velocidad.', { entrada: 20, salida: 5 }) },
+  ]);
+  await guardarClave(page);
+  await preguntar(page, 'Compara pikachu y raichu');
+  await expect(estado(page)).toHaveText('SKILL: comparar-pokemon');
+  await soltarRetenida(anthropic, 2);
+  await expect(registro(page)).toContainText('Raichu gana en velocidad.');
+  expect(anthropic.posts[1].body.messages.at(-1).content[0].content).toContain(
+    'Compara los dos Pokémon que indique el usuario.',
+  );
+});
+
+test('an off-topic question with Claude gets the fixed answer from one request', async ({
+  page,
+}) => {
+  const anthropic = await abrirChat(page, [
+    textoClaude(RESPUESTA_FIJA, { entrada: 30, salida: 8 }),
+  ]);
+  const pokeApiUrls = contarPokeApi(page);
+  await guardarClave(page);
+  await preguntar(page, '¿Cuál es la capital de Francia?');
+  await expect(registro(page)).toContainText(RESPUESTA_FIJA);
+  await expect(registro(page)).toContainText('Tokens: 30 entrada · 8 salida');
+  expect(anthropic.posts).toHaveLength(1);
+  expect(anthropic.posts[0].body.system).toContain(RESPUESTA_FIJA);
+  expect(pokeApiUrls).toEqual([]);
+});
+
+test('an off-topic question with OpenAI gets the fixed answer from one request', async ({
+  page,
+}) => {
+  const { openai, anthropic } = await abrirChatAmbos(page, {
+    openai: [
+      {
+        eventos: oa.respuesta({
+          items: [oa.messageItem({ texto: RESPUESTA_FIJA })],
+          final: oa.responseCompleted(oa.usage({ entrada: 30, salida: 8 })),
+        }),
+      },
+    ],
+  });
+  const pokeApiUrls = contarPokeApi(page);
+  await elegirProveedor(page, 'OpenAI');
+  await guardarClaveOpenai(page);
+  await preguntar(page, '¿Cuál es la capital de Francia?');
+  await expect(registro(page)).toContainText(RESPUESTA_FIJA);
+  await expect(registro(page)).toContainText('Tokens: 30 entrada · 8 salida');
+  expect(openai.posts).toHaveLength(1);
+  expect(anthropic.posts).toEqual([]);
+  expect(openai.posts[0].body.instructions).toContain(RESPUESTA_FIJA);
+  expect(pokeApiUrls).toEqual([]);
+});
+
+for (const theme of ['normal', 'gb', 'gray']) {
+  test(`axe: chat.html [${theme}] with a delegation in progress and answered`, async ({ page }) => {
+    await page.addInitScript((value) => localStorage.setItem('theme', value), theme);
+    const anthropic = await abrirChat(page, [
+      delegacion(),
+      { retener: true, ...textoClaude('Débil a electric.', { entrada: 50, salida: 10 }) },
+      textoClaude('Evita electric.', { entrada: 200, salida: 30 }),
+    ]);
+    await guardarClave(page);
+    await preguntar(page, '¿Qué debilidades tiene Gyarados?');
+    await expect(estado(page)).toHaveText('SUBAGENTE: estratega-tipos');
+    await expectNoSeriousViolations(page, `chat.html [${theme}] subagente`);
+    await soltarRetenida(anthropic, 2);
+    await expect(registro(page)).toContainText('Evita electric.');
+    await expectNoSeriousViolations(page, `chat.html [${theme}] delegación`);
+  });
 }

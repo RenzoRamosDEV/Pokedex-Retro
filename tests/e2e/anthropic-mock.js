@@ -11,7 +11,8 @@ const CORS = {
 /**
  * Simulates the Messages API. Each POST takes the next step of `pasos`:
  * `{ eventos }` streams SSE events, `{ status, type, message }` answers a JSON error and
- * `{ retener: true }` holds the request until `soltar()` (or never). Every POST is recorded.
+ * `{ retener: true }` holds the request until `soltar()` (or never) and then aborts it, or
+ * streams its `eventos` if it has them. Every POST is recorded.
  * @param {import('@playwright/test').Page} page
  */
 export async function mockAnthropic(page, pasos = []) {
@@ -29,7 +30,7 @@ export async function mockAnthropic(page, pasos = []) {
       await new Promise((resolve) => {
         soltar = resolve;
       });
-      return route.abort().catch(() => {});
+      if (!paso.eventos) return route.abort().catch(() => {});
     }
     if (paso.eventos) {
       return route.fulfill({
