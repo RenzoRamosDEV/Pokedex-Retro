@@ -4,6 +4,25 @@ Todos los cambios relevantes de este proyecto se documentan en este fichero.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-10-24
+
+### Añadido
+
+- OpenAI como segundo proveedor del chat: selector `PROVEEDOR` con `Claude (Anthropic)` (por defecto) y `OpenAI`, con la clave de OpenAI del propio visitante y la Responses API en streaming (`store: false`).
+- Modelos de OpenAI con sus precios: GPT-6.1 Sol (por defecto), GPT-6 Astra y GPT-6 Luna.
+- Las 12 herramientas como funciones estrictas para OpenAI, con los mismos nombres, límites y textos, y mensajes de error de OpenAI en español, incluido `Tu cuenta de OpenAI no tiene saldo.` sin reintento.
+- ADR 0006 y mutación propia del adaptador de OpenAI (`stryker.chat-openai.config.json`), con e2e contra la API de OpenAI simulada.
+
+### Cambiado
+
+- El bucle del chat usa un puerto de proveedor con dos adaptadores (Anthropic y OpenAI); el comportamiento con Claude no cambia.
+- Una clave por proveedor: la de Anthropic sigue en `pokedex:chat:apikey` y la de OpenAI va en `pokedex:chat:apikey:openai`; `OLVIDAR CLAVE` olvida solo la del proveedor elegido.
+
+### Seguridad
+
+- La CSP de todas las páginas permite además `connect-src https://api.openai.com`; el resto de la política no cambia.
+- La clave de OpenAI solo se envía a `api.openai.com` y la de Anthropic solo a `api.anthropic.com`.
+
 ## [1.2.0] - 2026-10-24
 
 ### Añadido
@@ -83,6 +102,7 @@ La etiqueta `v1.0.0-RC.0` apunta al primer commit del repositorio (`dcfbae7`, so
 - Tests con `node --test` y mutación con Stryker sobre `site/js/core` y `site/js/mappers`.
 - Despliegue de `site/` en GitHub Pages.
 
+[1.3.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/RenzoRamosDEV/Pokedex-Retro/compare/v1.0.0-RC.0...v1.1.0
