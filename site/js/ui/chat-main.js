@@ -1,6 +1,14 @@
 import { responder } from '../chat/bucle.js';
-import { esClaveValida, guardarClave, leerClave, olvidarClave } from '../chat/clave.js';
+import {
+  CLAVES_ALMACENAMIENTO,
+  guardarClave,
+  leerClave,
+  olvidarClave,
+  validarClave,
+} from '../chat/clave.js';
+import { PROVEEDORES, PROVEEDOR_POR_DEFECTO } from '../chat/proveedores/index.js';
 import { createChatView } from './chat-view.js';
+import { STRINGS } from './strings.js';
 import { createPokeApiPort, startPage, storageOrNull } from './arranque.js';
 
 const byId = (id) => document.getElementById(id);
@@ -9,7 +17,14 @@ const chat = document.querySelector('[data-chat]');
 const questionForm = document.querySelector('[data-pregunta-form]');
 const keyInput = byId('chat-clave');
 const remember = byId('chat-recordar');
-const model = byId('chat-modelo');
+const providerSelect = byId('chat-proveedor');
+const models = { anthropic: byId('chat-modelo'), openai: byId('chat-modelo-openai') };
+const modelGroups = {
+  anthropic: document.querySelector('[data-modelos="anthropic"]'),
+  openai: document.querySelector('[data-modelos="openai"]'),
+};
+const keyLabel = document.querySelector('[data-clave-etiqueta]');
+const KEY_LABELS = { anthropic: STRINGS.chat.claveAnthropic, openai: STRINGS.chat.claveOpenai };
 const question = byId('chat-mensaje');
 const stopButton = byId('chat-detener');
 
@@ -24,12 +39,16 @@ const view = createChatView({
   send: byId('chat-enviar'),
   stop: stopButton,
   reset: byId('chat-nueva'),
-  selectors: [model],
+  selectors: [providerSelect, models.anthropic, models.openai],
 });
 const pokeApiPort = createPokeApiPort();
 
-/** The key also lives in this variable, so the chat works when storage throws. */
-let apiKey = leerClave(storages);
+let provider = PROVEEDOR_POR_DEFECTO;
+/** Keys also live in memory, per provider, so the chat works when storage throws. */
+const apiKeys = {
+  anthropic: leerClave(storages, CLAVES_ALMACENAMIENTO.anthropic),
+  openai: leerClave(storages, CLAVES_ALMACENAMIENTO.openai),
+};
 let conversation = [];
 let controller = null;
 let replyStarted = false;
@@ -89,8 +108,9 @@ async function ask(text) {
   const result = await responder({
     mensajes: conversation,
     pregunta: text,
-    modelo: model.value,
-    clave: apiKey,
+    modelo: models[provider].value,
+    clave: apiKeys[provider],
+    proveedor: PROVEEDORES[provider],
     fetch: (url, init) => window.fetch(url, init),
     port: pokeApiPort(signal),
     signal,
@@ -121,12 +141,13 @@ function resetConversation() {
 keyForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const key = keyInput.value.trim();
-  if (!esClaveValida(key)) {
-    view.showKeyError('formato');
+  const validity = validarClave(provider, key);
+  if (validity !== 'ok') {
+    view.showKeyError(validity);
     return;
   }
-  guardarClave(storages, key, remember.checked);
-  apiKey = key;
+  guardarClave(storages, key, remember.checked, CLAVES_ALMACENAMIENTO[provider]);
+  apiKeys[provider] = key;
   keyInput.value = '';
   view.clearStatus();
   showChat(true);
@@ -150,12 +171,27 @@ byId('chat-nueva').addEventListener('click', () => {
   resetConversation();
   question.focus();
 });
-model.addEventListener('change', resetConversation);
+Object.values(models).forEach((select) => select.addEventListener('change', resetConversation));
+
+function showProvider() {
+  Object.entries(modelGroups).forEach(([id, group]) => {
+    group.hidden = id !== provider;
+  });
+  keyLabel.textContent = KEY_LABELS[provider];
+  view.setProvider(provider);
+  showChat(apiKeys[provider] !== null);
+}
+
+providerSelect.addEventListener('change', () => {
+  provider = providerSelect.value;
+  resetConversation();
+  showProvider();
+});
 byId('chat-olvidar').addEventListener('click', () => {
   controller?.abort();
   controller = null;
-  olvidarClave(storages);
-  apiKey = null;
+  olvidarClave(storages, CLAVES_ALMACENAMIENTO[provider]);
+  apiKeys[provider] = null;
   resetConversation();
   view.setBusy(false);
   showChat(false);
@@ -163,4 +199,5 @@ byId('chat-olvidar').addEventListener('click', () => {
 });
 
 startPage();
-showChat(apiKey !== null);
+providerSelect.value = provider;
+showProvider();

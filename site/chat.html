@@ -181,13 +181,21 @@
 
     <main id="contenido" class="site-main" tabindex="-1">
       <div class="page-header">
-        <h2 class="page-title">CHAT CON CLAUDE</h2>
+        <h2 class="page-title">CHAT CON CLAUDE U OPENAI</h2>
       </div>
       <noscript><p class="page-info">ESTA POKÉDEX NECESITA JAVASCRIPT</p></noscript>
       <p class="page-info estado" role="status" aria-live="polite" data-estado></p>
 
+      <div class="chat-panel chat-toolbar">
+        <label class="chat-label" for="chat-proveedor">PROVEEDOR</label>
+        <select id="chat-proveedor" class="chat-input">
+          <option value="anthropic" selected>Claude (Anthropic)</option>
+          <option value="openai">OpenAI</option>
+        </select>
+      </div>
+
       <form class="chat-panel chat-key" data-clave-form hidden>
-        <label class="chat-label" for="chat-clave">CLAVE DE ANTHROPIC</label>
+        <label class="chat-label" for="chat-clave" data-clave-etiqueta>CLAVE DE ANTHROPIC</label>
         <input
           id="chat-clave"
           class="chat-input"
@@ -202,21 +210,34 @@
         </div>
         <button type="submit" class="page-btn">GUARDAR CLAVE</button>
         <p id="chat-aviso" class="chat-notice">
-          Tu clave se queda en este navegador y solo se envía a api.anthropic.com. Las
-          conversaciones se cobran en tu cuenta de Anthropic.
+          Tu clave de Anthropic u OpenAI se queda en este navegador y solo se envía a la API de su
+          proveedor (api.anthropic.com o api.openai.com). Las conversaciones se cobran en tu cuenta
+          de ese proveedor.
         </p>
       </form>
 
       <section class="chat-panel chat" data-chat aria-label="Conversación" hidden>
         <div class="chat-toolbar">
-          <label class="chat-label" for="chat-modelo">MODELO</label>
-          <select id="chat-modelo" class="chat-input">
-            <option value="claude-opus-5-5" selected>
-              Claude Opus 5.5 — $4 / $20 por millón de tokens
-            </option>
-            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 — $2 / $10</option>
-            <option value="claude-haiku-5-5">Claude Haiku 5.5 — $0,10 / $0,50</option>
-          </select>
+          <div class="chat-modelos" data-modelos="anthropic">
+            <label class="chat-label" for="chat-modelo">MODELO</label>
+            <select id="chat-modelo" class="chat-input">
+              <option value="claude-opus-5-5" selected>
+                Claude Opus 5.5 — $4 / $20 por millón de tokens
+              </option>
+              <option value="claude-sonnet-5-5">Claude Sonnet 5.5 — $2 / $10</option>
+              <option value="claude-haiku-5-5">Claude Haiku 5.5 — $0,10 / $0,50</option>
+            </select>
+          </div>
+          <div class="chat-modelos" data-modelos="openai" hidden>
+            <label class="chat-label" for="chat-modelo-openai">MODELO</label>
+            <select id="chat-modelo-openai" class="chat-input">
+              <option value="gpt-6.1-sol" selected>
+                GPT-6.1 Sol (equilibrado) — $2 / $10 por millón de tokens
+              </option>
+              <option value="gpt-6-astra">GPT-6 Astra (más capaz, más caro) — $10 / $50</option>
+              <option value="gpt-6-luna">GPT-6 Luna (más barato) — $0,10 / $0,50</option>
+            </select>
+          </div>
           <button type="button" class="page-btn" id="chat-nueva">NUEVA CONVERSACIÓN</button>
           <button type="button" class="page-btn" id="chat-olvidar">OLVIDAR CLAVE</button>
         </div>

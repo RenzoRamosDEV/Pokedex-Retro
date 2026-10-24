@@ -2845,6 +2845,14 @@ body[data-theme='gray'] .logo-dot.green {
   display: none;
 }
 
+.chat-modelos {
+  display: contents;
+}
+
+.chat-modelos[hidden] {
+  display: none;
+}
+
 .chat-label {
   font-family: 'Press Start 2P', monospace;
   font-size: 0.55rem;
