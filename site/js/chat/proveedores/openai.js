@@ -103,14 +103,15 @@ const errorDeRed = (detalle) => crearError('red', 0, detalle);
  * @param {string} texto
  */
 function entradaDe(texto) {
-  let valor;
   try {
-    valor = JSON.parse(texto);
+    const valor = JSON.parse(texto);
+    if (typeof valor === 'object' && valor !== null) {
+      return Object.fromEntries(Object.entries(valor).filter(([, v]) => v !== null));
+    }
   } catch {
-    return ENTRADA_NO_JSON;
+    // Unparseable arguments end like any other non-object input.
   }
-  if (valor === null || typeof valor !== 'object') return ENTRADA_NO_JSON;
-  return Object.fromEntries(Object.entries(valor).filter(([, v]) => v !== null));
+  return ENTRADA_NO_JSON;
 }
 
 /** @param {any} item */
