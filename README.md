@@ -57,6 +57,18 @@ Abre `http://127.0.0.1:4173/` (otro puerto con `PORT=4181 node scripts/serve-sit
   - Claude: Claude Opus 5.5 ($4 / $20, por defecto), Claude Sonnet 5.5 ($2 / $10) y Claude Haiku 5.5 ($0,10 / $0,50).
   - OpenAI: GPT-6.1 Sol ($2 / $10, por defecto, equilibrado), GPT-6 Astra ($10 / $50, más capaz) y GPT-6 Luna ($0,10 / $0,50, más barato).
 
+El chat no se conecta al servidor MCP: un navegador no puede lanzar un proceso stdio. Comparte con él el código de las herramientas (`site/js/core`), así que ambos responden igual.
+
+Si algo falla, el mensaje dice por qué:
+
+| Mensaje                                                                | Qué pasa                                                                                                                                                        |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Clave no válida` / `Clave de OpenAI no válida`                        | La clave está mal copiada o revocada.                                                                                                                           |
+| `Tu cuenta de OpenAI no tiene saldo.`                                  | La cuenta no tiene crédito o llegó a su límite de gasto: añade saldo en la [facturación de OpenAI](https://platform.openai.com/settings/organization/billing/). |
+| `OpenAI rechazó la petición…`                                          | La clave es válida pero OpenAI rechazó la petición sin dejar leer el motivo (suele ser saldo o límites).                                                        |
+| `Error de OpenAI (<estado>): <motivo>` / `Error de Claude (<estado>)…` | Error del proveedor; el motivo viene de su API.                                                                                                                 |
+| `Sin conexión con …`                                                   | No hay red o la API no responde.                                                                                                                                |
+
 Detalles y riesgos de tener la clave en el navegador: [ADR 0005](docs/adr/0005-chat-byok-fetch-directo.md) y [ADR 0006](docs/adr/0006-chat-multiproveedor-openai.md).
 
 ## Servidor MCP
