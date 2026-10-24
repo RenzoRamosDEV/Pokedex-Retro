@@ -272,10 +272,11 @@ describe('loadSection on an unpaginated section', () => {
     assert.deepEqual(requested, [`${API}/type?limit=100`, `${API}/type/fire`]);
   });
 
-  test('excludes the unknown and shadow pseudo-types', async () => {
+  test('excludes the stellar, unknown and shadow pseudo-types', async () => {
     const { fetchJson } = fakeFetchJson({
-      [`${API}/type?limit=100`]: listOf(['ghost', 'unknown', 'shadow']),
+      [`${API}/type?limit=100`]: listOf(['ghost', 'stellar', 'unknown', 'shadow']),
       [`${API}/type/ghost`]: detail(8, 'ghost'),
+      [`${API}/type/stellar`]: detail(19, 'stellar'),
       [`${API}/type/unknown`]: detail(10001, 'unknown'),
       [`${API}/type/shadow`]: detail(10002, 'shadow'),
     });
@@ -412,16 +413,18 @@ describe('loadSection total', () => {
   });
 
   test('counts the entries before exclude when not paginating', async () => {
-    const types = Array.from({ length: 19 }, (_, i) => `type-${i + 1}`);
-    const routes = { [`${API}/type?limit=100`]: listOf([...types, 'unknown', 'shadow']) };
+    const types = Array.from({ length: 18 }, (_, i) => `type-${i + 1}`);
+    const routes = {
+      [`${API}/type?limit=100`]: listOf([...types, 'stellar', 'unknown', 'shadow']),
+    };
     types.forEach((name, i) => (routes[`${API}/type/${name}`] = detail(i + 1, name)));
     const { fetchJson, requested } = fakeFetchJson(routes);
 
     const result = await loadSection(fetchJson, section('tipos'), parseQuery(''));
 
     assert.equal(result.total, 21);
-    assert.equal(result.items.length, 19);
-    assert.ok(!requested.some((url) => /unknown|shadow/.test(url)));
+    assert.equal(result.items.length, 18);
+    assert.ok(!requested.some((url) => /stellar|unknown|shadow/.test(url)));
   });
 });
 

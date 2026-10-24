@@ -29,6 +29,6 @@ export const SECTIONS = {
   naturalezas: unpaginated('nature', mapNature),
   objetos: paginated('item', 12, mapItem),
   bayas: paginated('berry', 15, mapBerry),
-  tipos: unpaginated('type', mapType, ['unknown', 'shadow']),
+  tipos: unpaginated('type', mapType, ['stellar', 'unknown', 'shadow']),
   habilidades: paginated('ability', 8, mapAbility),
 };
