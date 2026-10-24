@@ -28,6 +28,12 @@ export default [
     },
   },
   {
+    files: ['site/js/chat/**/*.js'],
+    languageOptions: {
+      globals: { TextDecoder: 'readonly', structuredClone: 'readonly' },
+    },
+  },
+  {
     files: ['site/js/ui/**/*.js', 'site/js/api/**/*.js'],
     languageOptions: {
       globals: globals.browser,
