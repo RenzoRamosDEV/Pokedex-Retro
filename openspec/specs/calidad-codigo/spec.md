@@ -150,7 +150,7 @@ La versión de la web SHALL vivir en `site/js/version.js` (`export const VERSION
 - **THEN** el comando termina con código distinto de 0
 
 ### Requirement: Pruebas e2e con PokéAPI simulada
-`npm run e2e` SHALL ejecutar en Chromium, sobre `site/` servido por un servidor estático local, pruebas que simulan todas las peticiones a `https://pokeapi.co/**` con datos derivados de los fixtures de los mappers y todas las peticiones a `https://api.anthropic.com/**` con respuestas SSE sintéticas, y no hacen peticiones externas. MUST cubrir las 8 páginas, búsqueda, paginación, diálogo con teclado, tema persistido, el flujo del chat y 0 violaciones axe `serious`/`critical` por página y tema.
+`npm run e2e` SHALL ejecutar en Chromium, sobre `site/` servido localmente, pruebas que simulan todas las peticiones a `https://pokeapi.co/**` con datos de los fixtures, y a `https://api.anthropic.com/**` y `https://api.openai.com/**` con respuestas SSE sintéticas, sin peticiones externas. MUST cubrir las 8 páginas, búsqueda, paginación, diálogo con teclado, tema persistido, el chat con ambos proveedores y 0 violaciones axe `serious`/`critical` por página y tema.
 
 #### Scenario: Sin red externa
 - **WHEN** se ejecuta `npm run e2e` sin acceso a internet
@@ -167,6 +167,10 @@ La versión de la web SHALL vivir en `site/js/version.js` (`export const VERSION
 #### Scenario: Flujo del chat simulado
 - **WHEN** en `chat.html` se guarda una clave, se pregunta y la API simulada pide una tool y después responde texto
 - **THEN** la página muestra `CONSULTANDO: <tool>`, después el texto final y la línea de tokens, sin peticiones externas reales
+
+#### Scenario: Flujo del chat con OpenAI simulado
+- **WHEN** en `chat.html` se elige `OpenAI`, se guarda una clave, se pregunta y la API de OpenAI simulada pide una función y después responde texto
+- **THEN** la página muestra `CONSULTANDO: <tool>`, después el texto final con la etiqueta `OPENAI` y la línea de tokens, y ninguna petición va a `api.anthropic.com`
 
 ### Requirement: Presupuestos de Lighthouse
 `npm run lhci` SHALL auditar con Lighthouse `index.html` y `tipos.html` servidos localmente, 3 ejecuciones por página, y MUST fallar si accesibilidad, buenas prácticas o SEO bajan de 0,95. Performance SHALL exigir 0,95; solo si la cifra medida es inferior por la latencia real de PokéAPI su aserción MUST pasar a aviso y la cifra documentarse en el PR.
@@ -191,19 +195,19 @@ La versión de la web SHALL vivir en `site/js/version.js` (`export const VERSION
 - **THEN** `npm run mcp:test:mutation` termina con código distinto de 0
 
 ### Requirement: Mutación del chat y de la lógica compartida
-`npm run test:mutation:chat` SHALL ejecutar Stryker con una configuración propia sobre los módulos puros no-test del chat y los de `site/js/core` que comparten la web y el MCP para las herramientas, con `thresholds.break: 95`, y MUST abortarse si supera 180 s. Esos módulos de `core` MUST quedar fuera de `npm run test:mutation` para no repetir su mutación.
+`npm run test:mutation:chat` SHALL ejecutar Stryker sobre los módulos puros no-test del chat, incluidos los adaptadores de ambos proveedores, y los de `site/js/core` que comparten web y MCP, en configuraciones encadenadas con `thresholds.break: 95` cada una, abortando cada ejecución que supere 180 s. Esos módulos de `core` MUST quedar fuera de `npm run test:mutation`.
 
 #### Scenario: Mutación del chat dentro de presupuesto
 - **WHEN** se ejecuta `npm run test:mutation:chat`
-- **THEN** termina en menos de 180 s con una puntuación igual o superior al 95 %
+- **THEN** cada ejecución de Stryker termina en menos de 180 s con una puntuación igual o superior al 95 %
 
 #### Scenario: Puntuación insuficiente
-- **WHEN** la puntuación de mutación del chat es inferior al 95 %
+- **WHEN** la puntuación de mutación de cualquiera de las configuraciones del chat es inferior al 95 %
 - **THEN** el comando termina con código distinto de 0
 
 ### Requirement: Tests del chat sin red
-Los tests unitarios del chat SHALL usar un `fetch` falso que devuelve streams SSE sintéticos con el formato documentado de la API de Claude y MUST NOT hacer peticiones de red reales.
+Los tests unitarios del chat SHALL usar un `fetch` falso que devuelve streams SSE sintéticos con el formato documentado de la API de Claude o de la Responses API de OpenAI y MUST NOT hacer peticiones de red reales.
 
 #### Scenario: Sin acceso a internet
 - **WHEN** se ejecuta `npm test` sin acceso a internet
-- **THEN** todos los tests del chat pasan
+- **THEN** todos los tests del chat, de ambos proveedores, pasan
