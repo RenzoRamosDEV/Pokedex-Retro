@@ -1,5 +1,5 @@
 // @ts-check
-import { MENSAJES } from '../results.js';
+import { MENSAJES } from '../../../site/js/core/mensajes.js';
 import { loadTypeChart } from '../type-chart.js';
 
 const URI = 'pokedex://tipos/tabla';

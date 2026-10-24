@@ -2,7 +2,8 @@
 import { fetchDetail, loadSection } from '../../../site/js/core/load-section.js';
 import { normalizeQuery } from '../../../site/js/core/search.js';
 import { SECTIONS } from '../../../site/js/core/sections.js';
-import { MENSAJES, errorResult, okResult } from '../results.js';
+import { MENSAJES } from '../../../site/js/core/mensajes.js';
+import { errorResult, okResult } from '../results.js';
 import {
   BAYA,
   ENTRADA_BUSQUEDA,
