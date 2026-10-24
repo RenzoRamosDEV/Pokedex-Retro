@@ -25,7 +25,7 @@ El workflow `CI` SHALL ejecutarse en cada `pull_request` y en cada `push` a `mai
 - **THEN** el workflow `CI` termina en `success` para Node 22 y Node 24
 
 ### Requirement: Mutación solo en Node 24
-El workflow `CI` SHALL ejecutar `npm run test:mutation`, `npm run test:mutation:ui` y `npm run mcp:test:mutation` únicamente en la combinación de Node 24, con el mismo límite de 180 s por ejecución que en local.
+El workflow `CI` SHALL ejecutar `npm run test:mutation`, `npm run test:mutation:chat`, `npm run test:mutation:ui` y `npm run mcp:test:mutation` únicamente en la combinación de Node 24, con el mismo límite de 180 s por ejecución que en local.
 
 #### Scenario: Matriz de Node 22
 - **WHEN** el workflow `CI` corre en Node 22
@@ -33,7 +33,7 @@ El workflow `CI` SHALL ejecutar `npm run test:mutation`, `npm run test:mutation:
 
 #### Scenario: Matriz de Node 24
 - **WHEN** el workflow `CI` corre en Node 24
-- **THEN** se ejecutan `npm run test:mutation`, `npm run test:mutation:ui` y `npm run mcp:test:mutation` y el fallo de cualquiera marca el workflow como fallido
+- **THEN** se ejecutan `npm run test:mutation`, `npm run test:mutation:chat`, `npm run test:mutation:ui` y `npm run mcp:test:mutation` y el fallo de cualquiera marca el workflow como fallido
 
 ### Requirement: CI sin secretos
 El workflow `CI` MUST NOT usar secretos del repositorio y SHALL ejecutarse con permisos de solo lectura sobre el contenido.
