@@ -178,18 +178,6 @@ Lint, formato, typecheck, `check:html` y el flujo de ramas y commits: [`CONTRIBU
 
 ---
 
-## Decisiones
-
-- [0001: cabecera y navegación estáticas](docs/adr/0001-cabecera-navegacion-estaticas.md): HTML escrito a mano en cada página y comprobado en CI con `npm run check:html`.
-- [0002: estrategia de caché](docs/adr/0002-estrategia-cache.md): listas en `localStorage` 24 h, detalles en memoria y `sessionStorage`, y caché del MCP en memoria con disco opcional.
-- [0003: servidor MCP por stdio](docs/adr/0003-mcp-stdio.md): proceso local sin puertos ni servidor que desplegar.
-- [0004: JavaScript con JSDoc y `// @ts-check`](docs/adr/0004-javascript-jsdoc-ts-check.md): tipos comprobados con `tsc` sin compilar la web.
-- [0005: chat con clave propia y `fetch` directo](docs/adr/0005-chat-byok-fetch-directo.md): la clave del visitante llama a la API de Claude desde el navegador, sin SDK ni backend.
-- [0006: chat multiproveedor con OpenAI](docs/adr/0006-chat-multiproveedor-openai.md): Responses API con `fetch` directo y `store: false` tras un puerto de proveedor con dos adaptadores y una clave por proveedor.
-- [0007: agentes, subagentes y skills del chat](docs/adr/0007-chat-agentes-subagentes-skills.md): definiciones como módulos de datos, delegación con profundidad 1, skills bajo demanda y alcance solo Pokémon por instrucciones.
-
----
-
 ## Licencia
 
 [MIT](LICENSE) © Renzo Ramos. Las fuentes Press Start 2P y VT323 se distribuyen bajo la SIL Open Font License 1.1 ([`site/fonts/OFL.txt`](site/fonts/OFL.txt)).
