@@ -28,7 +28,7 @@ Claude u OpenAI desde el navegador, y el servidor MCP deja consultarla desde Cla
 
 <img src="docs/media/demo.gif" alt="Demo de la Pokédex Retro: búsqueda, ficha de un Pokémon y cambio de tema" width="100%">
 
-**Demo:** https://renzoramosdev.github.io/Pokedex-Retro/
+**Demo:** https://renzoramosdev.github.io/Pokedex-Retro/ · **Documentación:** https://docs.portafolio-renzoramos.com/pokedex-retro/
 
 </div>
 
